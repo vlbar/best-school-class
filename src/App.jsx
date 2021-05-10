@@ -12,6 +12,8 @@ import Login from './pages/Login';
 
 import NotFound from './pages/NotFound';
 
+const BASE_PATH = 'https://dss-course-work.herokuapp.com/api/v1';
+
 function App() {  
     return (
         <BrowserRouter>
