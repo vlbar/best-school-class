@@ -1,0 +1,30 @@
+{
+  "name": "best-school-class",
+  "version": "1.0.0",
+  "description": "Front-end for course work Best School Class",
+  "private": true,
+  "scripts": {
+    "build": "cross-env NODE_ENV=production npx webpack --mode production",
+    "dev": "cross-env NODE_ENV=development npx webpack --mode development",
+    "serve": "cross-env NODE_ENV=development npx webpack serve --open"
+  },
+  "author": "Baranov Solodov Command",
+  "license": "ISC",
+  "dependencies": {},
+  "devDependencies": {
+    "clean-webpack-plugin": "^4.0.0-alpha.0",
+    "cross-env": "^7.0.3",
+    "css-loader": "^5.2.4",
+    "file-loader": "^6.2.0",
+    "html-webpack-plugin": "^5.3.1",
+    "less": "^4.1.1",
+    "less-loader": "^8.1.1",
+    "mini-css-extract-plugin": "^1.6.0",
+    "optimize-css-assets-webpack-plugin": "^5.0.4",
+    "style-loader": "^2.0.0",
+    "terser-webpack-plugin": "^5.1.1",
+    "webpack": "^5.36.2",
+    "webpack-cli": "^4.6.0",
+    "webpack-dev-server": "^3.11.2"
+  }
+}
