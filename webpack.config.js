@@ -12,7 +12,7 @@ const filename = ext => isDev ? `[name].${ext}` : `[name].[fullhash].${ext}`;
 module.exports = {
     mode: 'development',
     context: path.resolve(__dirname, 'src'),
-    entry: './index.js',
+    entry: ['@babel/polyfill', './index.jsx'],
     output: { 
         filename: filename('js'),
         path: path.resolve(__dirname, 'build')
@@ -21,7 +21,7 @@ module.exports = {
         port: 4200
     },
     resolve: {
-        extensions: ['.js', '.json'],
+        extensions: ['.js', '.json', '.jsx'],
     },
     optimization: {
         minimize: !isDev,
@@ -52,6 +52,16 @@ module.exports = {
             {
                 test: /\.(ttf|woff|eot)$/,
                 use: ['file-loader']
+            },
+            {
+                test: /\.m?jsx$/,
+                exclude: /node_modules/,
+                use: {
+                  loader: 'babel-loader',
+                  options: {
+                    presets: ['@babel/preset-react', '@babel/preset-env']
+                  }
+                }
             }
         ]
     }
