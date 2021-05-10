@@ -15,10 +15,12 @@ module.exports = {
     entry: ['@babel/polyfill', './index.jsx'],
     output: { 
         filename: filename('js'),
-        path: path.resolve(__dirname, 'build')
+        path: path.resolve(__dirname, 'build'),
+        publicPath: '/'
     },
     devServer: {
-        port: 4200
+        port: 4200,
+        historyApiFallback: true
     },
     resolve: {
         extensions: ['.js', '.json', '.jsx'],
