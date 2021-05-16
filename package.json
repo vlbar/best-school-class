@@ -12,14 +12,17 @@
   "license": "ISC",
   "dependencies": {
     "@babel/polyfill": "^7.12.1",
+    "@reduxjs/toolkit": "^1.5.1",
     "axios": "^0.21.1",
+    "formik": "^2.2.6",
     "react": "^17.0.2",
     "react-bootstrap": "^1.5.2",
     "react-dom": "^17.0.2",
     "react-redux": "^7.2.4",
     "react-router-dom": "^5.2.0",
     "redux": "^4.1.0",
-    "redux-thunk": "^2.3.0"
+    "redux-thunk": "^2.3.0",
+    "yup": "^0.32.9"
   },
   "devDependencies": {
     "@babel/core": "^7.14.0",
