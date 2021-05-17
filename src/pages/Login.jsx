@@ -17,14 +17,20 @@ function Login() {
   const { status } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
 
-  const submit = ({ username, password }) => {
+  const submit = ({ username, password }, { setSubmitting }) => {
+    setErrorMessage(null);
+    setSubmitting(true);
     dispatch(login({ username, password }))
       .then(unwrapResult)
-      .catch((e) => setErrorMessage(e.message));
+      .then(() => setSubmitting(false))
+      .catch((e) => {
+        setErrorMessage(e.message);
+        setSubmitting(false)
+      });
   };
 
   return (
-    <Container className="w-25">
+    <Container style={{ maxWidth: 400 + "px" }}>
       <Card>
         <Card.Body>
           <Card.Title>
@@ -48,11 +54,11 @@ function Login() {
             validationSchema={loginSchema}
             onSubmit={submit}
           >
-            {({ dirty, isValid, errors, submitForm }) => (
+            {({ dirty, isValid, isSubmitting, submitForm }) => (
               <Form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  submitForm();
+                  if (!isSubmitting) submitForm();
                 }}
               >
                 <Form.Group>
@@ -105,7 +111,7 @@ function Login() {
                     variant="secondary"
                     className="btn-block"
                     type="submit"
-                    disabled={!(dirty && isValid)}
+                    disabled={isSubmitting || !(dirty && isValid)}
                   >
                     Войти
                   </Button>
