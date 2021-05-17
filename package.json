@@ -4,6 +4,7 @@
   "description": "Front-end for course work Best School Class",
   "private": true,
   "scripts": {
+    "start": "node server.js",
     "build": "cross-env NODE_ENV=production npx webpack --mode production",
     "dev": "cross-env NODE_ENV=development npx webpack --mode development",
     "serve": "cross-env NODE_ENV=development npx webpack serve --open"
@@ -13,6 +14,7 @@
   "dependencies": {
     "@babel/polyfill": "^7.12.1",
     "axios": "^0.21.1",
+    "express": "^4.17.1",
     "react": "^17.0.2",
     "react-bootstrap": "^1.5.2",
     "react-dom": "^17.0.2",
