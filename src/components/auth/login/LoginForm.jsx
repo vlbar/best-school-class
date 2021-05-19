@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Form, Button, Card, InputGroup, Container } from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
 import login from "../../../redux/auth/authActions";
@@ -6,7 +6,7 @@ import * as yup from "yup";
 import { ErrorMessage, FastField, Formik } from "formik";
 import ProcessBar from "../../process-bar/ProcessBar";
 import { unwrapResult } from "@reduxjs/toolkit";
-import "./auth-panel.less"
+import "./login-form.less"
 
 const loginSchema = yup.object().shape({
   username: yup.string().required("Вы не ввели имя пользователя!"),
@@ -18,12 +18,16 @@ function LoginForm() {
   const { status } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
 
+  useEffect(() => {
+    if(status == "success")
+        setErrorMessage(null)
+  }, [status])
+
   const submit = ({ username, password }, { setSubmitting }) => {
     setErrorMessage(null);
     setSubmitting(true);
     dispatch(login({ username, password }))
       .then(unwrapResult)
-      .then(() => setSubmitting(false))
       .catch((e) => {
         if (e.status !== 401) setErrorMessage(e.message);
         else setErrorMessage("Неверное имя пользователя или пароль");
@@ -32,7 +36,7 @@ function LoginForm() {
   };
 
   return (
-    <Container className="form-panel">
+    <Container className="login-form">
       <Card>
         <Card.Body>
           <Card.Title>
