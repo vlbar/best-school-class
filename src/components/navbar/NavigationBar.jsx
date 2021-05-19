@@ -2,7 +2,7 @@ import React from 'react';
 import { Navbar, Nav, Button } from 'react-bootstrap';
 import { NavLink } from 'react-router-dom';
 import './navigation-bar.less';
-import Auth from '../auth/Auth';
+import AuthPanel from '../auth/AuthPanel';
 import PrivateLink from '../routing/PrivateLink';
 
 function NavigationBar() {
@@ -18,7 +18,7 @@ function NavigationBar() {
                 <PrivateLink as={NavLink} to="/courses">Курс</PrivateLink> 
                 <PrivateLink as={NavLink} to="/groups">Группы</PrivateLink> 
             </Nav>
-            <Auth/>
+            <AuthPanel/>
         </Navbar.Collapse>
         </Navbar>
     );
