@@ -20,7 +20,7 @@ import { store } from "./redux/rootReducer";
 
 const BASE_PATH = "https://dss-course-work.herokuapp.com/api/v1";
 axios.defaults.baseURL = BASE_PATH;
-/*axios.interceptors.response.use(
+axios.interceptors.response.use(
   (response) => {
     return response;
   },
@@ -31,7 +31,7 @@ axios.defaults.baseURL = BASE_PATH;
   }
 );
 axios.defaults.headers.common['Authorization'] = `Bearer ${JSON.parse(localStorage.getItem("auth"))?.user.token }`;
-*/
+
 function App() {
   return (
     <BrowserRouter>
