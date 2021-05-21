@@ -1,11 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { login, refreshToken } from "./authActions";
+import login from "./authActions";
 
 const initialState = {
   isLoggedIn: false,
   user: {
     token: "",
-    refreshToken: "",
     username: "",
   },
   status: "idle",
@@ -40,10 +39,6 @@ const authSlice = createSlice({
       })
       .addCase(login.pending, (state) => {
         state.status = "loading";
-      })
-      .addCase(refreshToken.fulfilled, (state, action) => {
-        state.user.token = action.payload.token;
-        state.user.refreshToken = action.payload.refreshToken;
       });
   },
 });

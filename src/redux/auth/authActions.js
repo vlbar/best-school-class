@@ -2,7 +2,7 @@ import axios from "axios";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 const baseURL = "/auth"
 
-export const login = createAsyncThunk(
+const login = createAsyncThunk(
   "auth/login",
   async ({ username, password }, { rejectWithValue }) => {
     const initialCridentials = { username: username, password: password };
@@ -15,16 +15,4 @@ export const login = createAsyncThunk(
   }
 );
 
-export const refreshToken = createAsyncThunk(
-  "auth/refresh",
-  async ({ refreshToken }) => {
-    const initialCridentials = { refreshToken: refreshToken };
-      try {
-        const response = await axios.post(`${baseURL}/refresh`, initialCridentials);
-        return response.data;
-      } catch (e) {
-        return rejectWithValue(e.response.data);
-      }
-  } 
-)
-
+export default login;
