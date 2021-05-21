@@ -3,7 +3,7 @@ import axios from 'axios';
 
 function Groups() {
     
-    useEffect(() => {
+    useEffect(async () => {
         await axios.get('/hello');
     });
     
