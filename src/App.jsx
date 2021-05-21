@@ -18,7 +18,7 @@ import axios from "axios";
 import Register from "./pages/Register";
 import { store } from "./redux/rootReducer";
 
-const BASE_PATH = "http://localhost:8080/bestschoolclass/api/v1";
+const BASE_PATH = "https://dss-course-work.herokuapp.com/api/v1";
 axios.defaults.baseURL = BASE_PATH;
 /*axios.interceptors.response.use(
   (response) => {
