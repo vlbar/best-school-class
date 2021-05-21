@@ -13,11 +13,25 @@ import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import AuthenticatedRoute from "./components/routing/AuthenticatedRoute";
 import UnauthenticatedRoute from "./components/routing/UnauthenticatedRoute";
+import ErrorHandler from "./components/auth/authorize/ErrorHandler";
 import axios from "axios";
+import Register from "./pages/Register";
+import { store } from "./redux/rootReducer";
 
-const BASE_PATH = "https://dss-course-work.herokuapp.com/api/v1";
+const BASE_PATH = "http://localhost:8080/bestschoolclass/api/v1";
 axios.defaults.baseURL = BASE_PATH;
-
+/*axios.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    return Promise.reject(
+      ErrorHandler(store, error)
+    );
+  }
+);
+axios.defaults.headers.common['Authorization'] = `Bearer ${JSON.parse(localStorage.getItem("auth"))?.user.token }`;
+*/
 function App() {
   return (
     <BrowserRouter>
@@ -29,6 +43,7 @@ function App() {
         <AuthenticatedRoute path={"/courses"} component={Courses} />
         <AuthenticatedRoute path={"/groups"} component={Groups} />
         <UnauthenticatedRoute path={"/login"} component={Login} />
+        <UnauthenticatedRoute path={"/register"} component={Register} />
         <Route component={NotFound} />
       </Switch>
     </BrowserRouter>

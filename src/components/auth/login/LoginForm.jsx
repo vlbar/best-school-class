@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { Form, Button, Card, InputGroup, Container } from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
-import login from "../../../redux/auth/authActions";
+import { login } from "../../../redux/auth/authActions";
 import * as yup from "yup";
 import { ErrorMessage, FastField, Formik } from "formik";
 import ProcessBar from "../../process-bar/ProcessBar";
 import { unwrapResult } from "@reduxjs/toolkit";
 import "./login-form.less"
+import { Button, Card, Container, Form, InputGroup } from "react-bootstrap";
 
 const loginSchema = yup.object().shape({
   username: yup.string().required("Вы не ввели имя пользователя!"),
@@ -29,6 +29,7 @@ function LoginForm() {
     dispatch(login({ username, password }))
       .then(unwrapResult)
       .catch((e) => {
+        console.log(e)
         if (e.status !== 401) setErrorMessage(e.message);
         else setErrorMessage("Неверное имя пользователя или пароль");
         setSubmitting(false);
@@ -80,14 +81,14 @@ function LoginForm() {
                       type="text"
                       placeholder="Введите имя пользователя"
                     />
-                    <InputGroup>
+                  </InputGroup>
+                  <Form.Text muted>
                       <ErrorMessage
                         component="div"
                         name="username"
                         className="text-danger"
                       />
-                    </InputGroup>
-                  </InputGroup>
+                    </Form.Text>
                 </Form.Group>
                 <Form.Group>
                   <InputGroup>
@@ -103,14 +104,14 @@ function LoginForm() {
                       autoComplete="password"
                       className="form-control"
                     />
-                    <InputGroup>
+                  </InputGroup>
+                  <Form.Text muted>
                       <ErrorMessage
                         component="div"
                         name="password"
                         className=" text-danger"
                       />
-                    </InputGroup>
-                  </InputGroup>
+                    </Form.Text>
                 </Form.Group>
                 <Form.Group>
                   <Button
