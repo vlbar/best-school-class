@@ -45,7 +45,7 @@ function App() {
         <PrivateRoute path={"/shedule"} component={Shedule} allowedStates={[STUDENT, TEACHER]}/>
         <PrivateRoute path={"/answers"} component={Answers}/>
         <PrivateRoute path={"/courses"} component={Courses} allowedStates={[HELPER, TEACHER]}/>
-        <PrivateRoute path={"/groups"} component={Groups} />
+        <Route path={"/groups"} component={Groups} />
         <Route component={NotFound} />
       </Switch>
     </BrowserRouter>
