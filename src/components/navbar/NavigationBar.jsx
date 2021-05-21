@@ -49,7 +49,7 @@ function NavigationBar() {
         <PrivateContent>
           <StatePicker />
         </PrivateContent>
-        <Auth />
+        <AuthPanel />
       </Navbar.Collapse>
     </Navbar>
   );
