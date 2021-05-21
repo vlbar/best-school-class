@@ -2,7 +2,7 @@ import React from "react";
 import { Navbar, Nav, Button } from "react-bootstrap";
 import { NavLink } from "react-router-dom";
 import "./navigation-bar.less";
-import Auth from "../auth/Auth";
+import AuthPanel from "../auth/AuthPanel";
 import PrivateContent from "../routing/PrivateContent";
 import StatePicker from "../state/StatePicker";
 import { HELPER, STUDENT, TEACHER } from "../../redux/state/stateActions";
