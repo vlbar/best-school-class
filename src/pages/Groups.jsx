@@ -1,14 +1,8 @@
-import React, { useEffect } from 'react';
-import axios from 'axios';
+import React from 'react';
 
 function Groups() {
-    
-    useEffect(async () => {
-        await axios.get('/hello');
-    });
-    
     return (
-        <div className="container">Groups...</div>
+        <div className="container">Groups...{message}</div>
     )
 }
 

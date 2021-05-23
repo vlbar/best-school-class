@@ -3,7 +3,7 @@ import createAuthRefreshInterceptor from "axios-auth-refresh";
 import { refresh } from "../redux/auth/authActions";
 import { store } from "../redux/rootReducer";
 
-export const BASE_PATH = "http://localhost:8080/bestschoolclass/api/v1";
+export const BASE_PATH = "https://dss-course-work.herokuapp.com/api/v1";
 
 const retryAuth = async (failedRequest) => {
   const refreshToken = localStorage.getItem("refreshToken");
