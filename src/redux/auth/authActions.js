@@ -1,6 +1,6 @@
 import axios from "axios";
 import { createAsyncThunk } from "@reduxjs/toolkit";
-const baseURL = "/auth"
+const baseURL = "/auth";
 
 export const login = createAsyncThunk(
   "auth/login",
@@ -15,16 +15,15 @@ export const login = createAsyncThunk(
   }
 );
 
-export const refreshToken = createAsyncThunk(
+export const refresh = createAsyncThunk(
   "auth/refresh",
   async ({ refreshToken }) => {
-    const initialCridentials = { refreshToken: refreshToken };
-      try {
-        const response = await axios.post(`${baseURL}/refresh`, initialCridentials);
-        return response.data;
-      } catch (e) {
-        return rejectWithValue(e.response.data);
-      }
-  } 
-)
-
+    const initialCridentials = { refreshToken };
+    const response = await axios.post(
+      `${baseURL}/token/refresh`,
+      initialCridentials,
+      { skipAuthRefresh: true }
+    );
+    return response.data;
+  }
+);

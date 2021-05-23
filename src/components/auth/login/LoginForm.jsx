@@ -29,7 +29,6 @@ function LoginForm() {
     dispatch(login({ username, password }))
       .then(unwrapResult)
       .catch((e) => {
-        console.log(e)
         if (e.status !== 401) setErrorMessage(e.message);
         else setErrorMessage("Неверное имя пользователя или пароль");
         setSubmitting(false);
