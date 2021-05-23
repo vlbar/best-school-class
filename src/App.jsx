@@ -11,14 +11,15 @@ import Courses from "./pages/Courses";
 import Groups from "./pages/Groups";
 import Login from "./pages/Login";
 
-import NotFound from "./pages/NotFound";
 import axios from "axios";
+import NotFound from "./pages/NotFound";
 import PrivateRoute from "./components/routing/PrivateRoute";
 import PublicRoute from "./components/routing/PublicRoute";
 import { HELPER, STUDENT, TEACHER } from "./redux/state/stateActions";
 import configureAxios from "./config/axios-config";
 
 configureAxios(axios);
+
 
 function App() {
   return (
