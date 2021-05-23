@@ -8,7 +8,6 @@ export default function PublicRoute({ component: Component, ...rest }) {
   const history = useHistory();
 
   const destinationPath = history.location.state?.from.pathname;
-  console.log(destinationPath)
 
   return (
     <Route
