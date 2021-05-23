@@ -4,21 +4,31 @@ import { Route, Redirect } from "react-router-dom";
 import { selectAuth } from "../../redux/auth/authSelectors";
 import { selectState } from "../../redux/state/stateSelector";
 
-export default function PrivateRoute(props, { children, ...rest }) {
+export default function PrivateRoute({ component: Component, location, allowedStates, ...rest }) {
   const { isLoggedIn } = useSelector(selectAuth);
-  const { state } = useSelector(selectState)
-
-  const allowedStates = props.allowedStates;
-  console.log(props.allowedStates, state)
+  const { state } = useSelector(selectState);
 
   return (
-    <Route {...rest}>
-      {isLoggedIn? (
-        (!allowedStates || allowedStates.includes(state))?
-        children : <Redirect to={{pathname: "/home", state: { from: props.location } }}/>
-      ) : (
-        <Redirect to={{pathname: "/login", state: { from: props.location } }}/>
-      )}
-    </Route>
+    <Route
+      {...rest}
+      render={(props) => {
+        if (isLoggedIn) {
+          if (!allowedStates || allowedStates.includes(state))
+            return <Component {...props} />;
+          else
+            return (
+              <Redirect
+                to={{ pathname: "/home", state: { from: location } }}
+              />
+            );
+        } else {
+          return (
+            <Redirect
+              to={{ pathname: "/login", state: { from: location } }}
+            />
+          );
+        }
+      }}
+    />
   );
 }
