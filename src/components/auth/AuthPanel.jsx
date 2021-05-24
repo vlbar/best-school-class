@@ -5,7 +5,7 @@ import { Nav, Button } from "react-bootstrap";
 import { NavLink } from "react-router-dom";
 import { logouted } from "../../redux/auth/authReducer";
 
-function Auth() {
+function AuthPanel() {
   const auth = useSelector(selectAuth);
   const dispatch = useDispatch();
 
@@ -27,7 +27,7 @@ function Auth() {
   } else {
     return (
       <Nav>
-        <span className="text-light mt-1 mr-2">{auth.user.username}</span>
+        <span className="text-light mt-1 mr-2">{auth.username}</span>
         <Button variant="secondary" onClick={handleLogoutSumbit}>
           Выход
         </Button>
@@ -36,4 +36,4 @@ function Auth() {
   }
 }
 
-export default Auth;
+export default AuthPanel;

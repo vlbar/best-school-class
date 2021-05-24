@@ -1,25 +1,26 @@
 import { createSlice } from "@reduxjs/toolkit";
-import login from "./authActions";
+import { login, refresh } from "./authActions";
 
 const initialState = {
   isLoggedIn: false,
-  user: {
-    token: "",
-    username: "",
-  },
+  username: "",
   status: "idle",
 };
 
-const currentState = localStorage.getItem("auth")
-  ? JSON.parse(localStorage.getItem("auth"))
-  : initialState;
+const currentState = {
+  isLoggedIn: !!localStorage.getItem("token"),
+  username: localStorage.getItem("username") || "",
+  status: "idle",
+};
 
 const authSlice = createSlice({
   name: "auth",
   initialState: currentState,
   reducers: {
-    logouted(state, action) {
-      localStorage.removeItem("auth");
+    logouted() {
+      localStorage.removeItem("token");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("username");
       return initialState;
     },
   },
@@ -28,17 +29,26 @@ const authSlice = createSlice({
       .addCase(login.fulfilled, (state, action) => {
         state.status = "success";
         state.isLoggedIn = true;
-        state.user = {
-          username: action.payload.username,
-          token: action.payload.token,
-        };
-        localStorage.setItem("auth", JSON.stringify(state));
+        state.username = action.payload.username;
+        localStorage.setItem("token", action.payload.token);
+        localStorage.setItem("refreshToken", action.payload.refreshToken);
+        localStorage.setItem("username", action.payload.username);
       })
       .addCase(login.rejected, (state, action) => {
         state.status = "error";
       })
       .addCase(login.pending, (state) => {
         state.status = "loading";
+      })
+      .addCase(refresh.fulfilled, (state, action) => {
+        localStorage.setItem("token", action.payload.token);
+        localStorage.setItem("refreshToken", action.payload.refreshToken);
+      })
+      .addCase(refresh.rejected, () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("username");
+        return initialState;
       });
   },
 });
