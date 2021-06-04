@@ -5,6 +5,7 @@ import { CourseAddModal } from './CourseAddModal'
 import axios from 'axios'
 import './CourseHierarchy.less'
 
+const baseUtl = '/course'
 
 export const CourseHierarchy = () => {
     const [courses, setCourses] = useState([])
@@ -17,7 +18,7 @@ export const CourseHierarchy = () => {
     }, [])
 
     const fetchCourses = () => {
-        axios.get(`http://localhost:8080/bestschoolclass/api/v1/course?size=100`)
+        axios.get(`${baseUtl}?size=100`)
             .then(res => {
                 let items = res.data.items
                 items = items.map(x => {
@@ -32,7 +33,7 @@ export const CourseHierarchy = () => {
 
     const fetchSubCourses = async (id) => {
         let newNodes = []
-        await axios.get(`http://localhost:8080/bestschoolclass/api/v1/course/${id}/subcourse`)
+        await axios.get(`${baseUtl}/${id}/subcourse`)
             .then(res => {
                 let items = res.data.items
                 items = items.map(x => {
@@ -48,7 +49,7 @@ export const CourseHierarchy = () => {
     }
 
     const moveCourse = (courseId, parentId, position) => {
-        axios.put(`http://localhost:8080/bestschoolclass/api/v1/course/${courseId}/position?parentId=${parentId}&position=${position}`)
+        axios.put(`${baseUtl}/${courseId}/position?parentId=${parentId}&position=${position}`)
             .then(res => {
                 console.log('oh thats good')
             })
@@ -68,7 +69,7 @@ export const CourseHierarchy = () => {
             course.position = courses[courses.length - 1].position + 1
         }
 
-        axios.post(`http://localhost:8080/bestschoolclass/api/v1/course`,course)
+        axios.post(`${baseUtl}`,course)
             .then(res => {
                 course.id = res.data
 
@@ -92,7 +93,7 @@ export const CourseHierarchy = () => {
     }
 
     const deleteCourse = (course) => {
-        axios.delete(`http://localhost:8080/bestschoolclass/api/v1/course/${course.id}`)
+        axios.delete(`${baseUtl}/${course.id}`)
             .then(res => {
                 console.log('oh thats good')
             })
