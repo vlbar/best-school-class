@@ -53,11 +53,11 @@ export const CourseHierarchy = () => {
             })
     }
 
-    const fetchSubCourses = async (id) => {
+    const fetchSubCourses = async (node) => {
         setIsFetching(true)
 
         let newNodes = []
-        await axios.get(`${baseUtl}/${id}/subcourses`)
+        await axios.get(`${baseUtl}/${node.id}/subcourses`)
             .then(res => {
                 let items = res.data.items
                 items = items.map(x => {
@@ -102,7 +102,7 @@ export const CourseHierarchy = () => {
             })
     }
 
-    const addCourse = (course) => {
+    const addCourse = async (course) => {
         setIsFetching(true)
         setIsAddCourseShow(false)
         
@@ -115,19 +115,25 @@ export const CourseHierarchy = () => {
         }
 
         axios.post(`${baseUtl}`,course)
-            .then(res => {
-                course.id = res.data
+            .then(async res => {
+                course.id = res.data.id
+                course.isEmpty = true
 
                 let flatTreeData = treeToFlat(courses)
                 if (course.parentCourseId !== null)
                 {
                     let parentCourse = flatTreeData.find(x => x.id == course.parentCourseId)
-                    parentCourse.isExpanded = true
-                    let parentChilds = parentCourse.child
-                    parentChilds = [mapToNode(course), ...parentChilds]
-                    parentChilds.filter(x => x.position >= course.position).forEach(x => x.position++)
-                    let newTree = flatTreeData.filter(x => x.parentId == null)
-                    setCourses([...newTree])
+                    if(!parentCourse.isFetched) {
+                        parentCourse.child = await fetchSubCourses(parentCourse)
+                        parentCourse.isFetched = true
+                    } else {
+                        let parentChilds = parentCourse.child
+                        parentChilds.filter(x => x.position >= course.position).forEach(x => x.position++)
+                        parentCourse.child = [mapToNode(course), ...parentChilds]
+                    }
+
+                    flatTreeData.find(x => x.id == course.parentCourseId).isExpanded = true //i love React <3
+                    setCourses(flatTreeData.filter(x => x.parentId == null))                    
                 } else {
                     setCourses([...courses, mapToNode(course)])
                 }
@@ -141,6 +147,8 @@ export const CourseHierarchy = () => {
             })
             .finally(() => {
                 setIsFetching(false)
+                course.name = ''
+                course.id = null
             })
     }
 
@@ -175,6 +183,7 @@ export const CourseHierarchy = () => {
             position: course.position,
             isExapnded: false,
             isFetched: false,
+            isEmpty: course.isEmpty,
             child: []
         }
     }

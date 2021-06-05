@@ -63,8 +63,10 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
 
     //=====================Render========================
     const collapseList = () => {
-        setExpandedHandler(nodeData.id, !nodeData.isExpanded)
-        if(fetchDataHandler !== undefined && !nodeData.isFetched) fetchDataHandler(nodeData.id)
+        if(fetchDataHandler !== undefined && !nodeData.isFetched && !nodeData.isEmpty) 
+            fetchDataHandler(nodeData)
+        else
+            setExpandedHandler(nodeData.id, !nodeData.isExpanded)
     }
 
     const openDropdown = (isOpen) => setIsOpenDropdown(isOpen)
@@ -73,8 +75,6 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
         setIsDragOver(false)
         moveNodeHandler(targetParentId, position)
     }
-
-    if(nodeData.isExpanded && !nodeData.isFetched && fetchDataHandler !== undefined && !nodeData.isFetched) fetchDataHandler(nodeData.id)
 
     // decringelization of render
     const upperNode = (index) => {
@@ -85,9 +85,8 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
         else return subNodes[index - 1]
     }
 
-    
     let subNodes = nodeData.child
-    let expandShow = (fetchDataHandler === undefined && subNodes.length !== 0) || (fetchDataHandler !== undefined && (!nodeData.isFetched || subNodes.length !== 0))
+    let expandShow = subNodes.length !== 0 || (fetchDataHandler !== undefined && !nodeData.isEmpty)
     return (
         <>
             {isDragOver ?

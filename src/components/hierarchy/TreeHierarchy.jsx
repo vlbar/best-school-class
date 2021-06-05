@@ -9,6 +9,7 @@ import { NodePlaceholder } from './NodePlaceholder';
     position      int
     isExpanded    bool
     isFetched     bool     (optional without fetchDataHandler)
+    isEmpty       bool     (optional without fetchDataHandler)
     child         array
 */
 
@@ -38,11 +39,10 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchDataHandler, onNodeMo
     }
 
     // fetch data
-    const fetchData = async (nodeId) => {
-        const newNodes = await fetchDataHandler(nodeId)
-        let parentNode = flatTreeData.find(x => x.id == nodeId)
-        parentNode.child = newNodes
-        parentNode.isFetched = true
+    const fetchData = async (node) => {
+        node.isFetched = true //anti ddos
+        node.child = await fetchDataHandler(node)
+        node.isExpanded = true
         setTreeData(flatTreeData.filter(x => x.parentId == null))
     }
 
