@@ -33,9 +33,13 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchDataHandler, onNodeMo
     }
 
     // force expand
-    const setIsExpandedHandler = (id, isExpand) => {
-        flatTreeData.find(x => x.id == id).isExpanded = isExpand
-        setTreeData(flatTreeData.filter(x => x.parentId == null))
+    const setIsExpandedHandler = (node, isExpanded) => {
+        if(fetchDataHandler !== undefined && !node.isFetched) {
+            fetchData(node)
+        } else {
+            node.isExpanded = isExpanded
+            setTreeData(flatTreeData.filter(x => x.parentId == null))
+        }
     }
 
     // fetch data

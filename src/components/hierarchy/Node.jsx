@@ -66,7 +66,7 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
         if(fetchDataHandler !== undefined && !nodeData.isFetched && !nodeData.isEmpty) 
             fetchDataHandler(nodeData)
         else
-            setExpandedHandler(nodeData.id, !nodeData.isExpanded)
+            setExpandedHandler(nodeData, !nodeData.isExpanded)
     }
 
     const openDropdown = (isOpen) => setIsOpenDropdown(isOpen)
