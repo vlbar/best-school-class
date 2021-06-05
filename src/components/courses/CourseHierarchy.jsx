@@ -33,7 +33,7 @@ export const CourseHierarchy = () => {
 
     const fetchSubCourses = async (id) => {
         let newNodes = []
-        await axios.get(`${baseUtl}/${id}/subcourse`)
+        await axios.get(`${baseUtl}/${id}/subcourses`)
             .then(res => {
                 let items = res.data.items
                 items = items.map(x => {
