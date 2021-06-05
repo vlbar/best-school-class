@@ -49,7 +49,11 @@ export const CourseHierarchy = () => {
     }
 
     const moveCourse = (courseId, parentId, position) => {
-        axios.put(`${baseUtl}/${courseId}/position?parentId=${parentId}&position=${position}`)
+        let data = {
+            parentId: parentId,
+            position: position
+        }
+        axios.put(`${baseUtl}/${courseId}/position`, data)
             .then(res => {
                 console.log('oh thats good')
             })
