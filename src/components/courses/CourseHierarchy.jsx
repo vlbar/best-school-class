@@ -4,6 +4,7 @@ import { TreeHierarchy, treeToFlat } from '../hierarchy/TreeHierarchy'
 import { CourseAddModal } from './CourseAddModal'
 import axios from 'axios'
 import './CourseHierarchy.less'
+import ProcessBar from '../process-bar/ProcessBar'
 
 const baseUtl = '/course'
 
@@ -12,12 +13,14 @@ export const CourseHierarchy = () => {
 
     const [isAddCourseShow, setIsAddCourseShow] = useState(false)
     const [parentCourseIdToAdd, setParentCourseIdToAdd] = useState(undefined)
+    const [isFetching, setIsFetching] = useState(false)
 
     useEffect(() => {
         fetchCourses()
     }, [])
 
     const fetchCourses = () => {
+        setIsFetching(true)
         axios.get(`${baseUtl}?size=100`)
             .then(res => {
                 let items = res.data.items
@@ -29,9 +32,14 @@ export const CourseHierarchy = () => {
             .catch(error => {
                 console.log(error)
             })
+            .finally(() => {
+                setIsFetching(false)
+            })
     }
 
     const fetchSubCourses = async (id) => {
+        setIsFetching(true)
+
         let newNodes = []
         await axios.get(`${baseUtl}/${id}/subcourses`)
             .then(res => {
@@ -44,11 +52,16 @@ export const CourseHierarchy = () => {
             .catch(error => {
                 console.log(error)
             })
+            .finally(() => {
+                setIsFetching(false)
+            })
 
         return newNodes
     }
 
     const moveCourse = (courseId, parentId, position) => {
+        setIsFetching(true)
+
         let data = {
             parentId: parentId,
             position: position
@@ -60,9 +73,13 @@ export const CourseHierarchy = () => {
             .catch(error => {
                 console.log(error)
             })
+            .finally(() => {
+                setIsFetching(false)
+            })
     }
 
     const addCourse = (course) => {
+        setIsFetching(true)
         setIsAddCourseShow(false)
         
         if(parentCourseIdToAdd !== undefined) {
@@ -94,15 +111,22 @@ export const CourseHierarchy = () => {
             .catch(error => {
                 console.log(error)
             })
+            .finally(() => {
+                setIsFetching(false)
+            })
     }
 
     const deleteCourse = (course) => {
+        setIsFetching(true)
         axios.delete(`${baseUtl}/${course.id}`)
             .then(res => {
                 console.log('oh thats good')
             })
             .catch(error => {
                 console.log(error)
+            })
+            .finally(() => {
+                setIsFetching(false)
             })
     }
 
@@ -126,6 +150,7 @@ export const CourseHierarchy = () => {
     return (
         <>
             <div className="course-hierarchy">
+                <ProcessBar active={isFetching} height=".18Rem"/>
                 {(courses.length > 0) ?
                 <TreeHierarchy
                     treeData={courses}
