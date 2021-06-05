@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { store } from 'react-notifications-component'
 import { Button } from 'react-bootstrap'
 import { TreeHierarchy, treeToFlat } from '../hierarchy/TreeHierarchy'
 import { CourseAddModal } from './CourseAddModal'
@@ -7,6 +8,17 @@ import './CourseHierarchy.less'
 import ProcessBar from '../process-bar/ProcessBar'
 
 const baseUtl = '/course'
+
+const errorNotification = {
+    title: "Произошла ошибка",
+    message: "Перезагрузите страницу, если ошибка повторится то попробуйте позже",
+    type: "danger",
+    insert: "top",
+    container: "top-right",
+    animationIn: ["animate__animated animate__fadeIn"],
+    animationOut: ["animate__animated animate__fadeOut"],
+    showIcon: true
+  };
 
 export const CourseHierarchy = () => {
     const [courses, setCourses] = useState([])
@@ -31,6 +43,10 @@ export const CourseHierarchy = () => {
             })
             .catch(error => {
                 console.log(error)
+                store.addNotification({
+                    ...errorNotification,
+                    message: 'Не удалось загрузить список курсов. \n' + error
+                });
             })
             .finally(() => {
                 setIsFetching(false)
@@ -51,6 +67,10 @@ export const CourseHierarchy = () => {
             })
             .catch(error => {
                 console.log(error)
+                store.addNotification({
+                    ...errorNotification,
+                    message: 'Не удалось загрузить список курсов. \n' + error
+                });
             })
             .finally(() => {
                 setIsFetching(false)
@@ -72,6 +92,10 @@ export const CourseHierarchy = () => {
             })
             .catch(error => {
                 console.log(error)
+                store.addNotification({
+                    ...errorNotification,
+                    message: 'Не удалось переместить курс, возможно изменения не сохранятся. \n' + error
+                });
             })
             .finally(() => {
                 setIsFetching(false)
@@ -110,6 +134,10 @@ export const CourseHierarchy = () => {
             })
             .catch(error => {
                 console.log(error)
+                store.addNotification({
+                    ...errorNotification,
+                    message: 'Не удалось добавить курс, возможно изменения не сохранятся. ' + error
+                });
             })
             .finally(() => {
                 setIsFetching(false)
@@ -124,6 +152,10 @@ export const CourseHierarchy = () => {
             })
             .catch(error => {
                 console.log(error)
+                store.addNotification({
+                    ...errorNotification,
+                    message: 'Не удалось удалить курс, возможно изменеия не сохранятся.\n' + error
+                });
             })
             .finally(() => {
                 setIsFetching(false)
