@@ -108,7 +108,7 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchDataHandler, onNodeMo
     }
 
     return (
-        <div className={(draggedNode !== undefined ? ' disable-hover':'')}>
+        <div className={'tree-hierarchy' + (draggedNode !== undefined ? ' disable-hover':'')}>
             {treeData.map((nodeData, index) => {
                 return <Node key={nodeData.id} 
                     upperNodeData={upperNode(index)}
