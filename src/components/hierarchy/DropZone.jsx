@@ -1,36 +1,28 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState, useRef } from 'react'
 import './DropZone.less'
 
 export const DropZone = ({indent, onDropHandler, upperNode, forceExpandHandler, onDragEnter, onDragExit}) => {
     const [isOver, setIsOver] = useState(false)
+    const expandTimerRef = useRef(null)
     let previousCanExpanded = false
-    let isExpandOver = false
-    let expandTimer
-    
-    if(upperNode?.child.length > 0) previousCanExpanded = true;
 
-    //force expond upper node
-    useEffect(() => {
-        if(previousCanExpanded) {
-            if(isOver && !upperNode.isExpanded) {
-                isExpandOver = true
-                expandTimer = setTimeout(() => {
-                    if(isExpandOver) forceExpandHandler(upperNode.id, true)
-                }, 1000)
-            }
-        }
-    }, [isOver])
-
-    useEffect(() => {
-        return () => {
-            isExpandOver = false
-            clearTimeout(expandTimer)
-        }
-    })
+    if(upperNode !== undefined && (upperNode.child.length > 0 || upperNode.isEmpty !== undefined && !upperNode.isEmpty)) 
+    { 
+        previousCanExpanded = true
+    }
 
     //dragging
     const dragEnter = () => {
         setIsOver(true)
+
+        if(previousCanExpanded) {
+            if(!upperNode.isExpanded) {
+                expandTimerRef.current = setTimeout(() => {
+                    forceExpandHandler(upperNode, true)
+                }, 800)
+            }
+        }
+
         if(onDragEnter !== undefined) onDragEnter()
     }
 
@@ -39,8 +31,8 @@ export const DropZone = ({indent, onDropHandler, upperNode, forceExpandHandler, 
     }
 
     const dragLeave = () => {
-        isExpandOver = false
         setIsOver(false)
+        if(expandTimerRef.current) clearTimeout(expandTimerRef.current);
         if(onDragExit !== undefined) onDragExit()
     }
 
