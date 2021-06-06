@@ -9,23 +9,28 @@ import axios from "axios";
 import { login } from "../../../redux/auth/authActions";
 import { useRef } from "react";
 
-const cacheTest = (asyncValidate) => {
+async function cacheTest(asyncValidate) {
   let _valid = false;
   let _value = "";
 
-  return async (value) => {
-    if (value !== _value) {
-      const response = await asyncValidate(value);
-      _value = value;
-      _valid = response;
-      return response;
-    }
-    return _valid;
+  return async function (value) {
+    return new Promise((resolve) => {
+      if (value !== _value) {
+        return resolve(
+          asyncValidate(value).then((result) => {
+            _value = value;
+            _valid = response;
+            return response;
+          })
+        );
+      }
+      return resolve(_valid);
+    });
   };
-};
+}
 
 async function fetchAvailability(email) {
-  return await axios.get(`/availability/email/${email}`).then((response) => {
+  return axios.get(`/availability/email/${email}`).then((response) => {
     return response.data;
   });
 }
@@ -73,12 +78,13 @@ const registerSchema = yup.object().shape({
 function RegisterForm() {
   const [errorMessage, setErrorMessage] = useState(null);
   const [status, setStatus] = useState("idle");
-  const emailUniqueTest = useRef(cacheTest(check));
+  const [wasEmailToggled, setEmailToggled] = useState(false);
+  const emailUniqueTest = cacheTest(check);
   const dispatch = useDispatch();
 
   async function check(email) {
     setStatus("loading");
-    return await fetchAvailability(email)
+    return fetchAvailability(email)
       .then((data) => {
         setStatus(data.available ? "success" : "error");
         return data.available;
@@ -104,6 +110,10 @@ function RegisterForm() {
       });
   };
 
+  useEffect(() => {
+    console.log(wasEmailToggled);
+  }, [wasEmailToggled]);
+
   return (
     <Container className="register-form">
       <Card>
@@ -124,8 +134,48 @@ function RegisterForm() {
               password: "",
               passwordConfirmation: "",
             }}
-            validateOnChange={false}
-            validationSchema={registerSchema}
+            validationSchema={yup.object().shape({
+              email: yup
+                .string()
+                .trim()
+                .email("Неверный email")
+                .required("Вы не ввели email!")
+                .test("email-unique", "Еmail занят!", (value) => {
+                  if (wasEmailToggled) {
+                    setEmailToggled(false);
+                    return check(value).then((result) => {
+                      console.log(result)
+                      return !result;
+                    });
+                  } else return true;
+                }),
+              secondName: yup
+                .string()
+                .trim()
+                .min(3, "Фамилия должна содержать минимум 3 буквы")
+                .max(50, "Фамилия не может содержать больше 50 символов")
+                .required("Вы не ввели фамилию!"),
+              firstName: yup
+                .string()
+                .trim()
+                .min(2, "Имя должно содержать минимум 2 буквы")
+                .max(30, "Имя не может содержать больше 30 символов")
+                .required("Вы не ввели имя!"),
+              middleName: yup
+                .string()
+                .trim()
+                .min(3, "Отчество должно содержать минимум 3 буквы")
+                .max(30, "Отчество не может содержать больше 50 символов"),
+              password: yup
+                .string()
+                .min(8, "Пароль должен быть не короче 8 символов!")
+                .max(20, "Пароль не может превышать 20 символов!")
+                .required("Вы не ввели пароль!"),
+              passwordConfirmation: yup
+                .string()
+                .oneOf([yup.ref("password"), null], "Пароли должны совпадать!")
+                .required("Вы не ввели подтверждение пароля!"),
+            })}
             onSubmit={(values, { setSubmitting }) => {
               const castedValues = registerSchema.cast(values);
               submit(castedValues, { setSubmitting });
@@ -137,9 +187,8 @@ function RegisterForm() {
               touched,
               isSubmitting,
               submitForm,
-              setFieldError,
               errors,
-              setFieldTouched,
+              validateField,
             }) => (
               <Form
                 onSubmit={(e) => {
@@ -258,19 +307,13 @@ function RegisterForm() {
                         type="email"
                         placeholder="Введите email"
                         autoComplete="email"
-                        validate={async (email) => {
-                          return registerSchema
-                            .validateAt("email", { email })
-                            .then(async () => {
-                              return emailUniqueTest
-                                .current(email)
-                                .then((result) => {
-                                  return result ? "" : "Email занят!";
-                                });
-                            })
-                            .catch((err) => {
-                              return "";
-                            });
+                        onBlur={() => {
+                          if (status !== "loading") {
+                            setEmailToggled(true);
+                            setTimeout(() => {
+                              validateField("email");
+                            }, 500);
+                          }
                         }}
                       />
                       {status == "loading" && (
