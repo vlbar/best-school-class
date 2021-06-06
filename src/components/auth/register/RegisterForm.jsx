@@ -25,7 +25,7 @@ function cacheTest(asyncValidate) {
 }
 
 async function fetchAvailability(email) {
-  return axios.get(`/availability/email/${email}`).then((response) => {
+  return await axios.get(`/availability/email/${email}`).then((response) => {
     return response.data;
   });
 }
@@ -74,7 +74,6 @@ const registerSchema = yup.object().shape({
 function RegisterForm() {
   const [errorMessage, setErrorMessage] = useState(null);
   const [status, setStatus] = useState("idle");
-  const [wasEmailToggled, setEmailToggled] = useState(false);
   const emailUniqueTest = useRef(cacheTest(check));
   const dispatch = useDispatch();
 
@@ -107,10 +106,6 @@ function RegisterForm() {
       });
   };
 
-  useEffect(() => {
-    console.log(wasEmailToggled);
-  }, [wasEmailToggled]);
-
   return (
     <Container className="register-form">
       <Card>
@@ -131,44 +126,8 @@ function RegisterForm() {
               password: "",
               passwordConfirmation: "",
             }}
-            validationSchema={yup.object().shape({
-              email: yup
-                .string()
-                .trim()
-                .email("Неверный email")
-                .required("Вы не ввели email!")
-                .test("email-unique", "Еmail занят!", (value) => {
-                    return emailUniqueTest.current(value).then((result) => {
-                      return result;
-                    });
-                }),
-              secondName: yup
-                .string()
-                .trim()
-                .min(3, "Фамилия должна содержать минимум 3 буквы")
-                .max(50, "Фамилия не может содержать больше 50 символов")
-                .required("Вы не ввели фамилию!"),
-              firstName: yup
-                .string()
-                .trim()
-                .min(2, "Имя должно содержать минимум 2 буквы")
-                .max(30, "Имя не может содержать больше 30 символов")
-                .required("Вы не ввели имя!"),
-              middleName: yup
-                .string()
-                .trim()
-                .min(3, "Отчество должно содержать минимум 3 буквы")
-                .max(30, "Отчество не может содержать больше 50 символов"),
-              password: yup
-                .string()
-                .min(8, "Пароль должен быть не короче 8 символов!")
-                .max(20, "Пароль не может превышать 20 символов!")
-                .required("Вы не ввели пароль!"),
-              passwordConfirmation: yup
-                .string()
-                .oneOf([yup.ref("password"), null], "Пароли должны совпадать!")
-                .required("Вы не ввели подтверждение пароля!"),
-            })}
+            validateOnChange={false}
+            validationSchema={registerSchema}
             onSubmit={(values, { setSubmitting }) => {
               const castedValues = registerSchema.cast(values);
               submit(castedValues, { setSubmitting });
