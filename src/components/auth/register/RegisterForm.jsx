@@ -149,8 +149,7 @@ function RegisterForm() {
                 }}
               >
                 <div
-                  className="mt-3 mb-3 bg-secondary"
-                  style={{ height: 1.5 + "px" }}
+                  className="mt-3 mb-3 bg-secondary register-progress"
                 >
                   {isSubmitting && <ProcessBar />}
                 </div>
@@ -245,7 +244,7 @@ function RegisterForm() {
                   <Col sm="9">
                     <div
                       className={
-                        "border rounded email-field " +
+                        "overflow-hidden border rounded email-field " +
                         (status === "error" || (errors.email && touched.email)
                           ? "border-danger"
                           : status === "success"
@@ -279,7 +278,7 @@ function RegisterForm() {
                         }}
                       />
                       {status == "loading" && (
-                        <div className="email-validation">
+                        <div className="register-progress">
                           {" "}
                           <ProcessBar />{" "}
                         </div>
