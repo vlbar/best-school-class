@@ -17,6 +17,7 @@ import PrivateRoute from "./components/routing/PrivateRoute";
 import PublicRoute from "./components/routing/PublicRoute";
 import { HELPER, STUDENT, TEACHER } from "./redux/state/stateActions";
 import configureAxios from "./config/axios-config";
+import Register from "./pages/Register";
 
 configureAxios(axios);
 
@@ -28,6 +29,7 @@ function App() {
       <Switch>
         <Route path={"/"} exact component={Index} />
         <PublicRoute path={"/login"} component={Login} />
+        <PublicRoute path={"/register"} component={Register} />
         <PrivateRoute path={"/home"} component={Workspace} />
         <PrivateRoute
           path={"/shedule"}

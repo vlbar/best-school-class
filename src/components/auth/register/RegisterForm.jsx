@@ -1,38 +1,69 @@
 import React, { useEffect, useState } from "react";
-import {
-  Form,
-  Button,
-  Card,
-  InputGroup,
-  Container,
-  Row,
-  Col,
-} from "react-bootstrap";
+import { Form, Button, Card, Container, Row, Col } from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
-import login from "../../../redux/auth/authActions";
 import * as yup from "yup";
 import { ErrorMessage, FastField, Formik } from "formik";
 import ProcessBar from "../../process-bar/ProcessBar";
-import { unwrapResult } from "@reduxjs/toolkit";
 import "./register-form.less";
+import axios from "axios";
+import { login } from "../../../redux/auth/authActions";
+import { useRef } from "react";
+
+const cacheTest = (asyncValidate) => {
+  let _valid = false;
+  let _value = "";
+
+  return async (value) => {
+    if (value !== _value) {
+      const response = await asyncValidate(value);
+      _value = value;
+      _valid = response;
+      return response;
+    }
+    return _valid;
+  };
+};
+
+async function fetchAvailability(email) {
+  return await axios.get(`/availability/email/${email}`).then((response) => {
+    return response.data;
+  });
+}
+
+async function register(values) {
+  return await axios.post(`/auth/register`, values).then((response) => {
+    return response.data;
+  });
+}
 
 const registerSchema = yup.object().shape({
-  email: yup.string().email("Неверный email").required("Вы не ввели email!"),
+  email: yup
+    .string()
+    .trim()
+    .email("Неверный email")
+    .required("Вы не ввели email!"),
   secondName: yup
     .string()
+    .trim()
     .min(3, "Фамилия должна содержать минимум 3 буквы")
     .max(50, "Фамилия не может содержать больше 50 символов")
     .required("Вы не ввели фамилию!"),
   firstName: yup
     .string()
-    .min(2, "Имя должно содержать минимум 3 буквы")
+    .trim()
+    .min(2, "Имя должно содержать минимум 2 буквы")
     .max(30, "Имя не может содержать больше 30 символов")
     .required("Вы не ввели имя!"),
   middleName: yup
     .string()
+    .trim()
     .min(3, "Отчество должно содержать минимум 3 буквы")
-    .max(50, "Отчество не может содержать больше 50 символов"),
-  password: yup.string().required("Вы не ввели пароль!"),
+    .max(30, "Отчество не может содержать больше 50 символов"),
+  password: yup
+    .string()
+    .min(8, "Пароль должен быть не короче 8 символов!")
+    .max(20, "Пароль не может превышать 20 символов!")
+    .required("Вы не ввели пароль!"),
   passwordConfirmation: yup
     .string()
     .oneOf([yup.ref("password"), null], "Пароли должны совпадать!")
@@ -41,23 +72,36 @@ const registerSchema = yup.object().shape({
 
 function RegisterForm() {
   const [errorMessage, setErrorMessage] = useState(null);
-  const { status } = useSelector((state) => state.auth);
+  const [status, setStatus] = useState("idle");
+  const emailUniqueTest = useRef(cacheTest(check));
   const dispatch = useDispatch();
 
-  useEffect(() => {
-    if (status == "success") setErrorMessage(null);
-  }, [status]);
+  async function check(email) {
+    setStatus("loading");
+    return await fetchAvailability(email)
+      .then((data) => {
+        setStatus(data.available ? "success" : "error");
+        return data.available;
+      })
+      .catch(() => {
+        setStatus("error");
+        return false;
+      });
+  }
 
   const submit = (values, { setSubmitting }) => {
-    /*setErrorMessage(null);
+    setErrorMessage(null);
     setSubmitting(true);
-    dispatch(login({ username, password }))
-      .then(unwrapResult)
+    register(values)
+      .then(() => {
+        dispatch(login({ username: values.email, password: values.password }));
+      })
       .catch((e) => {
-        if (e.status !== 401) setErrorMessage(e.message);
-        else setErrorMessage("Неверное имя пользователя или пароль");
+        if (e.response.status === 409)
+          setErrorMessage("Email уже используется!");
+        else setErrorMessage(e.response.data.message);
         setSubmitting(false);
-      });*/
+      });
   };
 
   return (
@@ -67,12 +111,6 @@ function RegisterForm() {
           <Card.Title>
             <h4 className="text-center mb-4 mt-1">Регистрация</h4>
           </Card.Title>
-          <div
-            className="mt-3 mb-3 bg-secondary"
-            style={{ height: 1.5 + "px" }}
-          >
-            {status == "loading" && <ProcessBar />}
-          </div>
 
           {errorMessage && (
             <p className="alert alert-danger text-center">{errorMessage}</p>
@@ -86,27 +124,53 @@ function RegisterForm() {
               password: "",
               passwordConfirmation: "",
             }}
+            validateOnChange={false}
             validationSchema={registerSchema}
-            onSubmit={submit}
+            onSubmit={(values, { setSubmitting }) => {
+              const castedValues = registerSchema.cast(values);
+              submit(castedValues, { setSubmitting });
+            }}
           >
-            {({ dirty, isValid, isSubmitting, submitForm }) => (
+            {({
+              dirty,
+              isValid,
+              touched,
+              isSubmitting,
+              submitForm,
+              setFieldError,
+              errors,
+              setFieldTouched,
+            }) => (
               <Form
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (!isSubmitting) submitForm();
                 }}
               >
+                <div
+                  className="mt-3 mb-3 bg-secondary"
+                  style={{ height: 1.5 + "px" }}
+                >
+                  {isSubmitting && <ProcessBar />}
+                </div>
                 <Form.Group as={Row}>
                   <Form.Label column sm="3">
                     Фамилия
                   </Form.Label>
                   <Col sm="9">
                     <FastField
-                      className="form-control"
+                      className={
+                        "form-control border rounded " +
+                        (errors.secondName && touched.secondName
+                          ? "border-danger"
+                          : touched.secondName
+                          ? "border-success"
+                          : "")
+                      }
                       name="secondName"
                       type="text"
                       placeholder="Введите фамилию"
-                      autocomplete="family-name"
+                      autoComplete="family-name"
                     />
                     <Form.Text muted>
                       <ErrorMessage
@@ -123,11 +187,18 @@ function RegisterForm() {
                   </Form.Label>
                   <Col sm="9">
                     <FastField
-                      className="form-control"
+                      className={
+                        "form-control input " +
+                        (errors.firstName && touched.firstName
+                          ? "border-danger"
+                          : touched.firstName
+                          ? "border-success"
+                          : "")
+                      }
                       name="firstName"
                       type="text"
                       placeholder="Введите имя"
-                      autocomplete="given-name"
+                      autoComplete="given-name"
                     />
                     <Form.Text id="firstNameHelp" muted>
                       <ErrorMessage
@@ -144,11 +215,18 @@ function RegisterForm() {
                   </Form.Label>
                   <Col sm="9">
                     <FastField
-                      className="form-control"
+                      className={
+                        "form-control input " +
+                        (errors.middleName && touched.middleName
+                          ? "border-danger"
+                          : touched.middleName
+                          ? "border-success"
+                          : "")
+                      }
                       name="middleName"
                       type="text"
-                      placeholder="Введите отвество"
-                      autocomplete="additional-name"
+                      placeholder="Введите отчество"
+                      autoComplete="additional-name"
                     />
                     <Form.Text id="middleNameHelp" muted>
                       <ErrorMessage
@@ -164,13 +242,44 @@ function RegisterForm() {
                     Email
                   </Form.Label>
                   <Col sm="9">
-                    <FastField
-                      className="form-control"
-                      name="email"
-                      type="email"
-                      placeholder="Введите email"
-                      autocomplete="email" 
-                    />
+                    <div
+                      className={
+                        "border rounded email-field " +
+                        (status === "error" || (errors.email && touched.email)
+                          ? "border-danger"
+                          : status === "success"
+                          ? "border-success"
+                          : "")
+                      }
+                    >
+                      <FastField
+                        className="form-control"
+                        name="email"
+                        type="email"
+                        placeholder="Введите email"
+                        autoComplete="email"
+                        validate={async (email) => {
+                          return registerSchema
+                            .validateAt("email", { email })
+                            .then(async () => {
+                              return emailUniqueTest
+                                .current(email)
+                                .then((result) => {
+                                  return result ? "" : "Email занят!";
+                                });
+                            })
+                            .catch((err) => {
+                              return "";
+                            });
+                        }}
+                      />
+                      {status == "loading" && (
+                        <div className="email-validation">
+                          {" "}
+                          <ProcessBar />{" "}
+                        </div>
+                      )}
+                    </div>
                     <Form.Text id="emailHelp" muted>
                       <ErrorMessage
                         component="div"
@@ -186,10 +295,17 @@ function RegisterForm() {
                   </Form.Label>
                   <Col sm="9">
                     <FastField
-                      className="form-control"
+                      className={
+                        "form-control input" +
+                        (errors.password && touched.password
+                          ? "border-danger"
+                          : touched.password
+                          ? "border-success"
+                          : "")
+                      }
                       name="password"
                       type="password"
-                      autocomplete="new-password"
+                      autoComplete="new-password"
                       placeholder="Введите пароль"
                     />
                     <Form.Text id="passwordHelp" muted>
@@ -202,12 +318,20 @@ function RegisterForm() {
                   </Col>
                 </Form.Group>
                 <Form.Group as={Row}>
-                  <Col md={{ span: 9, offset: 3 }} >
+                  <Col md={{ span: 9, offset: 3 }}>
                     <FastField
-                      className="form-control"
+                      className={
+                        "form-control input" +
+                        (errors.passwordConfirmation &&
+                        touched.passwordConfirmation
+                          ? "border-danger"
+                          : touched.passwordConfirmation
+                          ? "border-success"
+                          : "")
+                      }
                       name="passwordConfirmation"
                       type="password"
-                      autocomplete="new-password"
+                      autoComplete="new-password"
                       placeholder="Введите подтверждение пароля"
                     />
                     <Form.Text id="passwordHelp" muted>
@@ -224,7 +348,7 @@ function RegisterForm() {
                     variant="secondary"
                     className="btn-block"
                     type="submit"
-                    disabled={!(dirty && isValid)}
+                    disabled={!(dirty && isValid && status === "success")}
                   >
                     Зарегистрироваться
                   </Button>
