@@ -9,23 +9,18 @@ import axios from "axios";
 import { login } from "../../../redux/auth/authActions";
 import { useRef } from "react";
 
-async function cacheTest(asyncValidate) {
+function cacheTest(asyncValidate) {
   let _valid = false;
   let _value = "";
 
-  return async function (value) {
-    return new Promise((resolve) => {
-      if (value !== _value) {
-        return resolve(
-          asyncValidate(value).then((result) => {
-            _value = value;
-            _valid = response;
-            return response;
-          })
-        );
-      }
-      return resolve(_valid);
-    });
+  return function (value) {
+    if (value !== _value) {
+      const response = asyncValidate(value);
+      _value = value;
+      _valid = response;
+      return response;
+    }
+    return _valid;
   };
 }
 
@@ -79,7 +74,7 @@ function RegisterForm() {
   const [errorMessage, setErrorMessage] = useState(null);
   const [status, setStatus] = useState("idle");
   const [wasEmailToggled, setEmailToggled] = useState(false);
-  const emailUniqueTest = cacheTest(check);
+  const emailUniqueTest = useRef(cacheTest(check));
   const dispatch = useDispatch();
 
   async function check(email) {
@@ -141,13 +136,9 @@ function RegisterForm() {
                 .email("Неверный email")
                 .required("Вы не ввели email!")
                 .test("email-unique", "Еmail занят!", (value) => {
-                  if (wasEmailToggled) {
-                    setEmailToggled(false);
-                    return check(value).then((result) => {
-                      console.log(result)
-                      return !result;
+                    return emailUniqueTest.current(value).then((result) => {
+                      return result;
                     });
-                  } else return true;
                 }),
               secondName: yup
                 .string()
@@ -307,14 +298,6 @@ function RegisterForm() {
                         type="email"
                         placeholder="Введите email"
                         autoComplete="email"
-                        onBlur={() => {
-                          if (status !== "loading") {
-                            setEmailToggled(true);
-                            setTimeout(() => {
-                              validateField("email");
-                            }, 500);
-                          }
-                        }}
                       />
                       {status == "loading" && (
                         <div className="email-validation">
