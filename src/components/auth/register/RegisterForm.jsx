@@ -2,27 +2,27 @@ import React, { useEffect, useState } from "react";
 import { Form, Button, Card, Container, Row, Col } from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
 import * as yup from "yup";
-import { ErrorMessage, FastField, Formik } from "formik";
+import { ErrorMessage, FastField, Field, Formik } from "formik";
 import ProcessBar from "../../process-bar/ProcessBar";
 import "./register-form.less";
 import axios from "axios";
 import { login } from "../../../redux/auth/authActions";
 import { useRef } from "react";
 
-const cacheTest = (asyncValidate) => {
+function cacheTest(asyncValidate) {
   let _valid = false;
   let _value = "";
 
-  return async (value) => {
+  return function (value) {
     if (value !== _value) {
-      const response = await asyncValidate(value);
+      const response = asyncValidate(value);
       _value = value;
       _valid = response;
       return response;
     }
     return _valid;
   };
-};
+}
 
 async function fetchAvailability(email) {
   return await axios.get(`/availability/email/${email}`).then((response) => {
@@ -57,6 +57,7 @@ const registerSchema = yup.object().shape({
   middleName: yup
     .string()
     .trim()
+    .nullable(true)
     .min(3, "Отчество должно содержать минимум 3 буквы")
     .max(30, "Отчество не может содержать больше 50 символов"),
   password: yup
@@ -78,7 +79,7 @@ function RegisterForm() {
 
   async function check(email) {
     setStatus("loading");
-    return await fetchAvailability(email)
+    return fetchAvailability(email)
       .then((data) => {
         setStatus(data.available ? "success" : "error");
         return data.available;
@@ -90,6 +91,7 @@ function RegisterForm() {
   }
 
   const submit = (values, { setSubmitting }) => {
+    if(values.middleName === "") values.middleName = null
     setErrorMessage(null);
     setSubmitting(true);
     register(values)
@@ -138,8 +140,7 @@ function RegisterForm() {
               isSubmitting,
               submitForm,
               setFieldError,
-              errors,
-              setFieldTouched,
+              errors
             }) => (
               <Form
                 onSubmit={(e) => {
@@ -252,25 +253,29 @@ function RegisterForm() {
                           : "")
                       }
                     >
-                      <FastField
+                      <Field
                         className="form-control"
                         name="email"
                         type="email"
                         placeholder="Введите email"
                         autoComplete="email"
-                        validate={async (email) => {
-                          return registerSchema
+                        disabled={status == "loading"}
+                        validate={(email) => {
+                          registerSchema
                             .validateAt("email", { email })
                             .then(async () => {
-                              return emailUniqueTest
-                                .current(email)
-                                .then((result) => {
-                                  return result ? "" : "Email занят!";
-                                });
+                              emailUniqueTest.current(email).then((result) => {
+                                setTimeout(
+                                  () =>
+                                    setFieldError(
+                                      "email",
+                                      result ? undefined : "Email занят!"
+                                    ),
+                                  0
+                                );
+                              });
                             })
-                            .catch((err) => {
-                              return "";
-                            });
+                            .catch(() => {});
                         }}
                       />
                       {status == "loading" && (
@@ -296,7 +301,7 @@ function RegisterForm() {
                   <Col sm="9">
                     <FastField
                       className={
-                        "form-control input" +
+                        "form-control input " +
                         (errors.password && touched.password
                           ? "border-danger"
                           : touched.password
@@ -321,7 +326,7 @@ function RegisterForm() {
                   <Col md={{ span: 9, offset: 3 }}>
                     <FastField
                       className={
-                        "form-control input" +
+                        "form-control input " +
                         (errors.passwordConfirmation &&
                         touched.passwordConfirmation
                           ? "border-danger"
