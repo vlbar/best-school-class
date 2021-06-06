@@ -2,6 +2,8 @@ import React from "react";
 import { BrowserRouter, Route, Switch } from "react-router-dom";
 
 import NavigationBar from "./components/navbar/NavigationBar";
+import ReactNotification from 'react-notifications-component';
+import 'react-notifications-component/dist/theme.css';
 
 import Index from "./pages/Index";
 import Workspace from "./pages/Workspace";
@@ -25,6 +27,7 @@ configureAxios(axios);
 function App() {
   return (
     <BrowserRouter>
+      <ReactNotification/>
       <NavigationBar />
       <Switch>
         <Route path={"/"} exact component={Index} />
