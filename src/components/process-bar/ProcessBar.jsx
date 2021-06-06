@@ -1,9 +1,9 @@
 import React from "react";
 import "./process-bar.less";
 
-function ProcessBar() {
+function ProcessBar(props) {
   return (
-    <div className="process-bar">
+    <div className="process-bar" {...props}>
       <div className="fill"></div>
     </div>
   );
