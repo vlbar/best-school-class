@@ -62,6 +62,7 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchDataHandler, onNodeMo
         if (dragNode.parentId != null) { 
             let dragNodeParent = flatTreeData.find(x => x.id === dragNode.parentId)
             dragNodeParent.child = dragNodeParent.child.filter(x => x !== dragNode)
+            if(fetchDataHandler !== undefined) dragNodeParent.isEmpty = dragNodeParent.child.length == 0
         } else {
             newTreeData = treeData.filter(x => x !== dragNode)
         }
