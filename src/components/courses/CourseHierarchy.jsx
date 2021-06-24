@@ -7,7 +7,7 @@ import axios from 'axios'
 import './CourseHierarchy.less'
 import ProcessBar from '../process-bar/ProcessBar'
 
-const baseUtl = '/course'
+const baseUrl = '/courses'
 
 const errorNotification = {
     title: "Произошла ошибка",
@@ -37,7 +37,7 @@ export const CourseHierarchy = () => {
 
     const fetchCourses = () => {
         setIsFetching(true)
-        axios.get(`${baseUtl}?size=100`)
+        axios.get(`${baseUrl}?size=100`)
             .then(res => {
                 let items = res.data.items
                 items = items.map(x => {
@@ -61,7 +61,7 @@ export const CourseHierarchy = () => {
         setIsFetching(true)
 
         let newNodes = []
-        await axios.get(`${baseUtl}/${node.id}/subcourses`)
+        await axios.get(`${baseUrl}/${node.id}/sub-courses`)
             .then(res => {
                 let items = res.data.items
                 items = items.map(x => {
@@ -90,7 +90,7 @@ export const CourseHierarchy = () => {
             parentId: parentId,
             position: position
         }
-        axios.put(`${baseUtl}/${courseId}/position`, data)
+        axios.put(`${baseUrl}/${courseId}/position`, data)
             .then(res => {
                 console.log('oh thats good')
             })
@@ -120,7 +120,7 @@ export const CourseHierarchy = () => {
                 : 1
         }
 
-        axios.post(`${baseUtl}`,course)
+        axios.post(`${baseUrl}`,course)
             .then(async res => {
                 course.id = res.data.id
                 course.isEmpty = true
@@ -160,7 +160,7 @@ export const CourseHierarchy = () => {
 
     const deleteCourse = (course) => {
         setIsFetching(true)
-        axios.delete(`${baseUtl}/${course.id}`)
+        axios.delete(`${baseUrl}/${course.id}`)
             .then(res => {
                 console.log('oh thats good')
             })
