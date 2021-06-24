@@ -17,7 +17,11 @@ const errorNotification = {
     container: "top-right",
     animationIn: ["animate__animated animate__fadeIn"],
     animationOut: ["animate__animated animate__fadeOut"],
-    showIcon: true
+    showIcon: true,
+    dismiss: {
+        duration: 15000,
+        onScreen: true
+    }
   };
 
 export const CourseHierarchy = () => {
