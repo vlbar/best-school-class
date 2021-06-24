@@ -115,7 +115,9 @@ export const CourseHierarchy = () => {
             course.position = 1
         } else {
             course.parentCourseId = null
-            course.position = courses[courses.length - 1].position + 1
+            course.position = (courses.length > 0) 
+                ? courses[courses.length - 1].position + 1
+                : 1
         }
 
         axios.post(`${baseUtl}`,course)
