@@ -12,6 +12,7 @@ export const CourseAddModal = ({onSubmit, onClose, parentCourse, show}) => {
           name: Yup.string()
             .min(3, 'Слишком короткое название')
             .max(50, 'Слишком длинное название')
+            .trim()
             .required('Не введено название курса')
         }),
         onSubmit: values => {
