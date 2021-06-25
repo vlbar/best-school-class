@@ -6,13 +6,23 @@ import { NavLink } from "react-router-dom";
 import { logouted } from "../../redux/auth/authReducer";
 import { useEffect } from "react";
 import { useState } from "react";
+import errorNotification from "../notifications/error";
+import { store } from "react-notifications-component";
 import axios from "axios";
 import MD5 from "md5";
 
 async function fetchUser() {
-  return await axios.get(`/users/me`).then((response) => {
-    return response.data;
-  });
+  return await axios
+    .get(`/users/me`)
+    .then((response) => {
+      return response.data;
+    })
+    .catch((e) => {
+      store.addNotification({
+        ...errorNotification,
+        message: "Не удалось загрузить профиль пользователя. \n" + e.message,
+      });
+    });
 }
 
 function AuthPanel() {
@@ -41,25 +51,25 @@ function AuthPanel() {
   if (!isLoggedIn) {
     return (
       <Nav>
-          <Nav.Link as={NavLink} to="/login">
+        <Nav.Link as={NavLink} to="/login">
           Вход
-            </Nav.Link>
-            <Nav.Link as={NavLink} to="/register">
-            Регистрация
-            </Nav.Link>
+        </Nav.Link>
+        <Nav.Link as={NavLink} to="/register">
+          Регистрация
+        </Nav.Link>
       </Nav>
     );
   } else {
     return (
       <div className="flex flex-baseline">
-        <span className="text-light">{userName}</span>
-        <img
+        {userName && <span className="text-light">{userName}</span>}
+        {emailHash && <img
           className="rounded-circle ml-2 mr-3"
           src={`https://www.gravatar.com/avatar/${emailHash}?s=100&&d=${
             emailHash ? "identicon" : "transparent"
           }&&r=g`}
           style={{ height: "36px" }}
-        />
+        />}
         <Button variant="secondary" onClick={handleLogoutSumbit}>
           Выход
         </Button>
