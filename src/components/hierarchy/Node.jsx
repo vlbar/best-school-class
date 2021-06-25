@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Dropdown } from 'react-bootstrap'
 import { NodePlaceholder } from './NodePlaceholder'
+import AnimateHeight from "react-animate-height";
 import './Node.less'
 
 const MOVE_UP = 'UP'
@@ -141,28 +142,34 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
                     </Dropdown>
                 </div>
             </div>
-            {nodeData.isExpanded && !isDrag ?
+            {expandShow &&
                 <div className={'sub-nodes'}>
-                    {(subNodes.length !== 0) ? subNodes.map((nodeData, index) => {
-                        return <Node key={nodeData.id} 
-                            upperNodeData={upperNode(index)}
-                            nodeData={nodeData}
-                            lowerNodeData={subNodes[index + 1]}
-                            setExpandedHandler={setExpandedHandler}
-                            fetchDataHandler={fetchDataHandler}
-                            draggedNodeData={draggedNodeData}
-                            dragStartHandle={dragStartHandle}
-                            dragEndHandle={dragEndHandle}
-                            updateNodeHandler={updateNodeHandler}
-                            deleteNodeHandler={deleteNodeHandler}
-                            addNodeHandler={addNodeHandler}
-                            moveNodeHandler={moveNodeHandler}
-                            canNodeDrag={canNodeDrag}
-                            onNodeClick={onNodeClick}
-                        />
-                    }):''}
+                    <AnimateHeight
+                        animateOpacity
+                        duration={220}
+                        height={nodeData.isExpanded && !isDrag ? 'auto' : 0}
+                    >
+                        {(subNodes.length !== 0) && subNodes.map((nodeData, index) => {
+                            return <Node key={nodeData.id} 
+                                upperNodeData={upperNode(index)}
+                                nodeData={nodeData}
+                                lowerNodeData={subNodes[index + 1]}
+                                setExpandedHandler={setExpandedHandler}
+                                fetchDataHandler={fetchDataHandler}
+                                draggedNodeData={draggedNodeData}
+                                dragStartHandle={dragStartHandle}
+                                dragEndHandle={dragEndHandle}
+                                updateNodeHandler={updateNodeHandler}
+                                deleteNodeHandler={deleteNodeHandler}
+                                addNodeHandler={addNodeHandler}
+                                moveNodeHandler={moveNodeHandler}
+                                canNodeDrag={canNodeDrag}
+                                onNodeClick={onNodeClick}
+                            />
+                        })}
+                    </AnimateHeight>
                 </div>
-            :''}
+            }
         </>
     )
 }
