@@ -44,7 +44,7 @@ export const NodePlaceholder = ({onDragLeaveHandle, insteadNode, upperNode, forc
 
     //cringe detector/detected
     const dragLeave = (event) => {
-        if(!event.relatedTarget.classList.contains('drop-zone'))
+        if(!event.relatedTarget?.classList.contains('drop-zone'))
             if(onDragLeaveHandle !== undefined)
                 onDragLeaveHandle()
     }
