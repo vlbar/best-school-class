@@ -46,6 +46,7 @@ function App() {
           allowedStates={[HELPER, TEACHER]}
         />
         <PrivateRoute path={"/groups"} component={Groups} />
+        <PrivateRoute path={"/invites/:code"} component={Groups} />
         <Route component={NotFound} />
       </Switch>
     </BrowserRouter>
