@@ -21,8 +21,7 @@ function StatePicker() {
   return (
     <Dropdown className="mr-5">
       <Dropdown.Toggle
-        variant="secondary"
-        style={{ backgroundColor: "#00000000" }}
+        variant="outline-light"
       >
         {fromStateToName(state)}
       </Dropdown.Toggle>
