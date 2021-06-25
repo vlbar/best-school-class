@@ -3,6 +3,7 @@ import { store } from 'react-notifications-component'
 import { Button } from 'react-bootstrap'
 import { TreeHierarchy, treeToFlat } from '../hierarchy/TreeHierarchy'
 import { CourseAddUpdateModal } from './CourseAddUpdateModal'
+import { LoadingCoursesList } from './LoadingCoursesList'
 import axios from 'axios'
 import './CourseHierarchy.less'
 import ProcessBar from '../process-bar/ProcessBar'
@@ -25,7 +26,7 @@ const errorNotification = {
   };
 
 export const CourseHierarchy = () => {
-    const [courses, setCourses] = useState([])
+    const [courses, setCourses] = useState(undefined)
 
     const [isAddCourseShow, setIsAddCourseShow] = useState(false)
     const [parentCourseIdToAdd, setParentCourseIdToAdd] = useState(undefined)
@@ -249,17 +250,18 @@ export const CourseHierarchy = () => {
         <>
             <div className="course-hierarchy">
                 <ProcessBar active={isFetching} height=".18Rem"/>
-                {(courses.length > 0) ?
-                <TreeHierarchy
-                    treeData={courses}
-                    setTreeData={setCourses}
-                    fetchDataHandler={fetchSubCourses}
-                    onNodeAdd={(node) => openAddCourseModal(node)}
-                    onNodeMove={moveCourse}
-                    onNodeUpdate={openUpdateCourseModal}
-                    onNodeDelete={deleteCourse}
-                />
-                :''}
+                {courses 
+                    ? <TreeHierarchy
+                            treeData={courses}
+                            setTreeData={setCourses}
+                            fetchDataHandler={fetchSubCourses}
+                            onNodeAdd={(node) => openAddCourseModal(node)}
+                            onNodeMove={moveCourse}
+                            onNodeUpdate={openUpdateCourseModal}
+                            onNodeDelete={deleteCourse}
+                        />
+                    :<LoadingCoursesList/>
+                }
             </div>
             <Button variant='primary' className={'w-100 mt-2'} onClick={() => openAddCourseModal()}>Добавить курс</Button>
             <CourseAddUpdateModal 
