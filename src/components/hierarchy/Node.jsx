@@ -6,7 +6,7 @@ import './Node.less'
 const MOVE_UP = 'UP'
 const MOVE_DOWN = 'DOWN'
 
-export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, dragStartHandle, dragEndHandle, moveNodeHandler, deleteNodeHandler, addNodeHandler, setExpandedHandler, fetchDataHandler, canNodeDrag, onNodeClick}) => {
+export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, dragStartHandle, dragEndHandle, moveNodeHandler, updateNodeHandler, deleteNodeHandler, addNodeHandler, setExpandedHandler, fetchDataHandler, canNodeDrag, onNodeClick}) => {
     const [isDragOver, setIsDragOver] = useState(false)
     const [isDrag, setDrag] = useState(false)
     const [isCanDrag, setCanDrag] = useState(false)
@@ -129,13 +129,14 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
                     <Dropdown onToggle={(isOpen) => openDropdown(isOpen)}>
                         <Dropdown.Toggle size='sm' variant='best' id='dropdown-basic'>⋮</Dropdown.Toggle>
                         <Dropdown.Menu>
-                            <Dropdown.Item onClick={() => addNodeHandler(nodeData)} disabled={addNodeHandler === undefined}>Добавить подкурс</Dropdown.Item>
-                            {canNodeDrag ? 
+                            {addNodeHandler && <Dropdown.Item onClick={() => addNodeHandler(nodeData)}>Добавить подкурс</Dropdown.Item>}
+                            {updateNodeHandler && <Dropdown.Item onClick={() => updateNodeHandler(nodeData)}>Изменить</Dropdown.Item>}
+                            {canNodeDrag && 
                             <>
                                 <Dropdown.Item onClick={() => moveNode(MOVE_UP)} disabled={upperNodeData === undefined}>Переместить выше</Dropdown.Item>
                                 <Dropdown.Item onClick={() => moveNode(MOVE_DOWN)} disabled={lowerNodeData === undefined}>Переместить ниже</Dropdown.Item>
-                            </>: ''}
-                            <Dropdown.Item onClick={() => deleteNodeHandler(nodeData)} disabled={deleteNodeHandler === undefined} className='text-danger'>Удалить</Dropdown.Item>
+                            </>}
+                            {deleteNodeHandler && <Dropdown.Item onClick={() => deleteNodeHandler(nodeData)} className='text-danger'>Удалить</Dropdown.Item>}
                         </Dropdown.Menu>
                     </Dropdown>
                 </div>
@@ -152,6 +153,7 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
                             draggedNodeData={draggedNodeData}
                             dragStartHandle={dragStartHandle}
                             dragEndHandle={dragEndHandle}
+                            updateNodeHandler={updateNodeHandler}
                             deleteNodeHandler={deleteNodeHandler}
                             addNodeHandler={addNodeHandler}
                             moveNodeHandler={moveNodeHandler}

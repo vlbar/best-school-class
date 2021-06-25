@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { store } from 'react-notifications-component'
 import { Button } from 'react-bootstrap'
 import { TreeHierarchy, treeToFlat } from '../hierarchy/TreeHierarchy'
-import { CourseAddModal } from './CourseAddModal'
+import { CourseAddUpdateModal } from './CourseAddUpdateModal'
 import axios from 'axios'
 import './CourseHierarchy.less'
 import ProcessBar from '../process-bar/ProcessBar'
@@ -29,6 +29,7 @@ export const CourseHierarchy = () => {
 
     const [isAddCourseShow, setIsAddCourseShow] = useState(false)
     const [parentCourseIdToAdd, setParentCourseIdToAdd] = useState(undefined)
+    const [courseToUpdate, setCourseToUpdate] = useState(undefined)
     const [isFetching, setIsFetching] = useState(false)
 
     useEffect(() => {
@@ -106,6 +107,13 @@ export const CourseHierarchy = () => {
             })
     }
 
+    const courseAddUpdateSubmit = (course) => {
+        if(courseToUpdate !== undefined)
+            updateCourse(course)
+        else
+            addCourse(course)
+    }
+
     const addCourse = async (course) => {
         setIsFetching(true)
         setIsAddCourseShow(false)
@@ -158,6 +166,29 @@ export const CourseHierarchy = () => {
             })
     }
 
+    const updateCourse = (course) => {
+        setIsFetching(true)
+        setIsAddCourseShow(false)
+        let putCourse = mapToCourse(course)
+        axios.put(`${baseUrl}/${putCourse.id}`, putCourse)
+            .then(res => {
+                let flatTreeData = treeToFlat(courses)
+                let courseInTree = flatTreeData.find(x => x.id == course.id)
+                applyCourseChanges(courseInTree, course)
+                setCourses(flatTreeData.filter(x => x.parentId == null))
+            })
+            .catch(error => {
+                console.log(error)
+                store.addNotification({
+                    ...errorNotification,
+                    message: 'Не удалось изменить курс, возможно изменения не сохранятся.\n' + error
+                });
+            })
+            .finally(() => {
+                setIsFetching(false)
+            })
+    }
+
     const deleteCourse = (course) => {
         setIsFetching(true)
         axios.delete(`${baseUrl}/${course.id}`)
@@ -177,7 +208,13 @@ export const CourseHierarchy = () => {
     }
 
     const openAddCourseModal = (parentCourse) => {
+        setCourseToUpdate(undefined)
         setParentCourseIdToAdd(parentCourse)
+        setIsAddCourseShow(true)
+    }
+
+    const openUpdateCourseModal = (course) => {
+        setCourseToUpdate(course)
         setIsAddCourseShow(true)
     }
 
@@ -194,6 +231,20 @@ export const CourseHierarchy = () => {
         }
     }
 
+    const mapToCourse = (node) => {
+        return {
+            id: node.id,
+            parentCourseId: node.parentId,
+            name: node.name,
+            position: node.position,
+            isEmpty: node.isEmpty
+        }
+    }
+
+    const applyCourseChanges = (course, updatedCourse) => {
+        course.name = updatedCourse.name
+    }
+
     return (
         <>
             <div className="course-hierarchy">
@@ -205,16 +256,18 @@ export const CourseHierarchy = () => {
                     fetchDataHandler={fetchSubCourses}
                     onNodeAdd={(node) => openAddCourseModal(node)}
                     onNodeMove={moveCourse}
+                    onNodeUpdate={openUpdateCourseModal}
                     onNodeDelete={deleteCourse}
                 />
                 :''}
             </div>
             <Button variant='primary' className={'w-100 mt-2'} onClick={() => openAddCourseModal()}>Добавить курс</Button>
-            <CourseAddModal 
+            <CourseAddUpdateModal 
                 show={isAddCourseShow} 
-                onSubmit={addCourse} 
+                onSubmit={courseAddUpdateSubmit} 
                 onClose={() => setIsAddCourseShow(false)} 
                 parentCourse={parentCourseIdToAdd}
+                updatedCourse={courseToUpdate}
             />
         </>
     )

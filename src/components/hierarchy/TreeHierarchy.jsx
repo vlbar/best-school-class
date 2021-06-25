@@ -18,7 +18,7 @@ import { NodePlaceholder } from './NodePlaceholder';
     fetchDataHandler(parentId): array
 */
 
-export const TreeHierarchy = ({treeData, setTreeData, fetchDataHandler, onNodeMove, onNodeDelete, onNodeAdd, onNodeClick, canNodeDrag = true}) => {
+export const TreeHierarchy = ({treeData, setTreeData, fetchDataHandler, onNodeMove, onNodeUpdate, onNodeDelete, onNodeAdd, onNodeClick, canNodeDrag = true}) => {
     const [draggedNode, setDraggedNode] = useState(undefined)
 
     let flatTreeData = treeToFlat(treeData)
@@ -125,6 +125,7 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchDataHandler, onNodeMo
                     dragStartHandle={dragStart}
                     dragEndHandle={dragEnd}
                     addNodeHandler={onNodeAdd}
+                    updateNodeHandler={onNodeUpdate}
                     deleteNodeHandler={deleteNode}
                     moveNodeHandler={moveNodeHandler}
                     canNodeDrag={canNodeDrag}

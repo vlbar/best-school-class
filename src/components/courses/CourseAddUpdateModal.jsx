@@ -11,15 +11,21 @@ const courseSchema = Yup.object().shape({
         .required('Не введено название курса')
 });
 
-export const CourseAddUpdateModal = ({onSubmit, onClose, parentCourse, show}) => {
+export const CourseAddUpdateModal = ({onSubmit, onClose, parentCourse, updatedCourse, show}) => {
     const submitHandle = (values) => {
-        onSubmit(values, parentCourse)
+        if(updatedCourse !== undefined) 
+            onSubmit({...updatedCourse, ...values})
+        else 
+            onSubmit(values)
     }
 
     const getTitle = () => {
-        return parentCourse == undefined
-            ? 'Добавить курс'
-            : 'Добавить подкурс'
+        if(!updatedCourse)
+            return !parentCourse
+                ? 'Добавить курс'
+                : 'Добавить подкурс'
+        else
+            return 'Изменить курс'
     } 
 
     return (
@@ -33,7 +39,7 @@ export const CourseAddUpdateModal = ({onSubmit, onClose, parentCourse, show}) =>
                 
                 <Formik
                     initialValues={{
-                        name: ''
+                        name: updatedCourse?.name || ''
                     }}
                     validationSchema={courseSchema}
                     onSubmit={values => {
@@ -60,7 +66,7 @@ export const CourseAddUpdateModal = ({onSubmit, onClose, parentCourse, show}) =>
                                     Закрыть
                                 </Button>
                                 <Button variant='primary' type='submit'>
-                                    Добавить
+                                    {updatedCourse ? 'Изменить' : 'Добавить'}
                                 </Button>
                             </Modal.Footer>
                         </Form>
