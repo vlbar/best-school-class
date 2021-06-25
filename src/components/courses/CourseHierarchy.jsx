@@ -251,7 +251,8 @@ export const CourseHierarchy = () => {
             <div className="course-hierarchy">
                 <ProcessBar active={isFetching} height=".18Rem"/>
                 {courses 
-                    ? <TreeHierarchy
+                    ? courses.length > 0
+                        ?<TreeHierarchy
                             treeData={courses}
                             setTreeData={setCourses}
                             fetchDataHandler={fetchSubCourses}
@@ -260,6 +261,12 @@ export const CourseHierarchy = () => {
                             onNodeUpdate={openUpdateCourseModal}
                             onNodeDelete={deleteCourse}
                         />
+                        :<div className='no-courses'>
+                            <h5>Увы, но учебные курсы еще не добавлены.</h5>
+                            <p className='text-muted'>
+                                Чтобы погрузится в мир удобного ведения учебного плана и базы знаний, для начала вы должны <a onClick={() => openAddCourseModal()}>добавить курс</a>.
+                            </p>
+                        </div>
                     :<LoadingCoursesList/>
                 }
             </div>
