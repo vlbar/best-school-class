@@ -71,7 +71,10 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchDataHandler, onNodeMo
         if (targetParentId != null) {
             let parentNode = flatTreeData.find(x => x.id === targetParentId)
             targetChildrens = parentNode.child
-            if(targetChildrens.length == 0) parentNode.isExpanded = true;
+            if(targetChildrens.length == 0) { 
+                parentNode.isExpanded = true
+                if(parentNode.isFetched !== undefined) parentNode.isFetched = true
+            }
         } else {
             targetChildrens = newTreeData
         }
