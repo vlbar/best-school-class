@@ -12,8 +12,8 @@ export function fromStateToName(state) {
   if (state == HELPER) return "Помощник";
 }
 
-export function fromStateToPath(state) {
-  if (state == TEACHER) return "/teacher";
-  if (state == STUDENT) return "/student";
-  if (state == HELPER) return "/helper";
+export function fromStateToParameter(state) {
+  if (state == TEACHER) return "r=t";
+  if (state == STUDENT) return "r=s";
+  if (state == HELPER) return "r=a";
 }
