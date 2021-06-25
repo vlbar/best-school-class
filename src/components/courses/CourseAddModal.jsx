@@ -1,69 +1,71 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { Button, Modal, Form } from 'react-bootstrap'
-import { useFormik } from 'formik';
-import * as Yup from 'yup';
+import { Formik, Field } from 'formik'
+import * as Yup from 'yup'
 
-export const CourseAddModal = ({onSubmit, onClose, parentCourse, show}) => {
-    const formik = useFormik({
-        initialValues: {
-          name: ''
-        },
-        validationSchema: Yup.object({
-          name: Yup.string()
-            .min(3, 'Слишком короткое название')
-            .max(50, 'Слишком длинное название')
-            .trim()
-            .required('Не введено название курса')
-        }),
-        onSubmit: values => {
-            submitHandle(values)
-        }
-    })
+const courseSchema = Yup.object().shape({
+    name: Yup.string()
+        .min(3, 'Слишком короткое название')
+        .max(50, 'Слишком длинное название')
+        .trim()
+        .required('Не введено название курса')
+});
 
+export const CourseAddUpdateModal = ({onSubmit, onClose, parentCourse, show}) => {
     const submitHandle = (values) => {
         onSubmit(values, parentCourse)
     }
+
+    const getTitle = () => {
+        return parentCourse == undefined
+            ? 'Добавить курс'
+            : 'Добавить подкурс'
+    } 
 
     return (
         <>
             <Modal show={show} onHide={onClose}>
                 <Modal.Header closeButton>
                     <Modal.Title>
-                        {parentCourse == undefined
-                            ? 'Добавить курс'
-                            : 'Добавить подкурс'
-                        }
+                        {getTitle()}
                     </Modal.Title>
                 </Modal.Header>
                 
-                <Form noValidate onSubmit={formik.handleSubmit}>
-                    <Modal.Body>
-                        <Form.Group controlId='formBasicEmail' style={{marginBottom: 0}}>
-                            <Form.Label>Название курса</Form.Label>
-                            <Form.Control 
-                                required
-                                isInvalid={formik.errors.name !== undefined}
-                                type='text' name='name'
-                                placeholder="Введите название курса..." 
-                                onChange={formik.handleChange}
-                                onBlur={formik.handleBlur}
-                                value={formik.values.name}
-                            />
-                            <Form.Control.Feedback type="invalid">
-                                {formik.errors.name}
-                            </Form.Control.Feedback>
-                        </Form.Group>
-                    </Modal.Body>
+                <Formik
+                    initialValues={{
+                        name: ''
+                    }}
+                    validationSchema={courseSchema}
+                    onSubmit={values => {
+                        submitHandle(values)
+                    }}
+                >
+                    {({ errors, touched, submitForm }) => (
+                        <Form onSubmit={(e) => {
+                            e.preventDefault();
+                            submitForm();
+                        }}>
+                            <Modal.Body>
+                                <Form.Group controlId='formBasicEmail' style={{marginBottom: 0}}>
+                                    <Form.Label>Название курса</Form.Label>
+                                    <Field as={Form.Control} name='name' type='text' placeholder="Введите название курса..." isInvalid={touched.name && errors.name}/>
+                                    <Form.Control.Feedback type="invalid">
+                                        {errors.name}
+                                    </Form.Control.Feedback>
+                                </Form.Group>
+                            </Modal.Body>
 
-                    <Modal.Footer>
-                        <Button variant='secondary' onClick={onClose}>
-                            Закрыть
-                        </Button>
-                        <Button variant='primary' type='submit'>
-                            Добавить
-                        </Button>
-                    </Modal.Footer>
-                </Form>
+                            <Modal.Footer>
+                                <Button variant='secondary' onClick={onClose}>
+                                    Закрыть
+                                </Button>
+                                <Button variant='primary' type='submit'>
+                                    Добавить
+                                </Button>
+                            </Modal.Footer>
+                        </Form>
+                    )}
+                </Formik>
             </Modal>
         </>
     )
