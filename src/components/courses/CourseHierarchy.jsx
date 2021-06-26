@@ -6,24 +6,10 @@ import { CourseAddUpdateModal } from './CourseAddUpdateModal'
 import { LoadingCoursesList } from './LoadingCoursesList'
 import axios from 'axios'
 import './CourseHierarchy.less'
+import { errorNotification } from '../notifications/Notifications'
 import ProcessBar from '../process-bar/ProcessBar'
 
 const baseUrl = '/courses'
-
-const errorNotification = {
-    title: "Произошла ошибка",
-    message: "Перезагрузите страницу, если ошибка повторится то попробуйте позже",
-    type: "danger",
-    insert: "top",
-    container: "top-right",
-    animationIn: ["animate__animated animate__fadeIn"],
-    animationOut: ["animate__animated animate__fadeOut"],
-    showIcon: true,
-    dismiss: {
-        duration: 15000,
-        onScreen: true
-    }
-  };
 
 export const CourseHierarchy = ({onCourseSelect}) => {
     const [courses, setCourses] = useState(undefined)

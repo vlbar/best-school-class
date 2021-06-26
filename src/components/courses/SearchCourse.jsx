@@ -4,22 +4,8 @@ import { TreeHierarchy } from '../hierarchy/TreeHierarchy'
 import { LoadingCoursesList } from './LoadingCoursesList'
 import { store } from 'react-notifications-component'
 import axios from 'axios'
+import { errorNotification } from '../notifications/Notifications'
 import './SearchCourse.less'
-
-const errorNotification = {
-    title: "Произошла ошибка",
-    message: "Перезагрузите страницу, если ошибка повторится то попробуйте позже",
-    type: "danger",
-    insert: "top",
-    container: "top-right",
-    animationIn: ["animate__animated animate__fadeIn"],
-    animationOut: ["animate__animated animate__fadeOut"],
-    showIcon: true,
-    dismiss: {
-        duration: 15000,
-        onScreen: true
-    }
-  };
 
 const baseUrl = '/courses'
 
