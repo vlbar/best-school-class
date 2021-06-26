@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { store } from 'react-notifications-component'
 import { Button } from 'react-bootstrap'
-import { TreeHierarchy, treeToFlat } from '../hierarchy/TreeHierarchy'
+import { TreeHierarchy, treeToFlat, deleteNode } from '../hierarchy/TreeHierarchy'
 import { CourseAddUpdateModal } from './CourseAddUpdateModal'
+import { DeleteCourseModal } from './DeleteCourseModal'
 import { LoadingCoursesList } from './LoadingCoursesList'
 import axios from 'axios'
 import './CourseHierarchy.less'
@@ -17,6 +18,7 @@ export const CourseHierarchy = ({onCourseSelect}) => {
     const [isAddCourseShow, setIsAddCourseShow] = useState(false)
     const [parentCourseIdToAdd, setParentCourseIdToAdd] = useState(undefined)
     const [courseToUpdate, setCourseToUpdate] = useState(undefined)
+    const [courseToDelete, setCourseToDelete] = useState(undefined)
     const [isFetching, setIsFetching] = useState(true)
 
     const fetchCourses = async (node, page) => {
@@ -192,11 +194,17 @@ export const CourseHierarchy = ({onCourseSelect}) => {
             })
     }
 
+    const openDeleteModal = (course) => {
+        setCourseToDelete(course)
+    }
+
     const deleteCourse = (course) => {
+        
+
         setIsFetching(true)
         axios.delete(`${baseUrl}/${course.id}`)
             .then(res => {
-                console.log('oh thats good')
+                deleteNode(course, courses, setCourses)
             })
             .catch(error => {
                 console.log(error)
@@ -207,6 +215,7 @@ export const CourseHierarchy = ({onCourseSelect}) => {
             })
             .finally(() => {
                 setIsFetching(false)
+                setCourseToDelete(undefined)
             })
     }
 
@@ -264,7 +273,7 @@ export const CourseHierarchy = ({onCourseSelect}) => {
                     onNodeAdd={(node) => openAddCourseModal(node)}
                     onNodeMove={moveCourse}
                     onNodeUpdate={openUpdateCourseModal}
-                    onNodeDelete={deleteCourse}
+                    onNodeDelete={openDeleteModal}
                     onNodeClick={onCourseSelectHandler}
                 />
                 {courses 
@@ -298,6 +307,7 @@ export const CourseHierarchy = ({onCourseSelect}) => {
                 parentCourse={parentCourseIdToAdd}
                 updatedCourse={courseToUpdate}
             />
+            {courseToDelete && <DeleteCourseModal onSubmit={deleteCourse} deletedCourse={courseToDelete} onClose={() => setCourseToDelete(undefined)}/>}
         </>
     )
 }

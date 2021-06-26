@@ -135,20 +135,6 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchNodesHandler, fetchSu
         if (onNodeMove !== undefined) onNodeMove(dragNode.id, targetParentId, position)
     }
 
-    // delete node
-    const deleteNode = (node) => {
-        if(node.parentId !== null) {
-            let parentNode = flatTreeData.find(x => x.id == node.parentId)
-            let parentChilds = parentNode.child
-            parentNode.child = parentChilds.filter(x => x.id !== node.id)
-            setTreeData(flatTreeData.filter(x => x.parentId == null))
-        } else {
-            setTreeData(treeData.filter(x => x.id !== node.id))
-        }
-        
-        if (onNodeDelete !== undefined) onNodeDelete(node)
-    }
-
     // decringelization of render
     const upperNode = (index) => {
         if (draggedNode !== undefined 
@@ -172,7 +158,7 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchNodesHandler, fetchSu
                     dragEndHandle={dragEnd}
                     addNodeHandler={onNodeAdd}
                     updateNodeHandler={onNodeUpdate}
-                    deleteNodeHandler={onNodeDelete && deleteNode}
+                    deleteNodeHandler={onNodeDelete}
                     moveNodeHandler={moveNodeHandler}
                     canNodeDrag={canNodeDrag}
                     onNodeClick={onNodeClick}
@@ -215,4 +201,16 @@ export const treeToFlat = (list) => {
     if(list !== undefined)
         return getAllChilds({child: list})
     else return null
+}
+
+export const deleteNode = (node, treeData, setTreeData) => {
+    if(!(node.parentId === null || node.parentId === undefined)) {
+        let flatTreeData = treeToFlat(treeData)
+        let parentNode = flatTreeData.find(x => x.id == node.parentId)
+        let parentChilds = parentNode.child
+        parentNode.child = parentChilds.filter(x => x.id !== node.id)
+        setTreeData(flatTreeData.filter(x => x.parentId == null))
+    } else {
+        setTreeData(treeData.filter(x => x.id !== node.id))
+    }
 }
