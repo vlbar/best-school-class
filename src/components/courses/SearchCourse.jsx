@@ -75,7 +75,7 @@ export const SearchCourse = ({onSearching, onCourseSelect}) => {
             page: page, 
             size: 20,
             total: undefined,
-            items:[]
+            items: undefined
         }
         
         await axios.get(`${baseUrl}?name=${encodeURIComponent(courseName)}&page=${page}&size=${coursePage.size}`)

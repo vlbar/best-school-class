@@ -28,7 +28,7 @@ export const CourseHierarchy = ({onCourseSelect}) => {
             page: page, 
             size: 20,
             total: undefined,
-            items:[]
+            items: undefined
         }
         
         await axios.get(`${baseUrl}?page=${page}&size=${coursePage.size}`)
@@ -63,7 +63,7 @@ export const CourseHierarchy = ({onCourseSelect}) => {
             page: page, 
             size: 20,
             total: undefined,
-            items:[]
+            items: undefined
         }
         await axios.get(`${baseUrl}/${node.id}/sub-courses?page=${page}&size=${coursePage.size}`)
             .then(res => {
