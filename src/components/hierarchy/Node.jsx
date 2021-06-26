@@ -113,7 +113,7 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
     }
 
     let subNodes = nodeData.child
-    let expandShow = subNodes.length !== 0 || (fetchSubNodesHandler !== undefined && !nodeData.isEmpty)
+    let expandShow = subNodes.length !== 0 || (fetchSubNodesHandler !== undefined && nodeData.isEmpty !== undefined && !nodeData.isEmpty)
     return (
         <>
             {isDragOver ?
@@ -134,7 +134,7 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
                     onDragStart={(e) => dragStart(e, nodeData.id)} 
                     onDragEnd={(e) => dragEnd(e)}
                 >
-                    {canNodeDrag ?
+                    {canNodeDrag &&
                         <div 
                             className='handle'
                             onMouseEnter={() => setCanDrag(true)} 
@@ -144,7 +144,7 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
                                 <path d='M20 18h8v-6h6l-10-10-10 10h6v6zm-2 2h-6v-6l-10 10 10 10v-6h6v-8zm28 4l-10-10v6h-6v8h6v6l10-10zm-18 6h-8v6h-6l10 10 10-10h-6v-6z'/>
                             </svg>
                         </div>
-                    :''}
+                    }
                     <div className='arrow' onClick={collapseList}>
                         {expandShow ? 
                             <svg width='21' viewBox='0 0 24 24'  xmlns='http://www.w3.org/2000/svg'>
@@ -153,19 +153,21 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
                         : ''}
                     </div>
                     <span className='node-text' onClick={onClick}>{nodeData.name}</span>
-                    <Dropdown onToggle={(isOpen) => openDropdown(isOpen)}>
-                        <Dropdown.Toggle size='sm' variant='best' id='dropdown-basic'>⋮</Dropdown.Toggle>
-                        <Dropdown.Menu>
-                            {addNodeHandler && <Dropdown.Item onClick={() => addNodeHandler(nodeData)}>Добавить подкурс</Dropdown.Item>}
-                            {updateNodeHandler && <Dropdown.Item onClick={() => updateNodeHandler(nodeData)}>Изменить</Dropdown.Item>}
-                            {canNodeDrag && 
-                            <>
-                                <Dropdown.Item onClick={() => moveNode(MOVE_UP)} disabled={upperNodeData === undefined}>Переместить выше</Dropdown.Item>
-                                <Dropdown.Item onClick={() => moveNode(MOVE_DOWN)} disabled={lowerNodeData === undefined}>Переместить ниже</Dropdown.Item>
-                            </>}
-                            {deleteNodeHandler && <Dropdown.Item onClick={() => deleteNodeHandler(nodeData)} className='text-danger'>Удалить</Dropdown.Item>}
-                        </Dropdown.Menu>
-                    </Dropdown>
+                    {(addNodeHandler && updateNodeHandler && canNodeDrag && deleteNodeHandler) &&
+                        <Dropdown onToggle={(isOpen) => openDropdown(isOpen)}>
+                            <Dropdown.Toggle size='sm' variant='best' id='dropdown-basic'>⋮</Dropdown.Toggle>
+                            <Dropdown.Menu>
+                                {addNodeHandler && <Dropdown.Item onClick={() => addNodeHandler(nodeData)}>Добавить подкурс</Dropdown.Item>}
+                                {updateNodeHandler && <Dropdown.Item onClick={() => updateNodeHandler(nodeData)}>Изменить</Dropdown.Item>}
+                                {canNodeDrag && 
+                                <>
+                                    <Dropdown.Item onClick={() => moveNode(MOVE_UP)} disabled={upperNodeData === undefined}>Переместить выше</Dropdown.Item>
+                                    <Dropdown.Item onClick={() => moveNode(MOVE_DOWN)} disabled={lowerNodeData === undefined}>Переместить ниже</Dropdown.Item>
+                                </>}
+                                {deleteNodeHandler && <Dropdown.Item onClick={() => deleteNodeHandler(nodeData)} className='text-danger'>Удалить</Dropdown.Item>}
+                            </Dropdown.Menu>
+                        </Dropdown>
+                    }
                 </div>
             </div>
             {expandShow &&

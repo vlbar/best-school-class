@@ -37,7 +37,7 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchNodesHandler, fetchSu
     let flatTreeData = treeToFlat(treeData)
 
     useEffect(() => {
-        fetchNodes(null, 1)
+        if(fetchNodesHandler !== undefined) fetchNodes(null, 1)
     }, [])
 
     useEffect(() => {
@@ -172,7 +172,7 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchNodesHandler, fetchSu
                     dragEndHandle={dragEnd}
                     addNodeHandler={onNodeAdd}
                     updateNodeHandler={onNodeUpdate}
-                    deleteNodeHandler={deleteNode}
+                    deleteNodeHandler={onNodeDelete && deleteNode}
                     moveNodeHandler={moveNodeHandler}
                     canNodeDrag={canNodeDrag}
                     onNodeClick={onNodeClick}
