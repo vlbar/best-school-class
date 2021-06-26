@@ -31,21 +31,29 @@ export const CourseHierarchy = () => {
     const [isAddCourseShow, setIsAddCourseShow] = useState(false)
     const [parentCourseIdToAdd, setParentCourseIdToAdd] = useState(undefined)
     const [courseToUpdate, setCourseToUpdate] = useState(undefined)
-    const [isFetching, setIsFetching] = useState(false)
+    const [isFetching, setIsFetching] = useState(true)
 
-    useEffect(() => {
-        fetchCourses()
-    }, [])
-
-    const fetchCourses = () => {
+    const fetchCourses = async (node, page) => {
+        console.log(page)
         setIsFetching(true)
-        axios.get(`${baseUrl}?size=100`)
+
+        let coursePage = {
+            page: page, 
+            size: 20,
+            total: undefined,
+            items:[]
+        }
+        
+        await axios.get(`${baseUrl}?page=${page}&size=${coursePage.size}`)
             .then(res => {
-                let items = res.data.items
+                let fetchedData = res.data
+                let items = fetchedData.items
                 items = items.map(x => {
                     return mapToNode(x)
                 })
-                setCourses(items)
+
+                coursePage.items = items
+                coursePage.total = fetchedData.totalItems
             })
             .catch(error => {
                 console.log(error)
@@ -57,19 +65,28 @@ export const CourseHierarchy = () => {
             .finally(() => {
                 setIsFetching(false)
             })
+
+        return coursePage
     }
 
-    const fetchSubCourses = async (node) => {
+    const fetchSubCourses = async (node, page = 1) => {
         setIsFetching(true)
 
-        let newNodes = []
-        await axios.get(`${baseUrl}/${node.id}/sub-courses`)
+        let coursePage = {
+            page: page, 
+            size: 20,
+            total: undefined,
+            items:[]
+        }
+        await axios.get(`${baseUrl}/${node.id}/sub-courses?page=${page}&size=${coursePage.size}`)
             .then(res => {
-                let items = res.data.items
+                let fetchedData = res.data
+                let items = fetchedData.items
                 items = items.map(x => {
                     return mapToNode(x)
                 })
-                newNodes = items
+                coursePage.items = items
+                coursePage.total = fetchedData.totalItems
             })
             .catch(error => {
                 console.log(error)
@@ -82,7 +99,7 @@ export const CourseHierarchy = () => {
                 setIsFetching(false)
             })
 
-        return newNodes
+        return coursePage
     }
 
     const moveCourse = (courseId, parentId, position) => {
@@ -248,20 +265,21 @@ export const CourseHierarchy = () => {
 
     return (
         <>
-            <div className="course-hierarchy">
+            <div className="course-hierarchy" id='viewport-use'>
                 <ProcessBar active={isFetching} height=".18Rem"/>
+                <TreeHierarchy
+                    treeData={courses}
+                    setTreeData={setCourses}
+                    fetchNodesHandler={fetchCourses}
+                    fetchSubNodesHandler={fetchSubCourses}
+                    onNodeAdd={(node) => openAddCourseModal(node)}
+                    onNodeMove={moveCourse}
+                    onNodeUpdate={openUpdateCourseModal}
+                    onNodeDelete={deleteCourse}
+                />
                 {courses 
-                    ? courses.length > 0
-                        ?<TreeHierarchy
-                            treeData={courses}
-                            setTreeData={setCourses}
-                            fetchDataHandler={fetchSubCourses}
-                            onNodeAdd={(node) => openAddCourseModal(node)}
-                            onNodeMove={moveCourse}
-                            onNodeUpdate={openUpdateCourseModal}
-                            onNodeDelete={deleteCourse}
-                        />
-                        :<div className='no-courses'>
+                    ? courses.length == 0
+                        && <div className='no-courses'>
                             <h5>Увы, но учебные курсы еще не добавлены.</h5>
                             <p className='text-muted'>
                                 Чтобы погрузится в мир удобного ведения учебного плана и базы знаний, для начала вы должны <a onClick={() => openAddCourseModal()}>добавить курс</a>.

@@ -7,10 +7,16 @@ import './Node.less'
 const MOVE_UP = 'UP'
 const MOVE_DOWN = 'DOWN'
 
-export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, dragStartHandle, dragEndHandle, moveNodeHandler, updateNodeHandler, deleteNodeHandler, addNodeHandler, setExpandedHandler, fetchDataHandler, canNodeDrag, onNodeClick}) => {
+export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, dragStartHandle, dragEndHandle, moveNodeHandler, updateNodeHandler, deleteNodeHandler, addNodeHandler, setExpandedHandler, fetchSubNodesHandler, canNodeDrag, onNodeClick}) => {
     const [isDragOver, setIsDragOver] = useState(false)
     const [isDrag, setDrag] = useState(false)
     const [isCanDrag, setCanDrag] = useState(false)
+
+    const [treePagination, setTreePagination] = useState({
+        page: 1, 
+        pageSize: undefined, 
+        total: undefined
+    })
 
     const [isOpenDropdown, setIsOpenDropdown] = useState(false)
 
@@ -62,10 +68,19 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
         }
     }
 
+    const fetchSubNodes = async (page) => {
+        let fetchData = await fetchSubNodesHandler(nodeData, page)
+        setTreePagination({
+            page: fetchData.page,
+            pageSize: fetchData.size,
+            total: fetchData.total
+        })
+    }
+
     //=====================Render========================
     const collapseList = () => {
-        if(fetchDataHandler !== undefined && !nodeData.isFetched && !nodeData.isEmpty) 
-            fetchDataHandler(nodeData)
+        if(fetchSubNodesHandler !== undefined && !nodeData.isFetched && !nodeData.isEmpty) 
+            fetchSubNodes(1)
         else
             setExpandedHandler(nodeData, !nodeData.isExpanded)
     }
@@ -87,7 +102,7 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
     }
 
     let subNodes = nodeData.child
-    let expandShow = subNodes.length !== 0 || (fetchDataHandler !== undefined && !nodeData.isEmpty)
+    let expandShow = subNodes.length !== 0 || (fetchSubNodesHandler !== undefined && !nodeData.isEmpty)
     return (
         <>
             {isDragOver ?
@@ -155,7 +170,7 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
                                 nodeData={nodeData}
                                 lowerNodeData={subNodes[index + 1]}
                                 setExpandedHandler={setExpandedHandler}
-                                fetchDataHandler={fetchDataHandler}
+                                fetchSubNodesHandler={fetchSubNodesHandler}
                                 draggedNodeData={draggedNodeData}
                                 dragStartHandle={dragStartHandle}
                                 dragEndHandle={dragEndHandle}
@@ -167,6 +182,9 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
                                 onNodeClick={onNodeClick}
                             />
                         })}
+                        {(fetchSubNodesHandler && treePagination.page * treePagination.pageSize < treePagination.total)
+                            && <button className="fetch-nodes-btn" onClick={() => fetchSubNodes(treePagination.page + 1)}>Загрузить еще</button>
+                        }
                     </AnimateHeight>
                 </div>
             }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Node } from './Node';
 import { NodePlaceholder } from './NodePlaceholder';
 
@@ -15,13 +15,24 @@ import { NodePlaceholder } from './NodePlaceholder';
 
 /*
     onNodeMove(dragNodeId, parentId, position)
-    fetchDataHandler(parentId): array
+    fetchNodesHandler(parentId): { items: array, page: int, size: int, total: int }
+    fetchSubNodesHandler(parentId): { items: array, page: int, size: int, total: int }  (optional if called the same as in 'fetchNodesHandler')
 */
 
-export const TreeHierarchy = ({treeData, setTreeData, fetchDataHandler, onNodeMove, onNodeUpdate, onNodeDelete, onNodeAdd, onNodeClick, canNodeDrag = true}) => {
+export const TreeHierarchy = ({treeData, setTreeData, fetchNodesHandler, fetchSubNodesHandler, onNodeMove, onNodeUpdate, onNodeDelete, onNodeAdd, onNodeClick, canNodeDrag = true}) => {
+    const [treePagination, setTreePagination] = useState({
+        page: 1, 
+        pageSize: undefined, 
+        total: undefined
+    })
+
     const [draggedNode, setDraggedNode] = useState(undefined)
 
     let flatTreeData = treeToFlat(treeData)
+
+    useEffect(() => {
+        fetchNodes(null, 1)
+    }, [])
 
     // dragging
     const dragStart = (node) => {
@@ -34,8 +45,8 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchDataHandler, onNodeMo
 
     // force expand
     const setIsExpandedHandler = (node, isExpanded) => {
-        if(fetchDataHandler !== undefined && !node.isFetched) {
-            fetchData(node)
+        if(fetchNodesHandler !== undefined && !node.isFetched) {
+            fetchNodes(node, 1)
         } else {
             node.isExpanded = isExpanded
             setTreeData(flatTreeData.filter(x => x.parentId == null))
@@ -43,11 +54,31 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchDataHandler, onNodeMo
     }
 
     // fetch data
-    const fetchData = async (node) => {
+    const fetchNodes = async (node, page) => {
+        if(node !== null) {
+            fetchSubNodes(node, page)
+        } else {
+            let fetchData = await fetchNodesHandler(node, page)
+            setTreePagination({
+                page: fetchData.page,
+                pageSize: fetchData.size,
+                total: fetchData.total
+            })
+            if(treeData === undefined)
+                setTreeData(fetchData.items)
+            else
+                setTreeData([...treeData, ...fetchData.items])
+        }
+    }
+
+    const fetchSubNodes = async (node, page) => {
         node.isFetched = true //anti ddos
-        node.child = await fetchDataHandler(node)
+        let fetchData = await fetchSubNodesHandler(node, page)
+        let nodeChilds = node.child
+        node.child = [...nodeChilds, ...fetchData.items]
         node.isExpanded = true
         setTreeData(flatTreeData.filter(x => x.parentId == null))
+        return fetchData
     }
 
     //
@@ -117,13 +148,13 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchDataHandler, onNodeMo
 
     return (
         <div className={'tree-hierarchy' + (draggedNode !== undefined ? ' disable-hover':'')}>
-            {treeData.map((nodeData, index) => {
+            {treeData !== undefined && treeData.map((nodeData, index) => {
                 return <Node key={nodeData.id} 
                     upperNodeData={upperNode(index)}
                     nodeData={nodeData}
                     lowerNodeData={treeData[index + 1]}
                     setExpandedHandler={setIsExpandedHandler}
-                    fetchDataHandler={fetchData}
+                    fetchSubNodesHandler={fetchSubNodes}
                     draggedNodeData={draggedNode}
                     dragStartHandle={dragStart}
                     dragEndHandle={dragEnd}
@@ -143,6 +174,9 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchDataHandler, onNodeMo
                 forceExpandHandler={setIsExpandedHandler}
                 dropHandle={(targetParentId, position) => moveNodeHandler(targetParentId, position)}
             />}
+            {(fetchNodesHandler && treePagination.page * treePagination.pageSize < treePagination.total)
+                && <button className="fetch-nodes-btn" onClick={() => fetchNodes(null, treePagination.page + 1)}>Загрузить еще</button>
+            }
         </div>
     )
 }
@@ -159,5 +193,7 @@ const getAllChilds = (node) => {
 }
 
 export const treeToFlat = (list) => {
-    return getAllChilds({child: list})
+    if(list !== undefined)
+        return getAllChilds({child: list})
+    else return null
 }
