@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { Button, Form } from 'react-bootstrap'
 import ProcessBar from '../process-bar/ProcessBar'
 import { TreeHierarchy } from '../hierarchy/TreeHierarchy'
 import { LoadingCoursesList } from './LoadingCoursesList'
@@ -16,13 +17,19 @@ export const SearchCourse = ({onSearching, onCourseSelect}) => {
 
     const [isSearching, setIsSearching] = useState(false)
     const [courseName, setCourseName] = useState('')
+    const [inputError, setInputError] = useState(undefined)
     const searchedCourseName = useRef('')
 
     useEffect(() => {
         if(courseName.length == 0) {
             setIsSearching(false)
             onSearching(false)
-        } 
+            setInputError(undefined)
+        }
+
+        if(courseName.length >= 3) {
+            setInputError(undefined)
+        }
     }, [courseName])
 
     const mapToNode = (course) => {
@@ -36,10 +43,18 @@ export const SearchCourse = ({onSearching, onCourseSelect}) => {
         }
     }
 
-    const onSearch = async () => {
-        if(isSearching) {
+    const onSearch = () => {
+        if(courseName.trim().length > 0) {
             if(courseName.trim() == searchedCourseName.current) return
             searchedCourseName.current = courseName.trim()
+        }
+
+        if(courseName.trim().length < 3) {
+            setInputError('Слишком короткое название')
+            if(courseName.trim().length == 0) setTimeout(() => {
+                setInputError(undefined)
+            }, 5000);
+            return
         }
 
         onSearching(true)
@@ -103,7 +118,6 @@ export const SearchCourse = ({onSearching, onCourseSelect}) => {
     }
 
     const searchKeyPress = (event) => {
-        console.log(event.charCode )
         if(event.key === 'Enter') {
             onSearch()
         }
@@ -112,16 +126,20 @@ export const SearchCourse = ({onSearching, onCourseSelect}) => {
     return (
         <>
             <div className="input-group my-3">
-                <input
+                <Form.Control
                     type="text"
                     className="form-control"
                     placeholder="Введите название курса"
                     aria-label="Введите название курса"
                     value={courseName}
                     onChange={(e) => setCourseName(e.target.value)}
-                    onKeyPress={(e) => searchKeyPress(e)}/>
+                    onKeyPress={(e) => searchKeyPress(e)}
+                    isInvalid={inputError !== undefined}/>
+                {inputError && <div className="invalid-tooltip">
+                    {inputError}
+                </div>}
                 <div className="input-group-append">
-                    <button className="btn btn-outline-secondary" type="button" onClick={onSearch}>Найти</button>
+                    <button className="btn btn-outline-secondary" type="button" onClick={onSearch}><i className="fas fa-search"/></button>
                 </div>
             </div>
 
