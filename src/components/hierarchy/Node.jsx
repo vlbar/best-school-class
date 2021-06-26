@@ -1,17 +1,33 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Dropdown } from 'react-bootstrap'
 import { NodePlaceholder } from './NodePlaceholder'
+import { useInView } from 'react-intersection-observer'
+import AnimateHeight from 'react-animate-height'
 import './Node.less'
 
 const MOVE_UP = 'UP'
 const MOVE_DOWN = 'DOWN'
 
-export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, dragStartHandle, dragEndHandle, moveNodeHandler, deleteNodeHandler, addNodeHandler, setExpandedHandler, fetchDataHandler, canNodeDrag, onNodeClick}) => {
+export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, dragStartHandle, dragEndHandle, moveNodeHandler, updateNodeHandler, deleteNodeHandler, addNodeHandler, setExpandedHandler, fetchSubNodesHandler, canNodeDrag, onNodeClick}) => {
     const [isDragOver, setIsDragOver] = useState(false)
     const [isDrag, setDrag] = useState(false)
     const [isCanDrag, setCanDrag] = useState(false)
 
+    const [treePagination, setTreePagination] = useState({
+        page: 1, 
+        pageSize: undefined, 
+        total: undefined
+    })
+    const [isFetching, setIsFetching] = useState(false)
+    const { ref, inView } = useInView({
+        threshold: 1,
+    });
+
     const [isOpenDropdown, setIsOpenDropdown] = useState(false)
+
+    useEffect(() => {
+        if(fetchSubNodesHandler && inView && !isFetching) fetchSubNodes(treePagination.page + 1)
+    }, [inView])
 
     //=====================DRAGGING==========================
     const dragStart = (event, id) => {
@@ -47,7 +63,7 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
     //other
     const onClick = () => {
         if(onNodeClick !== undefined)
-            onNodeClick(nodeData.id)
+            onNodeClick(nodeData)
     }
 
     const moveNode = (direction) => {
@@ -61,10 +77,21 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
         }
     }
 
+    const fetchSubNodes = async (page) => {
+        setIsFetching(true)
+        let fetchData = await fetchSubNodesHandler(nodeData, page)
+        setTreePagination({
+            page: fetchData.page,
+            pageSize: fetchData.size,
+            total: fetchData.total
+        })
+        setIsFetching(false)
+    }
+
     //=====================Render========================
     const collapseList = () => {
-        if(fetchDataHandler !== undefined && !nodeData.isFetched && !nodeData.isEmpty) 
-            fetchDataHandler(nodeData)
+        if(fetchSubNodesHandler !== undefined && !nodeData.isFetched && !nodeData.isEmpty) 
+            fetchSubNodes(1)
         else
             setExpandedHandler(nodeData, !nodeData.isExpanded)
     }
@@ -86,7 +113,7 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
     }
 
     let subNodes = nodeData.child
-    let expandShow = subNodes.length !== 0 || (fetchDataHandler !== undefined && !nodeData.isEmpty)
+    let expandShow = subNodes.length !== 0 || (fetchSubNodesHandler !== undefined && nodeData.isEmpty !== undefined && !nodeData.isEmpty)
     return (
         <>
             {isDragOver ?
@@ -107,7 +134,7 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
                     onDragStart={(e) => dragStart(e, nodeData.id)} 
                     onDragEnd={(e) => dragEnd(e)}
                 >
-                    {canNodeDrag ?
+                    {canNodeDrag &&
                         <div 
                             className='handle'
                             onMouseEnter={() => setCanDrag(true)} 
@@ -117,7 +144,7 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
                                 <path d='M20 18h8v-6h6l-10-10-10 10h6v6zm-2 2h-6v-6l-10 10 10 10v-6h6v-8zm28 4l-10-10v6h-6v8h6v6l10-10zm-18 6h-8v6h-6l10 10 10-10h-6v-6z'/>
                             </svg>
                         </div>
-                    :''}
+                    }
                     <div className='arrow' onClick={collapseList}>
                         {expandShow ? 
                             <svg width='21' viewBox='0 0 24 24'  xmlns='http://www.w3.org/2000/svg'>
@@ -126,41 +153,61 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
                         : ''}
                     </div>
                     <span className='node-text' onClick={onClick}>{nodeData.name}</span>
-                    <Dropdown onToggle={(isOpen) => openDropdown(isOpen)}>
-                        <Dropdown.Toggle size='sm' variant='best' id='dropdown-basic'>⋮</Dropdown.Toggle>
-                        <Dropdown.Menu>
-                            <Dropdown.Item onClick={() => addNodeHandler(nodeData)} disabled={addNodeHandler === undefined}>Добавить подкурс</Dropdown.Item>
-                            {canNodeDrag ? 
-                            <>
-                                <Dropdown.Item onClick={() => moveNode(MOVE_UP)} disabled={upperNodeData === undefined}>Переместить выше</Dropdown.Item>
-                                <Dropdown.Item onClick={() => moveNode(MOVE_DOWN)} disabled={lowerNodeData === undefined}>Переместить ниже</Dropdown.Item>
-                            </>: ''}
-                            <Dropdown.Item onClick={() => deleteNodeHandler(nodeData)} disabled={deleteNodeHandler === undefined} className='text-danger'>Удалить</Dropdown.Item>
-                        </Dropdown.Menu>
-                    </Dropdown>
+                    {(addNodeHandler && updateNodeHandler && canNodeDrag && deleteNodeHandler) &&
+                        <Dropdown onToggle={(isOpen) => openDropdown(isOpen)}>
+                            <Dropdown.Toggle size='sm' variant='best' id='dropdown-basic'>⋮</Dropdown.Toggle>
+                            <Dropdown.Menu>
+                                {addNodeHandler && <Dropdown.Item onClick={() => addNodeHandler(nodeData)}>Добавить подкурс</Dropdown.Item>}
+                                {updateNodeHandler && <Dropdown.Item onClick={() => updateNodeHandler(nodeData)}>Изменить</Dropdown.Item>}
+                                {canNodeDrag && 
+                                <>
+                                    <Dropdown.Item onClick={() => moveNode(MOVE_UP)} disabled={upperNodeData === undefined}>Переместить выше</Dropdown.Item>
+                                    <Dropdown.Item onClick={() => moveNode(MOVE_DOWN)} disabled={lowerNodeData === undefined}>Переместить ниже</Dropdown.Item>
+                                </>}
+                                {deleteNodeHandler && <Dropdown.Item onClick={() => deleteNodeHandler(nodeData)} className='text-danger'>Удалить</Dropdown.Item>}
+                            </Dropdown.Menu>
+                        </Dropdown>
+                    }
                 </div>
             </div>
-            {nodeData.isExpanded && !isDrag ?
+            {expandShow &&
                 <div className={'sub-nodes'}>
-                    {(subNodes.length !== 0) ? subNodes.map((nodeData, index) => {
-                        return <Node key={nodeData.id} 
-                            upperNodeData={upperNode(index)}
-                            nodeData={nodeData}
-                            lowerNodeData={subNodes[index + 1]}
-                            setExpandedHandler={setExpandedHandler}
-                            fetchDataHandler={fetchDataHandler}
-                            draggedNodeData={draggedNodeData}
-                            dragStartHandle={dragStartHandle}
-                            dragEndHandle={dragEndHandle}
-                            deleteNodeHandler={deleteNodeHandler}
-                            addNodeHandler={addNodeHandler}
-                            moveNodeHandler={moveNodeHandler}
-                            canNodeDrag={canNodeDrag}
-                            onNodeClick={onNodeClick}
-                        />
-                    }):''}
+                    <AnimateHeight
+                        animateOpacity
+                        duration={220}
+                        height={nodeData.isExpanded && !isDrag ? 'auto' : 0}
+                    >
+                        {(subNodes.length !== 0) && subNodes.map((nodeData, index) => {
+                            return <Node key={nodeData.id} 
+                                upperNodeData={upperNode(index)}
+                                nodeData={nodeData}
+                                lowerNodeData={subNodes[index + 1]}
+                                setExpandedHandler={setExpandedHandler}
+                                fetchSubNodesHandler={fetchSubNodesHandler}
+                                draggedNodeData={draggedNodeData}
+                                dragStartHandle={dragStartHandle}
+                                dragEndHandle={dragEndHandle}
+                                updateNodeHandler={updateNodeHandler}
+                                deleteNodeHandler={deleteNodeHandler}
+                                addNodeHandler={addNodeHandler}
+                                moveNodeHandler={moveNodeHandler}
+                                canNodeDrag={canNodeDrag}
+                                onNodeClick={onNodeClick}
+                            />
+                        })}
+                        {(fetchSubNodesHandler && treePagination.page * treePagination.pageSize < treePagination.total) &&
+                            <button 
+                                className="fetch-nodes-btn" 
+                                onClick={() => fetchSubNodes(treePagination.page + 1)} 
+                                disabled={isFetching} 
+                                ref={ref}
+                            >
+                                {isFetching ? '. . .' : 'Загрузить еще'}
+                            </button>
+                        }
+                    </AnimateHeight>
                 </div>
-            :''}
+            }
         </>
     )
 }

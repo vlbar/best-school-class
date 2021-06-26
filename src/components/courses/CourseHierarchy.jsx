@@ -1,45 +1,46 @@
 import React, { useEffect, useState } from 'react'
 import { store } from 'react-notifications-component'
 import { Button } from 'react-bootstrap'
-import { TreeHierarchy, treeToFlat } from '../hierarchy/TreeHierarchy'
-import { CourseAddModal } from './CourseAddModal'
+import { TreeHierarchy, treeToFlat, deleteNode } from '../hierarchy/TreeHierarchy'
+import { CourseAddUpdateModal } from './CourseAddUpdateModal'
+import { DeleteCourseModal } from './DeleteCourseModal'
+import { LoadingCoursesList } from './LoadingCoursesList'
 import axios from 'axios'
 import './CourseHierarchy.less'
+import { errorNotification } from '../notifications/Notifications'
 import ProcessBar from '../process-bar/ProcessBar'
 
-const baseUtl = '/course'
+const baseUrl = '/courses'
 
-const errorNotification = {
-    title: "Произошла ошибка",
-    message: "Перезагрузите страницу, если ошибка повторится то попробуйте позже",
-    type: "danger",
-    insert: "top",
-    container: "top-right",
-    animationIn: ["animate__animated animate__fadeIn"],
-    animationOut: ["animate__animated animate__fadeOut"],
-    showIcon: true
-  };
-
-export const CourseHierarchy = () => {
-    const [courses, setCourses] = useState([])
+export const CourseHierarchy = ({onCourseSelect}) => {
+    const [courses, setCourses] = useState(undefined)
 
     const [isAddCourseShow, setIsAddCourseShow] = useState(false)
     const [parentCourseIdToAdd, setParentCourseIdToAdd] = useState(undefined)
-    const [isFetching, setIsFetching] = useState(false)
+    const [courseToUpdate, setCourseToUpdate] = useState(undefined)
+    const [courseToDelete, setCourseToDelete] = useState(undefined)
+    const [isFetching, setIsFetching] = useState(true)
 
-    useEffect(() => {
-        fetchCourses()
-    }, [])
-
-    const fetchCourses = () => {
+    const fetchCourses = async (node, page) => {
         setIsFetching(true)
-        axios.get(`${baseUtl}?size=100`)
+
+        let coursePage = {
+            page: page, 
+            size: 20,
+            total: undefined,
+            items:[]
+        }
+        
+        await axios.get(`${baseUrl}?page=${page}&size=${coursePage.size}`)
             .then(res => {
-                let items = res.data.items
+                let fetchedData = res.data
+                let items = fetchedData.items
                 items = items.map(x => {
                     return mapToNode(x)
                 })
-                setCourses(items)
+
+                coursePage.items = items
+                coursePage.total = fetchedData.totalItems
             })
             .catch(error => {
                 console.log(error)
@@ -51,19 +52,28 @@ export const CourseHierarchy = () => {
             .finally(() => {
                 setIsFetching(false)
             })
+
+        return coursePage
     }
 
-    const fetchSubCourses = async (node) => {
+    const fetchSubCourses = async (node, page = 1) => {
         setIsFetching(true)
 
-        let newNodes = []
-        await axios.get(`${baseUtl}/${node.id}/subcourses`)
+        let coursePage = {
+            page: page, 
+            size: 20,
+            total: undefined,
+            items:[]
+        }
+        await axios.get(`${baseUrl}/${node.id}/sub-courses?page=${page}&size=${coursePage.size}`)
             .then(res => {
-                let items = res.data.items
+                let fetchedData = res.data
+                let items = fetchedData.items
                 items = items.map(x => {
                     return mapToNode(x)
                 })
-                newNodes = items
+                coursePage.items = items
+                coursePage.total = fetchedData.totalItems
             })
             .catch(error => {
                 console.log(error)
@@ -76,7 +86,7 @@ export const CourseHierarchy = () => {
                 setIsFetching(false)
             })
 
-        return newNodes
+        return coursePage
     }
 
     const moveCourse = (courseId, parentId, position) => {
@@ -86,7 +96,7 @@ export const CourseHierarchy = () => {
             parentId: parentId,
             position: position
         }
-        axios.put(`${baseUtl}/${courseId}/position`, data)
+        axios.put(`${baseUrl}/${courseId}/position`, data)
             .then(res => {
                 console.log('oh thats good')
             })
@@ -102,6 +112,13 @@ export const CourseHierarchy = () => {
             })
     }
 
+    const courseAddUpdateSubmit = (course) => {
+        if(courseToUpdate !== undefined)
+            updateCourse(course)
+        else
+            addCourse(course)
+    }
+
     const addCourse = async (course) => {
         setIsFetching(true)
         setIsAddCourseShow(false)
@@ -111,10 +128,12 @@ export const CourseHierarchy = () => {
             course.position = 1
         } else {
             course.parentCourseId = null
-            course.position = courses[courses.length - 1].position + 1
+            course.position = (courses.length > 0) 
+                ? courses[courses.length - 1].position + 1
+                : 1
         }
 
-        axios.post(`${baseUtl}`,course)
+        axios.post(`${baseUrl}`,course)
             .then(async res => {
                 course.id = res.data.id
                 course.isEmpty = true
@@ -152,11 +171,40 @@ export const CourseHierarchy = () => {
             })
     }
 
-    const deleteCourse = (course) => {
+    const updateCourse = (course) => {
         setIsFetching(true)
-        axios.delete(`${baseUtl}/${course.id}`)
+        setIsAddCourseShow(false)
+        let putCourse = mapToCourse(course)
+        axios.put(`${baseUrl}/${putCourse.id}`, putCourse)
             .then(res => {
-                console.log('oh thats good')
+                let flatTreeData = treeToFlat(courses)
+                let courseInTree = flatTreeData.find(x => x.id == course.id)
+                applyCourseChanges(courseInTree, course)
+                setCourses(flatTreeData.filter(x => x.parentId == null))
+            })
+            .catch(error => {
+                console.log(error)
+                store.addNotification({
+                    ...errorNotification,
+                    message: 'Не удалось изменить курс, возможно изменения не сохранятся.\n' + error
+                });
+            })
+            .finally(() => {
+                setIsFetching(false)
+            })
+    }
+
+    const openDeleteModal = (course) => {
+        setCourseToDelete(course)
+    }
+
+    const deleteCourse = (course) => {
+        
+
+        setIsFetching(true)
+        axios.delete(`${baseUrl}/${course.id}`)
+            .then(res => {
+                deleteNode(course, courses, setCourses)
             })
             .catch(error => {
                 console.log(error)
@@ -167,11 +215,22 @@ export const CourseHierarchy = () => {
             })
             .finally(() => {
                 setIsFetching(false)
+                setCourseToDelete(undefined)
             })
     }
 
+    const onCourseSelectHandler = (node) => {
+        onCourseSelect(mapToCourse(node))
+    }
+
     const openAddCourseModal = (parentCourse) => {
+        setCourseToUpdate(undefined)
         setParentCourseIdToAdd(parentCourse)
+        setIsAddCourseShow(true)
+    }
+
+    const openUpdateCourseModal = (course) => {
+        setCourseToUpdate(course)
         setIsAddCourseShow(true)
     }
 
@@ -188,28 +247,67 @@ export const CourseHierarchy = () => {
         }
     }
 
+    const mapToCourse = (node) => {
+        return {
+            id: node.id,
+            parentCourseId: node.parentId,
+            name: node.name,
+            position: node.position,
+            isEmpty: node.isEmpty
+        }
+    }
+
+    const applyCourseChanges = (course, updatedCourse) => {
+        course.name = updatedCourse.name
+    }
+
     return (
         <>
-            <div className="course-hierarchy">
+            <div className="course-hierarchy" id='viewport-use'>
                 <ProcessBar active={isFetching} height=".18Rem"/>
-                {(courses.length > 0) ?
                 <TreeHierarchy
                     treeData={courses}
                     setTreeData={setCourses}
-                    fetchDataHandler={fetchSubCourses}
+                    fetchNodesHandler={fetchCourses}
+                    fetchSubNodesHandler={fetchSubCourses}
                     onNodeAdd={(node) => openAddCourseModal(node)}
                     onNodeMove={moveCourse}
-                    onNodeDelete={deleteCourse}
+                    onNodeUpdate={openUpdateCourseModal}
+                    onNodeDelete={openDeleteModal}
+                    onNodeClick={onCourseSelectHandler}
                 />
-                :''}
+                {courses 
+                    ? courses.length == 0
+                        && <div className='no-courses'>
+                            <h5>Увы, но учебные курсы еще не добавлены.</h5>
+                            <p className='text-muted'>
+                                Чтобы погрузится в мир удобного ведения учебного плана и базы знаний, для начала вы должны <a onClick={() => openAddCourseModal()}>добавить курс</a>.
+                            </p>
+                        </div>
+                    :isFetching
+                    ?<LoadingCoursesList/>
+                    :<div className='no-courses'>
+                        <h5>Произошла ошибка.</h5>
+                        <p className='text-muted'>
+                            Не удалось загрузить список курсов, <a onClick={() => window.location.reload(false)}>перезагрузите страницу</a> или попробуйте позже.
+                        </p>
+                    </div>
+                }
             </div>
-            <Button variant='primary' className={'w-100 mt-2'} onClick={() => openAddCourseModal()}>Добавить курс</Button>
-            <CourseAddModal 
+            <Button 
+                variant='primary' 
+                className={'w-100 mt-2'} 
+                onClick={() => openAddCourseModal()}
+                disabled={!courses}
+            >Добавить курс</Button>
+            <CourseAddUpdateModal 
                 show={isAddCourseShow} 
-                onSubmit={addCourse} 
+                onSubmit={courseAddUpdateSubmit} 
                 onClose={() => setIsAddCourseShow(false)} 
                 parentCourse={parentCourseIdToAdd}
+                updatedCourse={courseToUpdate}
             />
+            {courseToDelete && <DeleteCourseModal onSubmit={deleteCourse} deletedCourse={courseToDelete} onClose={() => setCourseToDelete(undefined)}/>}
         </>
     )
 }
