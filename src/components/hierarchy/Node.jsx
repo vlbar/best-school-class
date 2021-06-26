@@ -63,7 +63,7 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
     //other
     const onClick = () => {
         if(onNodeClick !== undefined)
-            onNodeClick(nodeData.id)
+            onNodeClick(nodeData)
     }
 
     const moveNode = (direction) => {

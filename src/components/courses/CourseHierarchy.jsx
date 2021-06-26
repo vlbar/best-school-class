@@ -25,7 +25,7 @@ const errorNotification = {
     }
   };
 
-export const CourseHierarchy = () => {
+export const CourseHierarchy = ({onCourseSelect}) => {
     const [courses, setCourses] = useState(undefined)
 
     const [isAddCourseShow, setIsAddCourseShow] = useState(false)
@@ -224,6 +224,10 @@ export const CourseHierarchy = () => {
             })
     }
 
+    const onCourseSelectHandler = (node) => {
+        onCourseSelect(mapToCourse(node))
+    }
+
     const openAddCourseModal = (parentCourse) => {
         setCourseToUpdate(undefined)
         setParentCourseIdToAdd(parentCourse)
@@ -275,6 +279,7 @@ export const CourseHierarchy = () => {
                     onNodeMove={moveCourse}
                     onNodeUpdate={openUpdateCourseModal}
                     onNodeDelete={deleteCourse}
+                    onNodeClick={onCourseSelectHandler}
                 />
                 {courses 
                     ? courses.length == 0

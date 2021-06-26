@@ -23,7 +23,7 @@ const errorNotification = {
 
 const baseUrl = '/courses'
 
-export const SearchCourse = ({onSearching}) => {
+export const SearchCourse = ({onSearching, onCourseSelect}) => {
     const [courses, setCourses] = useState(undefined)
     const [isFetching, setIsFetching] = useState(true)
     const [isShowHierarhy, setIsShowHierarhy] = useState(true)
@@ -102,7 +102,22 @@ export const SearchCourse = ({onSearching}) => {
         return coursePage
     }
 
+    const onCourseSelectHandle = (node) => {
+        onCourseSelect(mapToCourse(node))
+    }
+
+    const mapToCourse = (node) => {
+        return {
+            id: node.id,
+            parentCourseId: node.parentId,
+            name: node.name,
+            position: node.position,
+            isEmpty: node.isEmpty
+        }
+    }
+
     const searchKeyPress = (event) => {
+        console.log(event.charCode )
         if(event.key === 'Enter') {
             onSearch()
         }
@@ -133,6 +148,7 @@ export const SearchCourse = ({onSearching}) => {
                             setTreeData={setCourses}
                             canNodeDrag={false}
                             fetchNodesHandler={fetchCourses}
+                            onNodeClick={onCourseSelectHandle}
                         />}
                         {courses
                             ? courses.length == 0 &&

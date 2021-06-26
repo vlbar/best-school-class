@@ -5,14 +5,15 @@ import { SearchCourse } from '../components/courses/SearchCourse'
 
 function Courses() {
     const [isShowHierarhy, setIsShowHierarhy] = useState(false)
+    const [selectedCourse, setSelectedCourse] = useState(undefined)
 
     return (
         <Container>
             <Row style={{marginTop: "1Rem", height: "100%"}}>
                 <Col md={6}>
                     <h4>База знаний</h4>
-                    <SearchCourse onSearching={(flag) => setIsShowHierarhy(!flag)}/>
-                    {isShowHierarhy && <CourseHierarchy isShow={true}/>}
+                    <SearchCourse onSearching={(flag) => setIsShowHierarhy(!flag)} onCourseSelect={setSelectedCourse}/>
+                    {isShowHierarhy && <CourseHierarchy onCourseSelect={setSelectedCourse}/>}
                 </Col>
 
                 <Col md={6}>
