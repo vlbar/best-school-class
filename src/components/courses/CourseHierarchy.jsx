@@ -7,7 +7,7 @@ import { DeleteCourseModal } from './DeleteCourseModal'
 import { LoadingCoursesList } from './LoadingCoursesList'
 import axios from 'axios'
 import './CourseHierarchy.less'
-import { errorNotification } from '../notifications/Notifications'
+import { errorNotification } from '../notifications/notifications'
 import ProcessBar from '../process-bar/ProcessBar'
 
 const baseUrl = '/courses'
