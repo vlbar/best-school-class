@@ -135,14 +135,14 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchDataHandler, onNodeMo
                     onNodeClick={onNodeClick}
                 />
             })}
-            <NodePlaceholder
+            {draggedNode && <NodePlaceholder
                 insteadNode={undefined}
                 upperNode={treeData[treeData.length - 1] == draggedNode 
                     ? treeData[treeData.length - 2]
                     : treeData[treeData.length - 1]}
                 forceExpandHandler={setIsExpandedHandler}
                 dropHandle={(targetParentId, position) => moveNodeHandler(targetParentId, position)}
-            />
+            />}
         </div>
     )
 }
