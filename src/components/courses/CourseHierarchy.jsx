@@ -34,7 +34,6 @@ export const CourseHierarchy = () => {
     const [isFetching, setIsFetching] = useState(true)
 
     const fetchCourses = async (node, page) => {
-        console.log(page)
         setIsFetching(true)
 
         let coursePage = {

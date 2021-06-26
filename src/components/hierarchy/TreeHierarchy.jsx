@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useInView } from 'react-intersection-observer'
 import { Node } from './Node';
 import { NodePlaceholder } from './NodePlaceholder';
 
@@ -26,6 +27,11 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchNodesHandler, fetchSu
         total: undefined
     })
 
+    const [isFetching, setIsFetching] = useState(false)
+    const { ref, inView } = useInView({
+        threshold: 1,
+    });
+
     const [draggedNode, setDraggedNode] = useState(undefined)
 
     let flatTreeData = treeToFlat(treeData)
@@ -33,6 +39,10 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchNodesHandler, fetchSu
     useEffect(() => {
         fetchNodes(null, 1)
     }, [])
+
+    useEffect(() => {
+        if(fetchNodesHandler && inView && !isFetching) fetchNodes(null, treePagination.page + 1)
+    }, [inView])
 
     // dragging
     const dragStart = (node) => {
@@ -55,6 +65,7 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchNodesHandler, fetchSu
 
     // fetch data
     const fetchNodes = async (node, page) => {
+        setIsFetching(true)
         if(node !== null) {
             fetchSubNodes(node, page)
         } else {
@@ -69,6 +80,7 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchNodesHandler, fetchSu
             else
                 setTreeData([...treeData, ...fetchData.items])
         }
+        setIsFetching(false)
     }
 
     const fetchSubNodes = async (node, page) => {
@@ -93,7 +105,7 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchNodesHandler, fetchSu
         if (dragNode.parentId != null) { 
             let dragNodeParent = flatTreeData.find(x => x.id === dragNode.parentId)
             dragNodeParent.child = dragNodeParent.child.filter(x => x !== dragNode)
-            if(fetchDataHandler !== undefined) dragNodeParent.isEmpty = dragNodeParent.child.length == 0
+            if(fetchNodesHandler !== undefined) dragNodeParent.isEmpty = dragNodeParent.child.length == 0
         } else {
             newTreeData = treeData.filter(x => x !== dragNode)
         }
@@ -174,8 +186,15 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchNodesHandler, fetchSu
                 forceExpandHandler={setIsExpandedHandler}
                 dropHandle={(targetParentId, position) => moveNodeHandler(targetParentId, position)}
             />}
-            {(fetchNodesHandler && treePagination.page * treePagination.pageSize < treePagination.total)
-                && <button className="fetch-nodes-btn" onClick={() => fetchNodes(null, treePagination.page + 1)}>Загрузить еще</button>
+            {(fetchNodesHandler && treePagination.page * treePagination.pageSize < treePagination.total) &&
+                <button 
+                    className="fetch-nodes-btn" 
+                    onClick={() => fetchNodes(null, treePagination.page + 1)} 
+                    disabled={isFetching} 
+                    ref={ref}
+                >
+                    {isFetching ? '. . .' : 'Загрузить еще'}
+                </button>
             }
         </div>
     )

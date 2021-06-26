@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Dropdown } from 'react-bootstrap'
 import { NodePlaceholder } from './NodePlaceholder'
-import AnimateHeight from "react-animate-height";
+import { useInView } from 'react-intersection-observer'
+import AnimateHeight from 'react-animate-height'
 import './Node.less'
 
 const MOVE_UP = 'UP'
@@ -17,8 +18,16 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
         pageSize: undefined, 
         total: undefined
     })
+    const [isFetching, setIsFetching] = useState(false)
+    const { ref, inView } = useInView({
+        threshold: 1,
+    });
 
     const [isOpenDropdown, setIsOpenDropdown] = useState(false)
+
+    useEffect(() => {
+        if(fetchSubNodesHandler && inView && !isFetching) fetchSubNodes(treePagination.page + 1)
+    }, [inView])
 
     //=====================DRAGGING==========================
     const dragStart = (event, id) => {
@@ -69,12 +78,14 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
     }
 
     const fetchSubNodes = async (page) => {
+        setIsFetching(true)
         let fetchData = await fetchSubNodesHandler(nodeData, page)
         setTreePagination({
             page: fetchData.page,
             pageSize: fetchData.size,
             total: fetchData.total
         })
+        setIsFetching(false)
     }
 
     //=====================Render========================
@@ -182,8 +193,15 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
                                 onNodeClick={onNodeClick}
                             />
                         })}
-                        {(fetchSubNodesHandler && treePagination.page * treePagination.pageSize < treePagination.total)
-                            && <button className="fetch-nodes-btn" onClick={() => fetchSubNodes(treePagination.page + 1)}>Загрузить еще</button>
+                        {(fetchSubNodesHandler && treePagination.page * treePagination.pageSize < treePagination.total) &&
+                            <button 
+                                className="fetch-nodes-btn" 
+                                onClick={() => fetchSubNodes(treePagination.page + 1)} 
+                                disabled={isFetching} 
+                                ref={ref}
+                            >
+                                {isFetching ? '. . .' : 'Загрузить еще'}
+                            </button>
                         }
                     </AnimateHeight>
                 </div>
