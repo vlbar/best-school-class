@@ -267,10 +267,22 @@ export const CourseHierarchy = () => {
                                 Чтобы погрузится в мир удобного ведения учебного плана и базы знаний, для начала вы должны <a onClick={() => openAddCourseModal()}>добавить курс</a>.
                             </p>
                         </div>
-                    :<LoadingCoursesList/>
+                    :isFetching
+                    ?<LoadingCoursesList/>
+                    :<div className='no-courses'>
+                        <h5>Произошла ошибка.</h5>
+                        <p className='text-muted'>
+                            Не удалось загрузить список курсов, <a onClick={() => window.location.reload(false)}>перезагрузите страницу</a> или попробуйте позже.
+                        </p>
+                    </div>
                 }
             </div>
-            <Button variant='primary' className={'w-100 mt-2'} onClick={() => openAddCourseModal()}>Добавить курс</Button>
+            <Button 
+                variant='primary' 
+                className={'w-100 mt-2'} 
+                onClick={() => openAddCourseModal()}
+                disabled={!courses}
+            >Добавить курс</Button>
             <CourseAddUpdateModal 
                 show={isAddCourseShow} 
                 onSubmit={courseAddUpdateSubmit} 
