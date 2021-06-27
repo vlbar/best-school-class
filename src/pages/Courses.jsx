@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Row, Col, Container } from 'react-bootstrap'
 import { CourseHierarchy } from '../components/courses/CourseHierarchy'
 import { SearchCourse } from '../components/courses/SearchCourse'
+import { TaskList } from '../components/tasks/TaskList'
 
 function Courses() {
     const [isShowHierarhy, setIsShowHierarhy] = useState(false)
@@ -18,6 +19,7 @@ function Courses() {
 
                 <Col md={6}>
                     <h4>Задания</h4>
+                    <TaskList/>
                 </Col>
             </Row>
         </Container>
