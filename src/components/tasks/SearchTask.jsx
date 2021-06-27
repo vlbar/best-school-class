@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Button, Form, Dropdown, InputGroup, FormControl } from 'react-bootstrap'
-import { store } from 'react-notifications-component'
-import { errorNotification } from '../notifications/notifications'
+import { addErrorNotification } from '../notifications/notifications'
 import { LoadingList } from '../loading/LoadingList'
 import { useInView } from 'react-intersection-observer'
+import { TaskTypeAddUpdateModal } from './TaskTypeAddUpdateModal'
+import { TaskTypeDeleteModal } from './TaskTypeDeleteModal'
 import ProcessBar from '../process-bar/ProcessBar'
 import axios from 'axios'
 import './SearchTask.less'
@@ -14,11 +15,30 @@ async function fetch(page, size, name) {
     return axios.get(`${baseUrl}?page=${page}&size=${size}${name && `&name=${name}`}`)
 }
 
+async function add(taskType) {
+    return axios.post(`${baseUrl}`, taskType)
+}
+
+async function update(taskType) {
+    return axios.put(`${baseUrl}/${taskType.id}`, taskType)
+}
+
+async function remove(taskType) {
+    return axios.delete(`${baseUrl}/${taskType.id}`)
+}
+
 export const SearchTask = ({onSubmit}) => {
     const [taskTypes, setTaskTypes] = useState(undefined)
     const [selectedTypeId, setSelectedTypeId] = useState(undefined)
     const [isFetching, setIsFetching] = useState(true)
     const [searchedTaskTypeName, setSearchedTaskTypeName] = useState('')
+    const [isDropdownShow, setIsDropdownShow] = useState(false)
+    const dropdownLock = useRef(false)
+
+    const [isAddTaskTypeModalShow, setIsAddTaskTypeModalShow] = useState(false)
+    const [isDeleteTaskTypeModalShow, setIsDeleteTaskTypeModalShow] = useState(false)
+    const [typeToUpdate, setTypeToUpdate] = useState(undefined)
+    const [typeToDelete, setTypeToDelete] = useState(undefined)
 
     const pagination = useRef({
         page: 1, 
@@ -41,8 +61,23 @@ export const SearchTask = ({onSubmit}) => {
         if(searchedTaskTypeName.length == 0 && pagination.current.name.length !== 0) fetchTypes(1)
     }, [searchedTaskTypeName])
 
+    //lock dropdown on modal show
+    useEffect(() => {
+        //а как иначе я просто не понимаю.....
+        if(!(isAddTaskTypeModalShow || isDeleteTaskTypeModalShow)) 
+            setTimeout(() => {
+                dropdownLock.current = false
+            }, 1);
+    }, [isAddTaskTypeModalShow, isDeleteTaskTypeModalShow])
+
     const onDropdownToggle = (show) => {
         if(show && !taskTypes) fetchTypes(1)
+
+        if(dropdownLock.current) {
+            setIsDropdownShow(true)
+        } else {
+            setIsDropdownShow(show)
+        }
     }
 
     const onSelectType = (typeId) => {
@@ -52,14 +87,14 @@ export const SearchTask = ({onSubmit}) => {
             setSelectedTypeId(undefined)
     }
 
-    const fetchTypes = async (page) => {
+    const fetchTypes = (page) => {
         setIsFetching(true)
 
         if(page == 1) {
             pagination.current.name = encodeURIComponent(searchedTaskTypeName.trim())
         }
         
-        await fetch(page, pagination.current.size, pagination.current.name)
+        fetch(page, pagination.current.size, pagination.current.name)
             .then(res => {
                 let fetchedData = res.data
 
@@ -71,15 +106,63 @@ export const SearchTask = ({onSubmit}) => {
                 else
                     setTaskTypes([...taskTypes, ...fetchedData.items])
             })
-            .catch(error => {
-                store.addNotification({
-                    ...errorNotification,
-                    message: 'Не удалось загрузить список курсов. \n' + error
-                });
+            .catch(error => addErrorNotification('Не удалось загрузить список типов. \n' + error))
+            .finally(() => setIsFetching(false))
+    }
+    
+    function showAddTaskTypeModal(taskType = undefined) {
+        dropdownLock.current = true
+        setIsAddTaskTypeModalShow(true)
+        setTypeToUpdate(taskType)
+    }
+
+    const taskTypeAddUpdateSubmit = (taskType) => {
+        if(!typeToUpdate)
+            addType(taskType)
+        else
+            updateType(taskType)
+    }
+
+    const addType = (taskType) => {
+        setIsFetching(true)
+
+        add(taskType)
+            .then(res => {
+                fetchTypes(1)
+                setIsAddTaskTypeModalShow(false)
             })
-            .finally(() => {
-                setIsFetching(false)
+            .catch(error => addErrorNotification('Не удалось добавить тип работы, возможно, изменения не сохранятся. \n' + error))
+            .finally(() => setIsFetching(false))
+    }
+
+    const updateType = (taskType) => {
+        setIsFetching(true)
+
+        update(taskType)
+            .then(res => {
+                fetchTypes(1)
+                setIsAddTaskTypeModalShow(false)
             })
+            .catch(error => addErrorNotification('Не удалось обновить тип работы, возможно, изменения не сохранятся. \n' + error))
+            .finally(() => setIsFetching(false))
+    }
+
+    const showDeleteTaskTypeModal = (taskType) => {
+        dropdownLock.current = true
+        setIsDeleteTaskTypeModalShow(true)
+        setTypeToDelete(taskType)
+    }
+
+    const deleteType = (taskType) => {
+        setIsFetching(true)
+
+        remove(taskType)
+            .then(res => {
+                fetchTypes(1)
+                setIsDeleteTaskTypeModalShow(false)
+            })
+            .catch(error => addErrorNotification('Не удалось обновить тип работы, возможно, изменения не сохранятся. \n' + error))
+            .finally(() => setIsFetching(false))
     }
 
     const searchKeyDown = (event) => {
@@ -89,7 +172,7 @@ export const SearchTask = ({onSubmit}) => {
         }
     }
 
-    return (
+    return (<>
         <div className='d-flex flex-row my-3'>        
             <InputGroup className='mr-2'>
                 <Form.Control
@@ -103,7 +186,7 @@ export const SearchTask = ({onSubmit}) => {
                 </div>
             </InputGroup>
             
-            <Dropdown onSelect={onSelectType} onToggle={onDropdownToggle} className='task-types-dropdown'>
+            <Dropdown show={isDropdownShow} onSelect={onSelectType} onToggle={onDropdownToggle} className='task-types-dropdown'>
                 <Dropdown.Toggle variant='best'>
                     {selectedTypeId ? taskTypes.find(x => x.id == selectedTypeId).name : 'Тип задания'}
                 </Dropdown.Toggle>
@@ -124,13 +207,20 @@ export const SearchTask = ({onSubmit}) => {
                         {taskTypes ?
                             (taskTypes.map(taskType => {
                                 return (
-                                    <div key={taskType.id} className={'d-flex justify-content-between' + ((selectedTypeId == taskType.id) ? ' selected':'')}>
+                                    <div key={taskType.id} className={'task-type-item' + ((selectedTypeId == taskType.id) ? ' selected':'')}>
                                         <Dropdown.Item eventKey={taskType.id}>
-                                            <span>{taskType.name}</span>
+                                            {taskType.name}
                                         </Dropdown.Item>
-                                        {taskType.creatorId !== null && <span className='task-type-edit' onClick={() => console.log('edit')} title='Изменить'>
-                                            <i className='fas fa-pen fa-xs'/>
-                                        </span>}
+                                        {taskType.creatorId !== null && 
+                                            <>
+                                                <span className='task-type-action' onClick={() => showAddTaskTypeModal(taskType)} title='Изменить'>
+                                                    <i className='fas fa-pen fa-xs'/>
+                                                </span>
+                                                <span className='task-type-action' onClick={() => showDeleteTaskTypeModal(taskType)} title='Удалить'>
+                                                    <i className="fas fa-times fa-xs"/>
+                                                </span>
+                                            </>
+                                        }
                                     </div>
                                 )
                             }))
@@ -155,11 +245,22 @@ export const SearchTask = ({onSubmit}) => {
                         }
                     </ul>
                     <div className='m-2'>
-                        <Button size='sm' variant='outline-secondary' className='w-100' onClick={() => setIsAddTaskTypeModalShow(true)}>
+                        <Button size='sm' variant='outline-secondary' className='w-100' onClick={() => showAddTaskTypeModal()}>
                             Добaвить
                         </Button>
                     </div>
                 </Dropdown.Menu>
             </Dropdown>
-        </div>)
+        </div>
+        {isAddTaskTypeModalShow && <TaskTypeAddUpdateModal
+            onClose={() => setIsAddTaskTypeModalShow(false)} 
+            onSubmit={taskTypeAddUpdateSubmit}
+            updatedTaskType={typeToUpdate}
+        />}
+        {isDeleteTaskTypeModalShow && <TaskTypeDeleteModal
+            onClose={() => setIsDeleteTaskTypeModalShow(false)}
+            onSubmit={deleteType}
+            deletedTaskType={typeToDelete}
+        />}
+    </>)
 }
