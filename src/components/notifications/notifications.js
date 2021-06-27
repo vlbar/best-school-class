@@ -1,3 +1,5 @@
+import { store } from 'react-notifications-component'
+
 export const errorNotification = {
     title: "Произошла ошибка",
     message: "Что-то пошло не так, перезагрузите страницу. Если ошибка повторится то попробуйте позже",
@@ -11,4 +13,11 @@ export const errorNotification = {
         duration: 15000,
         onScreen: true
     }
+}
+
+export const addErrorNotification = (message) => {
+    store.addNotification({
+        ...errorNotification,
+        message: message
+    });
 }
