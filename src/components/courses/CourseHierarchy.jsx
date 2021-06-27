@@ -7,7 +7,7 @@ import { DeleteCourseModal } from './DeleteCourseModal'
 import { LoadingCoursesList } from './LoadingCoursesList'
 import axios from 'axios'
 import './CourseHierarchy.less'
-import { errorNotification } from '../notifications/Notifications'
+import { errorNotification } from '../notifications/notifications'
 import ProcessBar from '../process-bar/ProcessBar'
 
 const baseUrl = '/courses'
@@ -28,7 +28,7 @@ export const CourseHierarchy = ({onCourseSelect}) => {
             page: page, 
             size: 20,
             total: undefined,
-            items:[]
+            items: undefined
         }
         
         await axios.get(`${baseUrl}?page=${page}&size=${coursePage.size}`)
@@ -63,7 +63,7 @@ export const CourseHierarchy = ({onCourseSelect}) => {
             page: page, 
             size: 20,
             total: undefined,
-            items:[]
+            items: undefined
         }
         await axios.get(`${baseUrl}/${node.id}/sub-courses?page=${page}&size=${coursePage.size}`)
             .then(res => {

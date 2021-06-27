@@ -5,7 +5,7 @@ import { TreeHierarchy } from '../hierarchy/TreeHierarchy'
 import { LoadingCoursesList } from './LoadingCoursesList'
 import { store } from 'react-notifications-component'
 import axios from 'axios'
-import { errorNotification } from '../notifications/Notifications'
+import { errorNotification } from '../notifications/notifications'
 import './SearchCourse.less'
 
 const baseUrl = '/courses'
@@ -75,7 +75,7 @@ export const SearchCourse = ({onSearching, onCourseSelect}) => {
             page: page, 
             size: 20,
             total: undefined,
-            items:[]
+            items: undefined
         }
         
         await axios.get(`${baseUrl}?name=${encodeURIComponent(courseName)}&page=${page}&size=${coursePage.size}`)
