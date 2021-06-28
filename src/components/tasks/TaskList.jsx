@@ -10,7 +10,7 @@ import './TaskList.less'
 const baseUrl = '/tasks'
 
 async function fetch(courseId, page, size, name, taskTypeId) {
-    return axios.get(`${baseUrl}?courseId=${courseId}&page=${page}&size=${size}${name !== undefined ? `&name=${name}`:''}${taskTypeId !== undefined ? `&taskTypeId=${taskTypeId}`:''}`)
+    return axios.get(`${baseUrl}?page=${page}&size=${size}${courseId !== undefined ? `&courseId=${courseId}`:''}${name !== undefined ? `&name=${name}`:''}${taskTypeId !== undefined ? `&taskTypeId=${taskTypeId}`:''}`)
 }
 
 const taskTypesColors = ['#69c44d', '#007bff', '#db4242', '#2cc7b2', '#8000ff', '#e68e29', '#d4d5d9', '#38c7d1']
@@ -20,7 +20,11 @@ export const TaskList = ({selectedCourse}) => {
     const [isFetching, setIsFetching] = useState(false)
 
     const [filterTaskName, setFilterTaskName] = useState(undefined)
-    const [filterTaskTypeId, setfilterTaskTypeId] = useState(undefined)
+    const [searchTaskTypeId, setSearchTaskTypeId] = useState(undefined)
+    const [searchParams, setSearchParams] = useState({
+        name: '',
+        taskTypeId: undefined
+    })
 
     const pagination = useRef({
         page: 1, 
@@ -35,14 +39,25 @@ export const TaskList = ({selectedCourse}) => {
         if(selectedCourse) fetchTasks(1)
     }, [selectedCourse])
 
+    useEffect(() => {
+        if(searchParams.taskTypeId == undefined && searchParams.name == '') {
+            if(selectedCourse)
+            fetchTasks(1)
+            else setTasks(undefined)
+        }
+        else if(searchParams.taskTypeId !== pagination.current.taskTypeId || searchParams.name !== pagination.current.name) fetchTasks(1)
+    }, [searchParams])
+
     const fetchTasks = (page) => {
         setIsFetching(true)
 
         if(page == 1) {
             setTasks(undefined)
             pagination.current.name = filterTaskName && encodeURIComponent(filterTaskName.trim())
-            pagination.current.taskTypeId = filterTaskTypeId
-            pagination.current.courseId = selectedCourse.id
+            pagination.current.taskTypeId = searchTaskTypeId
+            pagination.current.courseId = selectedCourse?.id
+            if(searchParams.name.length > 0) pagination.current.name = searchParams.name
+            pagination.current.taskTypeId = searchParams.taskTypeId
         }
 
         fetch(pagination.current.courseId, page, pagination.current.size, pagination.current.name, pagination.current.taskTypeId)
@@ -61,8 +76,9 @@ export const TaskList = ({selectedCourse}) => {
             .finally(() => setIsFetching(false))
     }
 
+    // ох уж эти индусы...
     const getMessage = () => {
-        if(!selectedCourse)
+        if(!selectedCourse && !tasks && !isFetching)
             return  <>
                         <h5>Не выбран курс</h5>
                         <p className='text-muted'>Выберите курс, чтобы отобразить его задания, либо воспользуйтесь поиском.</p>
@@ -70,10 +86,15 @@ export const TaskList = ({selectedCourse}) => {
         else
             if(tasks) {
                 if(tasks.length == 0)
-                    return  <>
-                                <h5>Увы, но задания еще не добавлены.</h5>
-                                <p className='text-muted'>Не удалось загрузить список заданий.</p>
-                            </>
+                    if(searchParams.name !== '' || searchParams.taskTypeId !== undefined)
+                        return  <>
+                                    <h5>Задания не найдены.</h5>
+                                    <p className='text-muted'>Не удалось найти задания, удовлетворяющие условиям поиска.</p>
+                                </>
+                    else return <>
+                                    <h5>Увы, но задания еще не добавлены.</h5>
+                                    <p className='text-muted'>Чтобы задания были в списке, для начали их нужно добавить.</p>
+                                </>
             }
             else if(!isFetching)
                 return  <>
@@ -87,7 +108,7 @@ export const TaskList = ({selectedCourse}) => {
     let message = getMessage()
     return (
         <>
-            <SearchTask/>
+            <SearchTask onSubmit={setSearchParams}/>
             <div className='task-list'>
                 {isFetching && <ProcessBar className='position-absolute' height='.18Rem'/>}
                 <div className='scroll-container'>

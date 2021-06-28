@@ -31,7 +31,10 @@ export const SearchTask = ({onSubmit}) => {
     const [taskTypes, setTaskTypes] = useState(undefined)
     const [selectedTypeId, setSelectedTypeId] = useState(undefined)
     const [isFetching, setIsFetching] = useState(true)
+
     const [searchedTaskTypeName, setSearchedTaskTypeName] = useState('')
+    const [searchedTaskName, setSearchedTaskName] = useState('')
+
     const [isDropdownShow, setIsDropdownShow] = useState(false)
     const dropdownLock = useRef(false)
 
@@ -56,10 +59,15 @@ export const SearchTask = ({onSubmit}) => {
         if(inView && !isFetching) fetchTypes(pagination.current.page + 1)
     }, [inView])
 
-    //auto empty name cancel
+    //auto empty type name cancel
     useEffect(() => {
         if(searchedTaskTypeName.length == 0 && pagination.current.name.length !== 0) fetchTypes(1)
     }, [searchedTaskTypeName])
+
+    //auto empty task name cancel
+    useEffect(() => {
+        if(searchedTaskName.length == 0) submitSearchParams({name: ''})
+    }, [searchedTaskName])
 
     //lock dropdown on modal show
     useEffect(() => {
@@ -81,10 +89,12 @@ export const SearchTask = ({onSubmit}) => {
     }
 
     const onSelectType = (typeId) => {
+        let taskTypeId = undefined
         if(!selectedTypeId || selectedTypeId !== typeId)
-            setSelectedTypeId(typeId)
-        else
-            setSelectedTypeId(undefined)
+            taskTypeId = typeId
+
+        setSelectedTypeId(taskTypeId)
+        submitSearchParams({taskTypeId: taskTypeId})
     }
 
     const fetchTypes = (page) => {
@@ -165,24 +175,39 @@ export const SearchTask = ({onSubmit}) => {
             .finally(() => setIsFetching(false))
     }
 
-    const searchKeyDown = (event) => {
+    const searchTypeKeyDown = (event) => {
         if(event.key == 'Enter') {
             if(searchedTaskTypeName.trim() !== pagination.current.name)
                 fetchTypes(1)
         }
     }
 
+    const searchTaskKeyDown = (event) => {
+        if(event.key == 'Enter') {
+            submitSearchParams()
+        }
+    }
+
+    const submitSearchParams = (forceParam) => {
+        let params = {
+            name: searchedTaskName,
+            taskTypeId: selectedTypeId
+        }
+        if(forceParam) params = {...params, ...forceParam}
+        onSubmit(params)
+    }
+
     return (<>
         <div className='d-flex flex-row my-3'>        
             <InputGroup className='mr-2'>
                 <Form.Control
-                    type='text'
-                    className='form-control'
                     placeholder='Введите название курса'
-                    aria-describedby='basic-addon2'
+                    onKeyPress={(e) => searchTaskKeyDown(e)}
+                    onChange={(e) => setSearchedTaskName(e.target.value)}
+                    value={searchedTaskName}
                 />
                 <div className='input-group-append'>
-                    <button className='btn btn-outline-secondary' type='button'><i className='fas fa-search'/></button>
+                    <Button variant='outline-secondary' onClick={() => submitSearchParams()}><i className='fas fa-search'/></Button>
                 </div>
             </InputGroup>
             
@@ -198,8 +223,7 @@ export const SearchTask = ({onSubmit}) => {
                             placeholder='Название для поиска...'
                             onChange={(e) => setSearchedTaskTypeName(e.target.value)}
                             value={searchedTaskTypeName}
-                            onKeyPress={(e) => searchKeyDown(e)}
-                            
+                            onKeyPress={(e) => searchTypeKeyDown(e)}
                         />
                     </div>
                     <ProcessBar active={isFetching} height=".18Rem"/>
