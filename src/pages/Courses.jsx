@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Row, Col, Container } from 'react-bootstrap'
+import { Row, Col, Container, Alert, Button } from 'react-bootstrap'
 import { CourseHierarchy } from '../components/courses/CourseHierarchy'
 import { SearchCourse } from '../components/courses/SearchCourse'
 import { TaskList } from '../components/tasks/TaskList'
@@ -10,7 +10,7 @@ function Courses() {
 
     return (
         <Container>
-            <Row style={{marginTop: "1Rem", height: "100%"}}>
+            <Row style={{marginTop: '1Rem', height: '100%'}}>
                 <Col md={6}>
                     <h4>База знаний</h4>
                     <SearchCourse onSearching={(flag) => setIsShowHierarhy(!flag)} onCourseSelect={setSelectedCourse}/>
@@ -19,7 +19,7 @@ function Courses() {
 
                 <Col md={6}>
                     <h4>Задания</h4>
-                    <TaskList/>
+                    <TaskList selectedCourse={selectedCourse}/>
                 </Col>
             </Row>
         </Container>
