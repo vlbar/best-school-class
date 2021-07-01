@@ -10,6 +10,7 @@ import Workspace from "./pages/Workspace";
 import Shedule from "./pages/Shedule";
 import Answers from "./pages/Answers";
 import Courses from "./pages/Courses";
+import Task from "./pages/Task";
 import Groups from "./pages/Groups";
 import Login from "./pages/Login";
 
@@ -41,8 +42,14 @@ function App() {
         />
         <PrivateRoute path={"/answers"} component={Answers} />
         <PrivateRoute
+          exact
           path={"/courses"}
           component={Courses}
+          allowedStates={[HELPER, TEACHER]}
+        />
+        <PrivateRoute
+          path={"/courses/:courseId/tasks/:taskId"}
+          component={Task}
           allowedStates={[HELPER, TEACHER]}
         />
         <PrivateRoute path={"/groups"} component={Groups} />

@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { SearchTask } from './SearchTask'
-import { Button, Table, Badge, Dropdown } from 'react-bootstrap'
+import { Button, Table, Badge, Dropdown, Spinner } from 'react-bootstrap'
 import ProcessBar from '../process-bar/ProcessBar'
 import { addErrorNotification } from '../notifications/notifications'
 import { LoadingList } from '../loading/LoadingList'
+import { TaskAddModal } from './TaskAddModal'
+import { useHistory } from "react-router-dom"
 import axios from 'axios'
 import './TaskList.less'
 
@@ -11,6 +13,10 @@ const baseUrl = '/tasks'
 
 async function fetch(courseId, page, size, name, taskTypeId) {
     return axios.get(`${baseUrl}?page=${page}&size=${size}${courseId !== undefined ? `&courseId=${courseId}`:''}${name !== undefined ? `&name=${name}`:''}${taskTypeId !== undefined ? `&taskTypeId=${taskTypeId}`:''}`)
+}
+
+async function add(task) {
+    return axios.post(`${baseUrl}`, task)
 }
 
 const taskTypesColors = ['#69c44d', '#007bff', '#db4242', '#2cc7b2', '#8000ff', '#e68e29', '#d4d5d9', '#38c7d1']
@@ -34,6 +40,11 @@ export const TaskList = ({selectedCourse}) => {
         taskTypeId: undefined,
         courseId: undefined
     })
+
+    const [isAddTaskModalShow, setIsAddTaskModalShow] = useState(false)
+    const [taskToAdd, setTaskToAdd] = useState(undefined)
+    const [isTaskAdding, setIsTaskAdding] = useState(false)
+    const history = useHistory()
 
     useEffect(() => {
         if(selectedCourse) fetchTasks(1)
@@ -74,6 +85,21 @@ export const TaskList = ({selectedCourse}) => {
             })
             .catch(error => addErrorNotification('Не удалось загрузить список типов. \n' + error))
             .finally(() => setIsFetching(false))
+    }
+
+    const addTask = (task) => {
+        task.courseId = selectedCourse.id
+
+        setIsTaskAdding(true)
+        setTaskToAdd(task)
+
+        add(task)
+            .then(res => {
+                let fetchedData = res.data
+                history.push(`courses/${selectedCourse.id}/tasks/${fetchedData.id}`)
+            })
+            .catch(error => addErrorNotification('Не удалось добавить задание, возможно, изменения не сохранятся. \n' + error))
+            .finally(() => setIsTaskAdding(false))
     }
 
     // ох уж эти индусы...
@@ -119,7 +145,12 @@ export const TaskList = ({selectedCourse}) => {
                                 <div key={task.id} className='task-table-item'>
                                     <div className='d-flex justify-content-between'>
                                         <div>
-                                            <span className='text-semi-bold'>{task.name}</span>
+                                            <span 
+                                                className='text-semi-bold task-name' 
+                                                onClick={() => history.push(`courses/${selectedCourse.id}/tasks/${task.id}`)}
+                                            >                                           
+                                                {task.name}
+                                            </span>
                                         
                                             {task.taskType !== null ?
                                                 <Badge
@@ -163,10 +194,18 @@ export const TaskList = ({selectedCourse}) => {
             </div>
             <Button 
                 variant='primary' 
-                className={'w-100 mt-2'} 
-                onClick={() => openAddCourseModal()}
+                className={'w-100 mt-2'}
                 disabled={!selectedCourse || !tasks}
-            >Добавить задание</Button>
-            
+                onClick={() => setIsAddTaskModalShow(true)}
+            >
+                Добавить задание
+            </Button>
+            {<TaskAddModal 
+                show={isAddTaskModalShow} 
+                onClose={() => setIsAddTaskModalShow(false)} 
+                isFetching={isTaskAdding} 
+                taskToAdd={taskToAdd}
+                onSubmit={addTask}
+            />}
         </>)
 }
