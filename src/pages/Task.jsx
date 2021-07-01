@@ -1,11 +1,12 @@
 import React from 'react'
 import { useParams } from 'react-router-dom'
+import { TaskEditor } from '../components/tasks/edit/TaskEditor'
 
 function Task() {
     const { courseId, taskId } = useParams()
 
     return (
-        <div>Task...</div>
+        <TaskEditor taskId={taskId}/>
     )
 }
 
