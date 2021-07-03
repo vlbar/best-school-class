@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useReducer, useRef } from 'react'
-import { Container, Row, Col, Form, Button } from 'react-bootstrap'
+import React, { useState, useEffect, useReducer, useRef, useContext } from 'react'
+import { Container, Row, Col, Form, Button, Dropdown, ButtonGroup } from 'react-bootstrap'
 import { sortableContainer, sortableElement, arrayMove } from 'react-sortable-hoc'
 import { TaskQuestion } from './TaskQuestion'
 import { addErrorNotification } from '../../notifications/notifications'
+import { TaskSaveContext, SAVED_STATUS, ERROR_STATUS } from './TaskSaveManager'
 import ProcessBar from '../../process-bar/ProcessBar'
 import axios from 'axios'
 import './TaskEditor.less'
@@ -63,8 +64,14 @@ async function fetchTaskDetails(taskId) {
     return axios.get(`${tasksBaseUrl}/${taskId}`)
 }
 
+async function updateTaskDetails(taskId, task) {
+    return axios.put(`${tasksBaseUrl}/${taskId}`, task)
+}
+
 export const TaskEditor = ({taskId}) => {
+    const { displayStatus, setTaskName, addSubscriber, onSaveClick, statusBySub } = useContext(TaskSaveContext)
     const [isTaskFetching, setIsTaskFetching] = useState(true)
+    const [isInputBlock, setIsInputBlock] = useState(true)
     const [questions, setQuestions] = useState([
         {
             id: 1
@@ -84,6 +91,7 @@ export const TaskEditor = ({taskId}) => {
 
     useEffect(() => {
         fetchTask()
+        addSubscriber(() => setForceSave(true))
     }, [])
 
     const [taskDetails, taskDispatch] = useReducer(taskReducer, {})
@@ -96,22 +104,58 @@ export const TaskEditor = ({taskId}) => {
 
     const fetchTask = (state) => {
         setIsTaskFetching(true)
+        setIsInputBlock(true)
         fetchTaskDetails(taskId)
             .then(res => {
                 let fetchedData = res.data
                 setTask(fetchedData)
+                setTaskName(fetchedData.name)
+
                 setIsTaskFetching(false)
+                setIsInputBlock(false)
             })
             .catch(error => 
                 addErrorNotification('Не удалось загрузить информацию о задании. \n' + (error?.response?.data ? error.response.data.message : error))
             )
     }
 
+    const [forceSave, setForceSave] = useState(false)
+    useEffect(() => {
+        if(forceSave) saveTaskDetails()
+    }, [forceSave])
+
+    const saveTaskDetails = () => {
+        updateTaskDetails(taskId, taskDetails)
+            .then(res => { 
+                statusBySub(SAVED_STATUS)
+            })
+            .catch(error => {
+                statusBySub(ERROR_STATUS)
+                addErrorNotification('Не удалось загрузить информацию о задании. \n' + (error?.response?.data?.message ? error.response.data.message : error))
+            })
+            .finally(() => {
+                setForceSave(false)
+            })
+    }
+
     return (
         <>
             <Container>
-                <h4 className='mt-3'>Задание</h4>
-                <ProcessBar active={isTaskFetching} height='.18Rem' className='mb-2'/>
+                <div className='d-flex justify-content-between'>
+                    <h4 className='mt-2'>Задание</h4>
+                    <div className='d-flex justify-content-between mt-2'>
+                        <div className='save-status'>{displayStatus}</div>
+                        <Dropdown as={ButtonGroup}>
+                            <Button variant='outline-primary' onClick={() => onSaveClick()}>Сохранить</Button>
+                            <Dropdown.Toggle split variant='outline-primary' />
+
+                            <Dropdown.Menu>
+                                <Dropdown.Item>Завершить</Dropdown.Item>
+                            </Dropdown.Menu>
+                        </Dropdown>
+                    </div>
+                </div>
+                <ProcessBar active={isTaskFetching} height='.18Rem' className='mt-2 mb-1'/>
                 <Form.Group as={Row}>
                     <Form.Label column sm={2}>
                         Название
@@ -120,9 +164,12 @@ export const TaskEditor = ({taskId}) => {
                         <Form.Control 
                             type='text' 
                             placeholder='Введите название задания...'
-                            disabled={isTaskFetching}
+                            disabled={isInputBlock}
                             value={taskDetails?.name || ''}
-                            onChange={(e) => setName(e.target.value)}
+                            onChange={(e) => {
+                                setName(e.target.value)
+                                setTaskName(e.target.value)
+                            }}
                         />
                     </Col>
                 </Form.Group>
@@ -135,7 +182,7 @@ export const TaskEditor = ({taskId}) => {
                             as='textarea' 
                             placeholder='Введите описание задания...' 
                             rows={3}
-                            disabled={isTaskFetching}
+                            disabled={isInputBlock}
                             value={taskDetails?.description || ''}
                             onChange={(e) => setDescription(e.target.value)}
                             style={{maxHeight: '86px', minHeight: '40px'}}
@@ -150,7 +197,7 @@ export const TaskEditor = ({taskId}) => {
                         <Form.Control 
                             type='number' 
                             min={1} 
-                            disabled={isTaskFetching}
+                            disabled={isInputBlock}
                             value={taskDetails?.maxScore || ''}
                             onChange={(e) => setMaxScore(e.target.value)}
                             placeholder='Введите максимальный балл...' />
@@ -168,7 +215,7 @@ export const TaskEditor = ({taskId}) => {
                             <Form.Control 
                                 type='number' 
                                 min={1}
-                                disabled={isTaskFetching}
+                                disabled={isInputBlock}
                                 value={taskDetails?.duration || ''}
                                 onChange={(e) => setDuration(e.target.value)}
                             />
