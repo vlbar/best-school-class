@@ -1,12 +1,15 @@
-import React, { useState } from 'react'
+import React, { useContext, useState } from 'react'
 import { Button } from 'react-bootstrap'
 import { sortableHandle } from 'react-sortable-hoc'
+import { QuestionContext } from './TaskEditor'
 import { QuestionVariant } from './QuestionVariant'
 import './TaskQuestion.less'
 
 const DragHandle = sortableHandle(() => <button className='icon-btn' title='Переместить'><i className='fas fa-grip-lines fa-lg'></i></button>)
 
-export const TaskQuestion = ({index, question, questionToEdit, questionToEditHadnle}) => {
+export const TaskQuestion = ({index, question}) => {
+    const {questionToChange, setQuestionToChange, addQuestionAfter} = useContext(QuestionContext)
+
     const [isHover, setIsHover] = useState(false)
 
     const [selectedVariant, setSelectedVariant] = useState(0)
@@ -37,10 +40,10 @@ export const TaskQuestion = ({index, question, questionToEdit, questionToEditHad
 
 
     const onQuestionEdit = () => {
-        questionToEditHadnle(index)
+        setQuestionToChange(index)
     }
 
-    let isEditing = (questionToEdit ? questionToEdit === index : false)
+    let isEditing = (questionToChange ? questionToChange === index : false)
     return (
         <div>
             <div className={'question-card' + (isHover || isEditing ? ' hover':'') + (isEditing ? ' edit':'')} onMouseEnter={() => setIsHover(true)} onMouseLeave={() => setIsHover(false)}>
@@ -79,7 +82,12 @@ export const TaskQuestion = ({index, question, questionToEdit, questionToEditHad
             </div>
             {isEditing &&
                 <div className='question-card-actions'>
-                    <Button variant='outline-primary'>Добавить вопрос</Button>
+                    <Button 
+                        variant='outline-primary'
+                        onClick={() => addQuestionAfter(question.position + 1)}
+                    >
+                        Добавить вопрос
+                    </Button>
                 </div>
             }
         </div>

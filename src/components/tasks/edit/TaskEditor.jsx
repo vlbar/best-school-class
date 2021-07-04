@@ -57,9 +57,11 @@ const taskReducer = (state, action) => {
 
 // sortable hoc
 const SortableContainer = sortableContainer(({children}) => <div>{children}</div>)
-const SortableItem = sortableElement(({index_, question, questionToEditHadnle, questionToEdit}) => (
-    <TaskQuestion index={index_} question={question} questionToEdit={questionToEdit} questionToEditHadnle={questionToEditHadnle}/>
+const SortableItem = sortableElement(({index_, question}) => (
+    <TaskQuestion index={index_} question={question} />
 ))
+
+export const QuestionContext = React.createContext()
 
 const taskSchema = Yup.object().shape({
     name: Yup.string()
@@ -100,7 +102,7 @@ export const TaskEditor = ({taskId}) => {
     const [isTaskFetching, setIsTaskFetching] = useState(true)
     const [isInputBlock, setIsInputBlock] = useState(true)
     const [isQuestionsFetching, setIsQuestionsFetching] = useState(false)
-    const [questions, setQuestions] = useState(undefined)
+    const [questions, setQuestions] = useState([])
     const pagination = useRef({
         page: 1, 
         size: 10, 
@@ -108,9 +110,6 @@ export const TaskEditor = ({taskId}) => {
     })
 
     const [questionToChange, setQuestionToChange] = useState(null)
-    const onSortEnd = ({oldIndex, newIndex}) => {
-        setQuestions(arrayMove(questions, oldIndex, newIndex))
-    }
 
     useEffect(() => {
         fetchTask()
@@ -214,16 +213,29 @@ export const TaskEditor = ({taskId}) => {
             })
     }
 
+    const onSortEnd = ({oldIndex, newIndex}) => {
+        let movedQuestions = arrayMove(questions, oldIndex, newIndex)
+        setQuestions([...movedQuestions])
+    }
+
     const addQuestionAfter = (position) => {
-        //let targetQuestion = questions.find(x => x.position == position)
-        //let targetIndex = questions.indexOf(targetQuestion) + 1
-        
-        let curQuestions = questions || []
-        curQuestions.push({
+        let targetQuestions = questions
+        targetQuestions.filter(x => x.position >= position).forEach(x => x.position++)
+
+        let newQuestion = {
+            id: Math.random(),
+            detached: true,
             position: position,
             maxScore: 1
-        })
-        setQuestions(curQuestions)
+        }
+        
+        let targetIndex = targetQuestions.findIndex(x => x.position >= position)
+        if(targetIndex < 1)
+            targetQuestions.push(newQuestion)
+        else
+            targetQuestions.splice(targetIndex, 0, newQuestion)
+
+        setQuestions(targetQuestions)
     }
 
     const getMessage = () => {
@@ -369,11 +381,14 @@ export const TaskEditor = ({taskId}) => {
                     </Col>
                 </Form.Group>
                 <hr/>
-                {questions !== undefined ? <SortableContainer onSortEnd={onSortEnd} useDragHandle>
-                    {questions.map((question, index) => (
-                        <SortableItem key={index} index={index} index_={index + 1} question={question} questionToEdit={questionToChange} questionToEditHadnle={setQuestionToChange} />
-                    ))}
-                </SortableContainer>:''}
+                {(questions !== undefined) &&
+                    <QuestionContext.Provider value={{questionToChange, setQuestionToChange, addQuestionAfter}}>
+                        <SortableContainer onSortEnd={onSortEnd} useDragHandle>
+                            {questions.map((question, index) => (
+                                <SortableItem key={question.id} index={index} index_={index + 1} question={question}/>
+                            ))}
+                        </SortableContainer>
+                    </QuestionContext.Provider>}
                 {(questions !== undefined && !isQuestionsFetching && pagination.current.page * pagination.current.size < pagination.current.total) &&
                     <button 
                         className="fetch-types-btn mb-2" 
