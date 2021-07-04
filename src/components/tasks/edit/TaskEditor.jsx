@@ -213,8 +213,16 @@ export const TaskEditor = ({taskId}) => {
             })
     }
 
-    const onSortEnd = ({oldIndex, newIndex}) => {
-        let movedQuestions = arrayMove(questions, oldIndex, newIndex)
+    const moveQuestion = ({oldIndex, newIndex}) => {
+        if(newIndex < 0 || newIndex > questions.length - 1 ||
+           oldIndex < 0 || oldIndex > questions.length - 1) return
+        let toPosition = questions[newIndex].position
+        let movedQuestion = questions[oldIndex]
+
+        let movedQuestions = questions
+        movedQuestions.filter(x => x.position >= toPosition).forEach(x => x.position++)
+        movedQuestions = arrayMove(movedQuestions, oldIndex, newIndex)
+        movedQuestion.position = toPosition
         setQuestions([...movedQuestions])
     }
 
@@ -228,7 +236,7 @@ export const TaskEditor = ({taskId}) => {
             position: position,
             maxScore: 1
         }
-        
+
         let targetIndex = targetQuestions.findIndex(x => x.position >= position)
         if(targetIndex < 1)
             targetQuestions.push(newQuestion)
@@ -382,8 +390,8 @@ export const TaskEditor = ({taskId}) => {
                 </Form.Group>
                 <hr/>
                 {(questions !== undefined) &&
-                    <QuestionContext.Provider value={{questionToChange, setQuestionToChange, addQuestionAfter}}>
-                        <SortableContainer onSortEnd={onSortEnd} useDragHandle>
+                    <QuestionContext.Provider value={{questionToChange, setQuestionToChange, addQuestionAfter, moveQuestion}}>
+                        <SortableContainer onSortEnd={moveQuestion} useDragHandle>
                             {questions.map((question, index) => (
                                 <SortableItem key={question.id} index={index} index_={index + 1} question={question}/>
                             ))}

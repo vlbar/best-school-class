@@ -8,7 +8,8 @@ import './TaskQuestion.less'
 const DragHandle = sortableHandle(() => <button className='icon-btn' title='Переместить'><i className='fas fa-grip-lines fa-lg'></i></button>)
 
 export const TaskQuestion = ({index, question}) => {
-    const {questionToChange, setQuestionToChange, addQuestionAfter} = useContext(QuestionContext)
+    let arrayIndex = index - 1
+    const { questionToChange, setQuestionToChange, addQuestionAfter, moveQuestion } = useContext(QuestionContext)
 
     const [isHover, setIsHover] = useState(false)
 
@@ -69,8 +70,8 @@ export const TaskQuestion = ({index, question}) => {
                         >+</Button>}
                     </div>
                     <div>
-                        <button className='icon-btn' title='Переместить ниже'><i className='fas fa-angle-down fa-lg'/></button>
-                        <button className='icon-btn' title='Переместить выше'><i className='fas fa-angle-up fa-lg'/></button>
+                        <button className='icon-btn' title='Переместить ниже' onClick={() => moveQuestion({oldIndex: arrayIndex, newIndex: arrayIndex + 1})}><i className='fas fa-angle-down fa-lg'/></button>
+                        <button className='icon-btn' title='Переместить выше' onClick={() => moveQuestion({oldIndex: arrayIndex, newIndex: arrayIndex - 1})}><i className='fas fa-angle-up fa-lg'/></button>
                         <button className='icon-btn' title='Удалить вопрос'><i className='fas fa-times fa-lg'/></button>
                     </div>
                 </div>
