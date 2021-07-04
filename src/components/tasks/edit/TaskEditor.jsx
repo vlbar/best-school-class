@@ -3,9 +3,11 @@ import { Container, Row, Col, Form, Button, Dropdown, ButtonGroup } from 'react-
 import { sortableContainer, sortableElement, arrayMove } from 'react-sortable-hoc'
 import { TaskQuestion } from './TaskQuestion'
 import { addErrorNotification } from '../../notifications/notifications'
-import { TaskSaveContext, SAVED_STATUS, ERROR_STATUS } from './TaskSaveManager'
+import { TaskSaveContext, SAVED_STATUS, ERROR_STATUS, VALIDATE_ERROR_STATUS } from './TaskSaveManager'
 import ProcessBar from '../../process-bar/ProcessBar'
 import { LoadingList } from '../../loading/LoadingList'
+import { useFormik } from 'formik'
+import * as Yup from 'yup'
 import axios from 'axios'
 import './TaskEditor.less'
 
@@ -59,6 +61,24 @@ const SortableItem = sortableElement(({index_, question, questionToEditHadnle, q
     <TaskQuestion index={index_} question={question} questionToEdit={questionToEdit} questionToEditHadnle={questionToEditHadnle}/>
 ))
 
+const taskSchema = Yup.object().shape({
+    name: Yup.string()
+        .trim()
+        .min(5, 'Слишком короткое название')
+        .max(100, 'Слишком длинное название')
+        .required('Не введено название задания'),
+    maxScore: Yup.number()
+        .integer()
+        .min(1, 'Оценка должа быть положительной')
+        .max(9223372036854775807, 'Слишком большая оценка')
+        .required('Не введена оценка'),
+    duration: Yup.number()
+        .integer()
+        .nullable()
+        .min(1, 'Время должна быть положительным')
+        .max(99999, 'Слишком большое время')
+})
+
 const tasksBaseUrl = '/tasks'
 
 async function fetchTaskDetails(taskId) {
@@ -79,7 +99,6 @@ export const TaskEditor = ({taskId}) => {
     const { displayStatus, setTaskName, addSubscriber, onSaveClick, statusBySub } = useContext(TaskSaveContext)
     const [isTaskFetching, setIsTaskFetching] = useState(true)
     const [isInputBlock, setIsInputBlock] = useState(true)
-
     const [isQuestionsFetching, setIsQuestionsFetching] = useState(false)
     const [questions, setQuestions] = useState(undefined)
     const pagination = useRef({
@@ -100,6 +119,16 @@ export const TaskEditor = ({taskId}) => {
 
     const [taskDetails, taskDispatch] = useReducer(taskReducer, {})
 
+    const formik = useFormik({
+        initialValues: {
+          name: '',
+          maxScore: 100,
+          duration: null
+        },
+        validationSchema: taskSchema,
+        onSubmit: values => {}
+    })
+
     const setTask = (task) => taskDispatch({ type: TASK, payload: task })
     const setName = (name) => taskDispatch({ type: TASK_NAME, payload: name })
     const setDescription = (description) => taskDispatch({ type: TASK_DESC, payload: description })
@@ -114,6 +143,14 @@ export const TaskEditor = ({taskId}) => {
                 let fetchedData = res.data
                 setTask(fetchedData)
                 setTaskName(fetchedData.name)
+
+                // пожилой маппер
+                for (const [key, value] of Object.entries(formik.values)) {
+                    if(key in fetchedData) {
+                        formik.setFieldValue(key, fetchedData[key], true)
+                    }
+                }
+                formik.validateForm()
 
                 setIsTaskFetching(false)
                 setIsInputBlock(false)
@@ -130,10 +167,20 @@ export const TaskEditor = ({taskId}) => {
 
     const [forceSave, setForceSave] = useState(false)
     useEffect(() => {
-        if(forceSave) saveTaskDetails()
+        if(forceSave) {
+            saveTaskDetails()
+            setForceSave(false)
+        }
     }, [forceSave])
 
     const saveTaskDetails = () => {
+        formik.validateForm()
+        if(!formik.isValid) {
+            console.log(formik.errors)
+            statusBySub(VALIDATE_ERROR_STATUS)
+            return
+        }
+
         updateTaskDetails(taskId, taskDetails)
             .then(res => { 
                 statusBySub(SAVED_STATUS)
@@ -141,9 +188,6 @@ export const TaskEditor = ({taskId}) => {
             .catch(error => {
                 statusBySub(ERROR_STATUS)
                 addErrorNotification('Не удалось загрузить информацию о задании. \n' + (error?.response?.data?.message ? error.response.data.message : error))
-            })
-            .finally(() => {
-                setForceSave(false)
             })
     }
 
@@ -232,14 +276,22 @@ export const TaskEditor = ({taskId}) => {
                     <Col sm={10}>
                         <Form.Control 
                             type='text' 
+                            name='name'
                             placeholder='Введите название задания...'
                             disabled={isInputBlock}
+                            autoFocus={formik.errors.name !== undefined}
+                            isInvalid={formik.errors.name !== undefined}
                             value={taskDetails?.name || ''}
+                            onBlur={formik.handleBlur}
                             onChange={(e) => {
                                 setName(e.target.value)
                                 setTaskName(e.target.value)
+                                formik.handleChange(e)
                             }}
                         />
+                        <Form.Control.Feedback type="invalid">
+                            {formik.errors.name}
+                        </Form.Control.Feedback>
                     </Col>
                 </Form.Group>
                 <Form.Group as={Row}>
@@ -264,12 +316,21 @@ export const TaskEditor = ({taskId}) => {
                     </Form.Label>
                     <Col sm={10}>
                         <Form.Control 
-                            type='number' 
-                            min={1} 
-                            disabled={isInputBlock}
-                            value={taskDetails?.maxScore || ''}
-                            onChange={(e) => setMaxScore(e.target.value)}
-                            placeholder='Введите максимальный балл...' />
+                            type='number'
+                            name='maxScore'
+                            placeholder='Введите максимальный балл...'
+                            disabled={isInputBlock}                          
+                            autoFocus={formik.errors.maxScore !== undefined}
+                            isInvalid={formik.errors.maxScore !== undefined}
+                            value={(taskDetails?.maxScore && taskDetails.maxScore !== null) ? taskDetails.maxScore : ''}
+                            onBlur={formik.handleBlur}
+                            onChange={(e) => {
+                                setMaxScore(e.target.value)
+                                formik.handleChange(e)
+                            }} />
+                        <Form.Control.Feedback type='invalid'>
+                            {formik.errors.maxScore}
+                        </Form.Control.Feedback>
                         <Form.Text className='text-muted'>
                             К этому числу будут переводится количество баллов, полученные учеником
                         </Form.Text>
@@ -283,16 +344,27 @@ export const TaskEditor = ({taskId}) => {
                         <div className='task-duration'>
                             <Form.Control 
                                 type='number' 
+                                name='duration'
                                 min={1}
+                                max={99999}
                                 disabled={isInputBlock}
+                                autoFocus={formik.errors.duration !== undefined}
+                                isInvalid={formik.errors.duration !== undefined}
                                 value={taskDetails?.duration || ''}
-                                onChange={(e) => setDuration(e.target.value)}
+                                onBlur={formik.handleBlur}
+                                onChange={(e) => {
+                                    setDuration(e.target.value)
+                                    formik.handleChange(e)
+                                }}
                             />
                             <Form.Control as='select'>
                                 <option>{getTimeName(MINUTES, taskDetails?.duration || '')}</option>
                                 <option>{getTimeName(HOURS, taskDetails?.duration || '')}</option>
                                 <option>{getTimeName(DAYS, taskDetails?.duration || '')}</option>
                             </Form.Control>
+                            <Form.Control.Feedback type='invalid'>
+                                {formik.errors.duration}
+                            </Form.Control.Feedback>
                         </div>
                     </Col>
                 </Form.Group>
@@ -322,7 +394,7 @@ export const TaskEditor = ({taskId}) => {
                     variant='outline-primary mb-4' 
                     className='w-100'
                     onClick={() => addQuestionAfter(questions[questions.length - 1]?.position + 1 || 1)}
-                    disabled={!(isTaskFetching && isQuestionsFetching)}
+                    disabled={(isTaskFetching || isQuestionsFetching)}
                 >
                     Добавить
                 </Button>

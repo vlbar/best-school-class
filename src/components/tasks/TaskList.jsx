@@ -89,6 +89,7 @@ export const TaskList = ({selectedCourse}) => {
 
     const addTask = (task) => {
         task.courseId = selectedCourse.id
+        task.maxScore = 100
 
         setIsTaskAdding(true)
         setTaskToAdd(task)

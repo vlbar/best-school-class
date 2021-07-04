@@ -5,6 +5,7 @@ import './TaskEditor.less'
 const SAVING_STATUS = 'Сохранение...'
 export const SAVED_STATUS = 'Сохранено'
 export const ERROR_STATUS = 'Произошла ошибка'
+export const VALIDATE_ERROR_STATUS = 'Исправьте ошибки!'
 
 export const TaskSaveContext = React.createContext()
 
@@ -28,8 +29,9 @@ export const TaskSaveManager = ({children}) => {
 
     const statusBySub = (status) => {
         switch(status) {
+            case VALIDATE_ERROR_STATUS:
             case ERROR_STATUS:
-                setSaveStatus(ERROR_STATUS)
+                setSaveStatus(status)
                 break
             case SAVED_STATUS:
                 checkedSubs.current++
@@ -56,6 +58,7 @@ export const TaskSaveManager = ({children}) => {
     const savedTimer = useRef(null)
     useEffect(() => {
         let additionalClassName = ''
+        if(saveStatus !== SAVED_STATUS) clearTimeout(savedTimer.current)
         switch(saveStatus) {
             case SAVED_STATUS:
                 savedTimer.current = setTimeout(() => {
@@ -63,12 +66,12 @@ export const TaskSaveManager = ({children}) => {
                 }, 2000);
                 break
             case SAVING_STATUS:
-                clearTimeout(savedTimer.current)
                 break
             case ERROR_STATUS:
-                clearTimeout(savedTimer.current)
                 additionalClassName = 'text-danger'
                 break
+            case VALIDATE_ERROR_STATUS:
+                additionalClassName = 'text-danger'
         }
         setDisplayStatus(<span className={`trans-span ${additionalClassName}`}>{saveStatus}</span>)
     }, [saveStatus])
@@ -80,7 +83,7 @@ export const TaskSaveManager = ({children}) => {
                     <Row>
                         <Col md={8} className='d-flex mt-2'>
                             <h4>Задание</h4>
-                            <span className='label-center ml-2'>
+                            <span className='label-center text-ellipsis ml-2'>
                                 {taskName}
                                 <button className='icon-btn ml-1' onClick={() => window.scrollTo(0, 0)}>
                                     <i className='fas fa-pen fa-xs'></i>
