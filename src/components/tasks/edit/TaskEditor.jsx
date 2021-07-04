@@ -5,6 +5,7 @@ import { TaskQuestion } from './TaskQuestion'
 import { addErrorNotification } from '../../notifications/notifications'
 import { TaskSaveContext, SAVED_STATUS, ERROR_STATUS } from './TaskSaveManager'
 import ProcessBar from '../../process-bar/ProcessBar'
+import { LoadingList } from '../../loading/LoadingList'
 import axios from 'axios'
 import './TaskEditor.less'
 
@@ -54,8 +55,8 @@ const taskReducer = (state, action) => {
 
 // sortable hoc
 const SortableContainer = sortableContainer(({children}) => <div>{children}</div>)
-const SortableItem = sortableElement(({question, questionToEditHadnle, questionToEdit}) => (
-    <TaskQuestion question={question} questionToEdit={questionToEdit} questionToEditHadnle={questionToEditHadnle}/>
+const SortableItem = sortableElement(({index_, question, questionToEditHadnle, questionToEdit}) => (
+    <TaskQuestion index={index_} question={question} questionToEdit={questionToEdit} questionToEditHadnle={questionToEditHadnle}/>
 ))
 
 const tasksBaseUrl = '/tasks'
@@ -68,23 +69,26 @@ async function updateTaskDetails(taskId, task) {
     return axios.put(`${tasksBaseUrl}/${taskId}`, task)
 }
 
+const questionPartUrl = 'questions'
+
+async function fetchQuestions(taskId, page, size) {
+    return axios.get(`${tasksBaseUrl}/${taskId}/${questionPartUrl}?page=${page}&size=${size}`)
+}
+
 export const TaskEditor = ({taskId}) => {
     const { displayStatus, setTaskName, addSubscriber, onSaveClick, statusBySub } = useContext(TaskSaveContext)
     const [isTaskFetching, setIsTaskFetching] = useState(true)
     const [isInputBlock, setIsInputBlock] = useState(true)
-    const [questions, setQuestions] = useState([
-        {
-            id: 1
-        },
-        {
-            id: 2
-        },
-        {
-            id: 3
-        }
-    ])
 
-    const [questionToChange, setQuestionToChange] = useState()
+    const [isQuestionsFetching, setIsQuestionsFetching] = useState(false)
+    const [questions, setQuestions] = useState(undefined)
+    const pagination = useRef({
+        page: 1, 
+        size: 10, 
+        total: undefined
+    })
+
+    const [questionToChange, setQuestionToChange] = useState(null)
     const onSortEnd = ({oldIndex, newIndex}) => {
         setQuestions(arrayMove(questions, oldIndex, newIndex))
     }
@@ -113,10 +117,15 @@ export const TaskEditor = ({taskId}) => {
 
                 setIsTaskFetching(false)
                 setIsInputBlock(false)
+
+                fetchTaskQuestions(1)
             })
             .catch(error => 
                 addErrorNotification('Не удалось загрузить информацию о задании. \n' + (error?.response?.data ? error.response.data.message : error))
             )
+            .finally(() => {
+                setIsTaskFetching(false)
+            })
     }
 
     const [forceSave, setForceSave] = useState(false)
@@ -138,6 +147,66 @@ export const TaskEditor = ({taskId}) => {
             })
     }
 
+    const fetchTaskQuestions = (page) => {
+        setIsQuestionsFetching(true)
+        fetchQuestions(taskId, page, pagination.current.size)
+            .then(res => {
+                let fetchedData = res.data
+                let items = fetchedData.items
+
+                pagination.current.page = page
+                pagination.current.total = fetchedData.totalItems
+
+                if(page == 1)
+                    setQuestions(items)
+                else
+                    setQuestions([...questions, ...items])
+            })
+            .catch(error => 
+                addErrorNotification('Не удалось загрузить информацию о задании. \n' + (error?.response?.data ? error.response.data.message : error))
+            )
+            .finally(() => {
+                setIsQuestionsFetching(false)
+            })
+    }
+
+    const addQuestionAfter = (position) => {
+        //let targetQuestion = questions.find(x => x.position == position)
+        //let targetIndex = questions.indexOf(targetQuestion) + 1
+        
+        let curQuestions = questions || []
+        curQuestions.push({
+            position: position,
+            maxScore: 1
+        })
+        setQuestions(curQuestions)
+    }
+
+    const getMessage = () => {
+        if(taskDetails?.name) {
+            if(questions) {
+                if(questions.length == 0)
+                    return  <>
+                                <h5>Увы, но вопросы еще не добавлены.</h5>
+                                <p className='text-muted'>Чтобы вопросы были в списке, для начали их нужно добавить.</p>
+                            </>
+            } else
+                if(!isQuestionsFetching)
+                return  <>
+                            <h5>Произошла ошибка</h5>
+                            <p className='text-muted'>Не удалось загрузить список вопросов задания.</p>
+                        </>
+        } else
+            if(!isTaskFetching)
+                return  <>
+                            <h5>Произошла ошибка</h5>
+                            <p className='text-muted'>Не удалось загрузить данные задания.</p>
+                        </>
+
+        return undefined
+    }
+
+    let message = getMessage()
     return (
         <>
             <Container>
@@ -201,7 +270,7 @@ export const TaskEditor = ({taskId}) => {
                             value={taskDetails?.maxScore || ''}
                             onChange={(e) => setMaxScore(e.target.value)}
                             placeholder='Введите максимальный балл...' />
-                        <Form.Text className="text-muted">
+                        <Form.Text className='text-muted'>
                             К этому числу будут переводится количество баллов, полученные учеником
                         </Form.Text>
                     </Col>
@@ -219,7 +288,7 @@ export const TaskEditor = ({taskId}) => {
                                 value={taskDetails?.duration || ''}
                                 onChange={(e) => setDuration(e.target.value)}
                             />
-                            <Form.Control as="select">
+                            <Form.Control as='select'>
                                 <option>{getTimeName(MINUTES, taskDetails?.duration || '')}</option>
                                 <option>{getTimeName(HOURS, taskDetails?.duration || '')}</option>
                                 <option>{getTimeName(DAYS, taskDetails?.duration || '')}</option>
@@ -228,12 +297,35 @@ export const TaskEditor = ({taskId}) => {
                     </Col>
                 </Form.Group>
                 <hr/>
-                <SortableContainer onSortEnd={onSortEnd} useDragHandle>
+                {questions !== undefined ? <SortableContainer onSortEnd={onSortEnd} useDragHandle>
                     {questions.map((question, index) => (
-                        <SortableItem key={question.id} index={index} question={question} questionToEdit={questionToChange} questionToEditHadnle={setQuestionToChange} />
+                        <SortableItem key={index} index={index} index_={index + 1} question={question} questionToEdit={questionToChange} questionToEditHadnle={setQuestionToChange} />
                     ))}
-                </SortableContainer>
-                <Button variant='outline-primary mb-4' className='w-100'>Добавить</Button>
+                </SortableContainer>:''}
+                {(questions !== undefined && !isQuestionsFetching && pagination.current.page * pagination.current.size < pagination.current.total) &&
+                    <button 
+                        className="fetch-types-btn mb-2" 
+                        onClick={() => fetchTaskQuestions(pagination.current.page + 1)} 
+                        disabled={isQuestionsFetching}
+                    >
+                        Загрузить еще
+                    </button>
+                }
+                {(isQuestionsFetching) &&
+                    <ProcessBar height='.18Rem' className='mb-2'/>
+                }
+                {(isTaskFetching || isQuestionsFetching) &&
+                    <LoadingList widths={[100, 100]} itemHeight='240px' itemMarginLeft='0'/>    
+                }
+                {message && <div className='task-message-container'>{message}</div>}
+                <Button 
+                    variant='outline-primary mb-4' 
+                    className='w-100'
+                    onClick={() => addQuestionAfter(questions[questions.length - 1]?.position + 1 || 1)}
+                    disabled={!(isTaskFetching && isQuestionsFetching)}
+                >
+                    Добавить
+                </Button>
             </Container>
         </>
     )

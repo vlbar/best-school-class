@@ -6,52 +6,18 @@ import './TaskQuestion.less'
 
 const DragHandle = sortableHandle(() => <button className='icon-btn' title='Переместить'><i className='fas fa-grip-lines fa-lg'></i></button>)
 
-export const TaskQuestion = ({question, questionToEdit, questionToEditHadnle}) => {
+export const TaskQuestion = ({index, question, questionToEdit, questionToEditHadnle}) => {
     const [isHover, setIsHover] = useState(false)
 
     const [selectedVariant, setSelectedVariant] = useState(0)
     const [questionVariants, setQuestionVariants] = useState([
         {
-            id: 621,
-            formulation: '5 Who is dangeon master?',
+            id: undefined,
+            formulation: '',
             position: 1,
-            questionId: 612,
-            numberOfSymbols: 555,
+            questionId: question.id,
+            numberOfSymbols: '',
             type: 'TEXT_QUESTION'
-        },
-        {
-            id: 622,
-            formulation: 'Who is dangeon master?',
-            position: 2,
-            questionId: 612,
-            numberOfSymbols: 555,
-            type: 'TEXT_QUESTION'
-        },
-        {
-            id: 623,
-            formulation: 'Who is test master?',
-            position: 2,
-            questionId: 612,
-            numberOfSymbols: 555,
-            isMultipleAnswer: false,
-            testAnswerVariants: [
-                {
-                    id: 618,
-                    answer: "Van darkholme",
-                    isRight: true
-                },
-                {
-                    id: 619,
-                    answer: "Relation slave",
-                    isRight: false
-                },
-                {
-                    id: 620,
-                    answer: "Java Master",
-                    isRight: false
-                }
-            ],
-            type: 'TEST_QUESTION'
         }
     ])
 
@@ -62,7 +28,7 @@ export const TaskQuestion = ({question, questionToEdit, questionToEditHadnle}) =
             formulation: '',
             position: questionVariantsVar.length,
             questionId: question.id,
-            numberOfSymbols: undefined,
+            numberOfSymbols: '',
             type: 'TEXT_QUESTION'
         })
 
@@ -71,10 +37,10 @@ export const TaskQuestion = ({question, questionToEdit, questionToEditHadnle}) =
 
 
     const onQuestionEdit = () => {
-        questionToEditHadnle(question)
+        questionToEditHadnle(index)
     }
 
-    let isEditing = (questionToEdit ? questionToEdit.id == question.id : false)
+    let isEditing = (questionToEdit ? questionToEdit === index : false)
     return (
         <div>
             <div className={'question-card' + (isHover || isEditing ? ' hover':'') + (isEditing ? ' edit':'')} onMouseEnter={() => setIsHover(true)} onMouseLeave={() => setIsHover(false)}>
@@ -109,7 +75,6 @@ export const TaskQuestion = ({question, questionToEdit, questionToEditHadnle}) =
                     {questionVariants.map((variant, index) => 
                         <QuestionVariant key={index} show={selectedVariant == index} question={question} questionVariant={variant} isEditing={isEditing}/>
                     )}
-                    
                 </div>
             </div>
             {isEditing &&
