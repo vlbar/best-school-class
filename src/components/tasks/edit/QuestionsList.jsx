@@ -74,6 +74,13 @@ export const QuestionsList = ({taskId}) => {
         setQuestions([...movedQuestions])
     }
 
+    const deleteQuestion = (question) => {
+        let targetQuestions = questions
+        let targetIndex = targetQuestions.findIndex(x => x.id == question.id)
+        targetQuestions.splice(targetIndex, 1)
+        setQuestions(targetQuestions)
+    }
+
     const addQuestionAfter = (position) => {
         let targetQuestions = questions
         targetQuestions.filter(x => x.position >= position).forEach(x => x.position++)
@@ -112,11 +119,10 @@ export const QuestionsList = ({taskId}) => {
     }
 
     let message = getMessage()
-
     return (
         <>
             {(questions !== undefined) &&
-                <QuestionContext.Provider value={{taskId, questionToChange, setQuestionToChange, addQuestionAfter, moveQuestion}}>
+                <QuestionContext.Provider value={{taskId, questionToChange, setQuestionToChange, addQuestionAfter, moveQuestion, deleteQuestion}}>
                     <SortableContainer onSortEnd={moveQuestion} useDragHandle>
                         {questions.map((question, index) => (
                             <SortableItem key={question.id} index={index} index_={index + 1} question={question}/>

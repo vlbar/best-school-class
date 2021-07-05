@@ -18,12 +18,17 @@ async function update(question, taskId) {
     return axios.put(`${tasksBaseUrl}/${taskId}/${questionPartUrl}/${question.id}`, question)
 }
 
+async function remove(question, taskId) {
+    return axios.delete(`${tasksBaseUrl}/${taskId}/${questionPartUrl}/${question.id}`)
+}
+
 const DragHandle = sortableHandle(() => <button className='icon-btn' title='Переместить'><i className='fas fa-grip-lines fa-lg'></i></button>)
 
 export const TaskQuestion = ({index, question}) => {
     let arrayIndex = index - 1
-    const { taskId, questionToChange, setQuestionToChange, addQuestionAfter, moveQuestion } = useContext(QuestionContext)
+    const { taskId, questionToChange, setQuestionToChange, addQuestionAfter, moveQuestion, deleteQuestion } = useContext(QuestionContext)
     const [isHover, setIsHover] = useState(false)
+    const [isDeleted, setIsDeleted] = useState(false)
     const [selectedVariant, setSelectedVariant] = useState(0)
     const [questionVariants, setQuestionVariants] = useState([
         {
@@ -40,8 +45,8 @@ export const TaskQuestion = ({index, question}) => {
 
     function updateQuestion() {
         if(question.detached) {
-            question.id = null
-            add(question, taskId)
+            let addableQuestion = {...question, id: null}
+            add(addableQuestion, taskId)
                 .then(res => {
                     let fetchedData = res.data
                     question.detached = false
@@ -55,16 +60,27 @@ export const TaskQuestion = ({index, question}) => {
                     question.id = Math.random()
                 })
         } else {
-            update(question, taskId)
-                .then(res => {
-                    let fetchedData = res.data
-                    statusBySub(SAVED_STATUS)
-                })
-                .catch(error => {
-                    addErrorNotification('Не удалось сохранить задание. \n' + error)
-                    statusBySub(ERROR_STATUS)
-                    question.id = Math.random()
-                })
+            if(!isDeleted) {
+                update(question, taskId)
+                    .then(res => {
+                        statusBySub(SAVED_STATUS)
+                    })
+                    .catch(error => {
+                        addErrorNotification('Не удалось сохранить задание. \n' + error)
+                        statusBySub(ERROR_STATUS)
+                        question.id = Math.random()
+                    })
+            } else {
+                remove(question, taskId)
+                    .then(res => {
+                        deleteQuestion(question)
+                        statusBySub(SAVED_STATUS)
+                    })
+                    .catch(error => {
+                        addErrorNotification('Не удалось удалить задание. \n' + error)
+                        statusBySub(ERROR_STATUS)
+                    })
+            }
         }
     }
 
@@ -82,13 +98,17 @@ export const TaskQuestion = ({index, question}) => {
         setQuestionVariants([...questionVariantsVar])
     }
 
-
     const onQuestionEdit = () => {
         setQuestionToChange(index)
     }
 
+    const markForDeletion = () => {
+        setIsDeleted(true)
+        if(question.detached) deleteQuestion(question)
+    }
+
     let isEditing = (questionToChange ? questionToChange === index : false)
-    return (
+    if(!isDeleted) return (
         <div>
             <div className={'question-card' + (isHover || isEditing ? ' hover':'') + (isEditing ? ' edit':'')} onMouseEnter={() => setIsHover(true)} onMouseLeave={() => setIsHover(false)}>
                 <div className='question-card-header'>
@@ -115,7 +135,7 @@ export const TaskQuestion = ({index, question}) => {
                     <div>
                         <button className='icon-btn' title='Переместить ниже' onClick={() => moveQuestion({oldIndex: arrayIndex, newIndex: arrayIndex + 1})}><i className='fas fa-angle-down fa-lg'/></button>
                         <button className='icon-btn' title='Переместить выше' onClick={() => moveQuestion({oldIndex: arrayIndex, newIndex: arrayIndex - 1})}><i className='fas fa-angle-up fa-lg'/></button>
-                        <button className='icon-btn' title='Удалить вопрос'><i className='fas fa-times fa-lg'/></button>
+                        <button className='icon-btn' title='Удалить вопрос' onClick={() => markForDeletion()}><i className='fas fa-times fa-lg'/></button>
                     </div>
                 </div>
                 <div onClick={() => onQuestionEdit()}>
@@ -136,4 +156,5 @@ export const TaskQuestion = ({index, question}) => {
             }
         </div>
     )
+    else return (<></>)
 }
