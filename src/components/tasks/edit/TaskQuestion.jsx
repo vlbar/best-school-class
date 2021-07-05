@@ -1,18 +1,15 @@
 import React, { useContext, useState } from 'react'
 import { Button } from 'react-bootstrap'
 import { sortableHandle } from 'react-sortable-hoc'
-import { QuestionContext } from './TaskEditor'
+import { QuestionContext } from './QuestionsList'
 import { QuestionVariant } from './QuestionVariant'
 import './TaskQuestion.less'
 
 const DragHandle = sortableHandle(() => <button className='icon-btn' title='Переместить'><i className='fas fa-grip-lines fa-lg'></i></button>)
 
 export const TaskQuestion = ({index, question}) => {
-    let arrayIndex = index - 1
     const { questionToChange, setQuestionToChange, addQuestionAfter, moveQuestion } = useContext(QuestionContext)
-
     const [isHover, setIsHover] = useState(false)
-
     const [selectedVariant, setSelectedVariant] = useState(0)
     const [questionVariants, setQuestionVariants] = useState([
         {
@@ -24,6 +21,8 @@ export const TaskQuestion = ({index, question}) => {
             type: 'TEXT_QUESTION'
         }
     ])
+
+    let arrayIndex = index - 1
 
     const pushNewVariant = () => {
         let questionVariantsVar = questionVariants
