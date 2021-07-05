@@ -17,7 +17,7 @@ const SortableItem = sortableElement(({index_, question}) => (
 ))
 
 //requests
-const questionPartUrl = 'questions'
+export const questionPartUrl = 'questions'
 async function fetchQuestions(taskId, page, size) {
     return axios.get(`${tasksBaseUrl}/${taskId}/${questionPartUrl}?page=${page}&size=${size}`)
 }
@@ -116,7 +116,7 @@ export const QuestionsList = ({taskId}) => {
     return (
         <>
             {(questions !== undefined) &&
-                <QuestionContext.Provider value={{questionToChange, setQuestionToChange, addQuestionAfter, moveQuestion}}>
+                <QuestionContext.Provider value={{taskId, questionToChange, setQuestionToChange, addQuestionAfter, moveQuestion}}>
                     <SortableContainer onSortEnd={moveQuestion} useDragHandle>
                         {questions.map((question, index) => (
                             <SortableItem key={question.id} index={index} index_={index + 1} question={question}/>

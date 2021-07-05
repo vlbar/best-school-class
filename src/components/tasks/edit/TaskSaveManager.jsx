@@ -124,8 +124,12 @@ export function useTaskSaveManager(onSave) {
         return () => removeSubscriber(uid)
     }, [])
     
+    const firstCycle = useRef(true)
     useEffect(() => {
-        if(updateCycle !== 0) onSave()
+        if(!firstCycle.current) {
+            onSave()
+        }
+        firstCycle.current = false
     }, [updateCycle])
 
     return statusBySub

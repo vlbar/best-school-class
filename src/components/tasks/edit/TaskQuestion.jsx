@@ -1,14 +1,28 @@
 import React, { useContext, useState } from 'react'
 import { Button } from 'react-bootstrap'
 import { sortableHandle } from 'react-sortable-hoc'
+import { addErrorNotification } from '../../notifications/notifications'
+import { useTaskSaveManager, SAVED_STATUS, ERROR_STATUS, VALIDATE_ERROR_STATUS } from './TaskSaveManager'
 import { QuestionContext } from './QuestionsList'
 import { QuestionVariant } from './QuestionVariant'
+import { tasksBaseUrl } from './TaskEditor'
+import { questionPartUrl } from './QuestionsList'
+import axios from 'axios'
 import './TaskQuestion.less'
+
+async function add(question, taskId) {
+    return axios.post(`${tasksBaseUrl}/${taskId}/${questionPartUrl}`, question)
+}
+
+async function update(question, taskId) {
+    return axios.put(`${tasksBaseUrl}/${taskId}/${questionPartUrl}/${question.id}`, question)
+}
 
 const DragHandle = sortableHandle(() => <button className='icon-btn' title='Переместить'><i className='fas fa-grip-lines fa-lg'></i></button>)
 
 export const TaskQuestion = ({index, question}) => {
-    const { questionToChange, setQuestionToChange, addQuestionAfter, moveQuestion } = useContext(QuestionContext)
+    let arrayIndex = index - 1
+    const { taskId, questionToChange, setQuestionToChange, addQuestionAfter, moveQuestion } = useContext(QuestionContext)
     const [isHover, setIsHover] = useState(false)
     const [selectedVariant, setSelectedVariant] = useState(0)
     const [questionVariants, setQuestionVariants] = useState([
@@ -22,7 +36,37 @@ export const TaskQuestion = ({index, question}) => {
         }
     ])
 
-    let arrayIndex = index - 1
+    const statusBySub = useTaskSaveManager(updateQuestion)
+
+    function updateQuestion() {
+        if(question.detached) {
+            question.id = null
+            add(question, taskId)
+                .then(res => {
+                    let fetchedData = res.data
+                    question.detached = false
+                    question.id = fetchedData.id
+
+                    statusBySub(SAVED_STATUS)
+                })
+                .catch(error => {
+                    addErrorNotification('Не удалось сохранить задание. \n' + error)
+                    statusBySub(ERROR_STATUS)
+                    question.id = Math.random()
+                })
+        } else {
+            update(question, taskId)
+                .then(res => {
+                    let fetchedData = res.data
+                    statusBySub(SAVED_STATUS)
+                })
+                .catch(error => {
+                    addErrorNotification('Не удалось сохранить задание. \n' + error)
+                    statusBySub(ERROR_STATUS)
+                    question.id = Math.random()
+                })
+        }
+    }
 
     const pushNewVariant = () => {
         let questionVariantsVar = questionVariants
