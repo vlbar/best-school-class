@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useReducer, useRef, useContext } from 'react'
 import { Container, Row, Col, Form, Button, Dropdown, ButtonGroup } from 'react-bootstrap'
 import { addErrorNotification } from '../../notifications/notifications'
-import { TaskSaveContext, SAVED_STATUS, ERROR_STATUS, VALIDATE_ERROR_STATUS } from './TaskSaveManager'
+import { TaskSaveContext, useTaskSaveManager, SAVED_STATUS, ERROR_STATUS, VALIDATE_ERROR_STATUS } from './TaskSaveManager'
 import { QuestionsList } from './QuestionsList'
 import ProcessBar from '../../process-bar/ProcessBar'
 import { useFormik } from 'formik'
@@ -84,7 +84,7 @@ async function updateTaskDetails(taskId, task) {
 }
 
 export const TaskEditor = ({taskId}) => {
-    const { displayStatus, setTaskName, addSubscriber, onSaveClick, statusBySub } = useContext(TaskSaveContext)
+    const { displayStatus, setTaskName, onSaveClick } = useContext(TaskSaveContext)
     const [isTaskFetching, setIsTaskFetching] = useState(true)
     const [isInputBlock, setIsInputBlock] = useState(true)
 
@@ -105,12 +105,13 @@ export const TaskEditor = ({taskId}) => {
     const setMaxScore = (maxScore) => taskDispatch({ type: TASK_MAX_SCORE, payload: maxScore })
     const setDuration = (duration) => taskDispatch({ type: TASK_DURATION, payload: duration })
 
+    const statusBySub = useTaskSaveManager(saveTaskDetails)
+
     useEffect(() => {
         fetchTask()
-        addSubscriber(() => setForceSave(true))
     }, [])
 
-    const fetchTask = (state) => {
+    const fetchTask = () => {
         setIsTaskFetching(true)
         setIsInputBlock(true)
         fetchTaskDetails(taskId)
@@ -138,16 +139,7 @@ export const TaskEditor = ({taskId}) => {
             })
     }
 
-    // :/
-    const [forceSave, setForceSave] = useState(false)
-    useEffect(() => {
-        if(forceSave) {
-            saveTaskDetails()
-            setForceSave(false)
-        }
-    }, [forceSave])
-
-    const saveTaskDetails = () => {
+    function saveTaskDetails() {
         formik.validateForm()
         if(!formik.isValid) {
             console.log(formik.errors)

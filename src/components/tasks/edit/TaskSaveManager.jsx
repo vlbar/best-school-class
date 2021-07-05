@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect, useRef, useEffect } from 'react'
+import React, { useState, useLayoutEffect, useRef, useEffect, useContext } from 'react'
 import { Button, Container, Row, Col, Dropdown, ButtonGroup } from 'react-bootstrap'
 import './TaskEditor.less'
 
@@ -15,16 +15,22 @@ export const TaskSaveManager = ({children}) => {
     const [displayStatus, setDisplayStatus] = useState('')
     const [taskName, setTaskName] = useState('')
 
+    const [updateCycle, setUpdateCycle] = useState(0)
     const subscribers = useRef([])
     const checkedSubs = useRef(0)
 
-    const addSubscriber = (subscriber) => {
-        subscribers.current.push(subscriber)
+    const addSubscriber = (id) => {
+        subscribers.current.push(id)
+    }
+
+    const removeSubscriber = (id) => {
+        let removedSubIndex = subscribers.current.indexOf(id)
+        subscribers.current.splice(removedSubIndex, 1)
     }
 
     const onSaveClick = () => {
         setSaveStatus(SAVING_STATUS)
-        subscribers.current.forEach(sub => sub.call())
+        setUpdateCycle(updateCycle + 1)
     }
 
     const statusBySub = (status) => {
@@ -77,7 +83,7 @@ export const TaskSaveManager = ({children}) => {
     }, [saveStatus])
 
     return (
-        <TaskSaveContext.Provider value={{displayStatus, setTaskName, addSubscriber, onSaveClick, statusBySub}}>
+        <TaskSaveContext.Provider value={{displayStatus, setTaskName, addSubscriber, removeSubscriber, updateCycle, onSaveClick, statusBySub}}>
             <div className={'task-save-panel' + (isBarShow ? ' show':'')}>
                 <Container>
                     <Row>
@@ -107,4 +113,20 @@ export const TaskSaveManager = ({children}) => {
             {children}
         </TaskSaveContext.Provider>
     )
+}
+
+export function useTaskSaveManager(onSave) {
+    const { addSubscriber, removeSubscriber, updateCycle, statusBySub } = useContext(TaskSaveContext)
+
+    useEffect(() => {
+        let uid = Math.random()
+        addSubscriber(uid)
+        return () => removeSubscriber(uid)
+    }, [])
+    
+    useEffect(() => {
+        if(updateCycle !== 0) onSave()
+    }, [updateCycle])
+
+    return statusBySub
 }
