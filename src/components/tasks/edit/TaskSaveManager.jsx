@@ -28,9 +28,27 @@ export const TaskSaveManager = ({children}) => {
         subscribers.current.splice(removedSubIndex, 1)
     }
 
+    const canSave = useRef(true)
+    const isFakeSaving = useRef(false)
     const onSaveClick = () => {
+        if(canSave.current) {
+            canSave.current = false
+            setUpdateCycle(updateCycle + 1)
+        } else {
+            if(saveStatus !== SAVING_STATUS) isFakeSaving.current = true
+        }
+
         setSaveStatus(SAVING_STATUS)
-        setUpdateCycle(updateCycle + 1)
+    }
+
+    const manualSaveCooldown = () => {
+        setTimeout(() => {
+            canSave.current = true
+            if(isFakeSaving.current) {
+                isFakeSaving.current = false
+                onSaveClick()
+            }
+        }, 10000)
     }
 
     const statusBySub = (status) => {
@@ -43,6 +61,7 @@ export const TaskSaveManager = ({children}) => {
                 checkedSubs.current++
                 if(saveStatus !== ERROR_STATUS && checkedSubs.current == subscribers.current.length) {
                     setSaveStatus(SAVED_STATUS)
+                    manualSaveCooldown()
                     checkedSubs.current = 0
                 }
                 break
