@@ -1,9 +1,9 @@
-import React, { useContext, useState, useEffect } from 'react'
+import React, { useContext, useState, useEffect, useRef } from 'react'
 import { Button } from 'react-bootstrap'
 import { sortableHandle } from 'react-sortable-hoc'
 import { addErrorNotification } from '../../notifications/notifications'
 import ProcessBar from '../../process-bar/ProcessBar'
-import { useTaskSaveManager, SAVED_STATUS, ERROR_STATUS, VALIDATE_ERROR_STATUS } from './TaskSaveManager'
+import { useTaskSaveManager, isEquivalent, SAVED_STATUS, ERROR_STATUS, VALIDATE_ERROR_STATUS } from './TaskSaveManager'
 import { QuestionContext } from './QuestionsList'
 import { QuestionVariant } from './QuestionVariant'
 import { tasksBaseUrl } from './TaskEditor'
@@ -43,6 +43,7 @@ export const TaskQuestion = ({index, question}) => {
     const [questionVariants, setQuestionVariants] = useState(undefined)
 
     const statusBySub = useTaskSaveManager(updateQuestion)
+    const lastSavedData = useRef({})
 
     useEffect(() => {
         if(question.questionVariantsCount > 0) {
@@ -61,9 +62,16 @@ export const TaskQuestion = ({index, question}) => {
                 }
             ])
         }
+
+        if(!question.detached) lastSavedData.current = question
     }, [])
 
     function updateQuestion() {
+        if(!isDeleted && isEquivalent(question, lastSavedData.current)) { 
+            statusBySub(SAVED_STATUS)
+            return
+        }
+
         if(question.detached) {
             let addableQuestion = {...question, id: null}
             add(addableQuestion, taskId)
@@ -72,6 +80,7 @@ export const TaskQuestion = ({index, question}) => {
                     question.detached = false
                     question.id = fetchedData.id
 
+                    lastSavedData.current = question
                     statusBySub(SAVED_STATUS)
                 })
                 .catch(error => {
@@ -83,6 +92,7 @@ export const TaskQuestion = ({index, question}) => {
             if(!isDeleted) {
                 update(question, taskId)
                     .then(res => {
+                        lastSavedData.current = question
                         statusBySub(SAVED_STATUS)
                     })
                     .catch(error => {

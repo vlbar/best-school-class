@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useReducer, useRef, useContext } from 'react'
 import { Container, Row, Col, Form, Button, Dropdown, ButtonGroup } from 'react-bootstrap'
 import { addErrorNotification } from '../../notifications/notifications'
-import { TaskSaveContext, useTaskSaveManager, SAVED_STATUS, ERROR_STATUS, VALIDATE_ERROR_STATUS } from './TaskSaveManager'
+import { TaskSaveContext, useTaskSaveManager, isEquivalent, SAVED_STATUS, ERROR_STATUS, VALIDATE_ERROR_STATUS } from './TaskSaveManager'
 import { QuestionsList } from './QuestionsList'
 import ProcessBar from '../../process-bar/ProcessBar'
 import { useFormik } from 'formik'
@@ -106,6 +106,7 @@ export const TaskEditor = ({taskId}) => {
     const setDuration = (duration) => taskDispatch({ type: TASK_DURATION, payload: duration })
 
     const statusBySub = useTaskSaveManager(saveTaskDetails)
+    const lastSavedData = useRef({})
 
     useEffect(() => {
         fetchTask()
@@ -118,6 +119,7 @@ export const TaskEditor = ({taskId}) => {
             .then(res => {
                 let fetchedData = res.data
                 setTask(fetchedData)
+                lastSavedData.current = fetchedData
                 setTaskName(fetchedData.name)
 
                 // пожилой маппер
@@ -140,9 +142,13 @@ export const TaskEditor = ({taskId}) => {
     }
 
     function saveTaskDetails() {
+        if(isEquivalent(taskDetails, lastSavedData.current)) { 
+            statusBySub(SAVED_STATUS)
+            return
+        }
+
         formik.validateForm()
         if(!formik.isValid) {
-            console.log(formik.errors)
             statusBySub(VALIDATE_ERROR_STATUS)
             return
         }
@@ -150,6 +156,7 @@ export const TaskEditor = ({taskId}) => {
         updateTaskDetails(taskId, taskDetails)
             .then(res => { 
                 statusBySub(SAVED_STATUS)
+                lastSavedData.current = taskDetails
             })
             .catch(error => {
                 statusBySub(ERROR_STATUS)
