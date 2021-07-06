@@ -33,6 +33,9 @@ const AD_DELETE = 'DELETE'
 //context
 const QuestionContext = React.createContext();
 
+//requests
+export const variantsPartUrl = 'variants'
+
 export const QuestionVariant = ({show, question, questionVariant, isEditing}) => {
     const [formulation, setFormulation] = useState(questionVariant.formulation || '')
     const [questionType, setQuestionType] = useState(TEXT_QUESTION)
