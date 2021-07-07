@@ -155,19 +155,28 @@ export function useTaskSaveManager(onSave) {
 }
 
 export function isEquivalent(a, b) {
-    var aProps = Object.getOwnPropertyNames(a);
-    var bProps = Object.getOwnPropertyNames(b);
+    if(b == undefined) return false
+    let aProps = Object.getOwnPropertyNames(a)
+    let bProps = Object.getOwnPropertyNames(b)
 
     if (aProps.length != bProps.length) {
-        return false;
+        return false
     }
 
     for (var i = 0; i < aProps.length; i++) {
-        var propName = aProps[i];
-        if (a[propName] !== b[propName]) {
-            return false;
-        }
+        let propName = aProps[i]
+        if(a[propName] instanceof Array) {
+            if(a[propName].length !== b[propName].length)
+                return false
+            
+            for(let j = 0; j < a[propName].length; j++) 
+                if(!isEquivalent(a[propName][j], b[propName][j]))
+                    return false
+        } else {
+            if (a[propName] !== b[propName])
+                return false  
+        }    
     }
 
-    return true;
+    return true
 }

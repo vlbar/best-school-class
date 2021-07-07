@@ -1,6 +1,10 @@
 import React, { useState, useRef, useContext, useEffect, useReducer } from 'react'
 import { Row, Col, Button, Form, Dropdown } from 'react-bootstrap'
+import { addErrorNotification } from '../../notifications/notifications'
 import { sortableContainer, sortableElement, sortableHandle, arrayMove } from 'react-sortable-hoc'
+import { useTaskSaveManager, isEquivalent, SAVED_STATUS, ERROR_STATUS, VALIDATE_ERROR_STATUS } from './TaskSaveManager'
+import { questionPartUrl } from './QuestionsList'
+import axios from 'axios'
 import './QuestionVariant.less'
 
 //question types
@@ -93,9 +97,14 @@ const QuestionContext = React.createContext();
 //requests
 export const variantsPartUrl = 'variants'
 
+async function updateVariant(variant, questionId) {
+    return axios.put(`${questionPartUrl}/${questionId}/${variantsPartUrl}/${variant.id}`, variant)
+}
+
 export const QuestionVariant = ({show, question, questionVariant, isEditing}) => {
     const [questionType, setQuestionType] = useState(TEXT_QUESTION)
     const [variant, dispatchVariant] = useReducer(variantReducer, questionVariant)
+    const statusBySub = useTaskSaveManager(saveVariant)
     const lastSavedData = useRef({})
 
     const setFormulation = (formulation) => dispatchVariant({ type: FORMULATION, payload: formulation })
@@ -110,7 +119,7 @@ export const QuestionVariant = ({show, question, questionVariant, isEditing}) =>
 
     useEffect(() => {
         getQuestionParams()
-        lastSavedData.current = questionVariant
+        setLastSavedData(questionVariant)
     }, [])
 
     // -Anti select varinat focus. 
@@ -160,6 +169,31 @@ export const QuestionVariant = ({show, question, questionVariant, isEditing}) =>
             answer: answer,
             isRight: false
         })
+    }
+
+    function saveVariant() {
+        if(isEquivalent(variant, lastSavedData.current)) { 
+            statusBySub(SAVED_STATUS)
+            return
+        }
+
+        updateVariant(variant, question.id)
+            .then(res => { 
+                statusBySub(SAVED_STATUS)
+                setLastSavedData(variant)
+            })
+            .catch(error => {
+                statusBySub(ERROR_STATUS)
+                addErrorNotification('Не удалось загрузить информацию о задании. \n' + (error?.response?.data?.message ? error.response.data.message : error))
+            })
+    }
+
+    const setLastSavedData = (questionVariant) => {
+        if(questionVariant.type == SOURCE_TEST_QUESTION) {
+            lastSavedData.current = cloneTestAnswers(questionVariant)
+        } else {
+            lastSavedData.current = questionVariant
+        }
     }
 
     const getQuestionInputs = (type) => {
@@ -293,4 +327,13 @@ const TestQuestionAnswerVariant = ({index, answerVariant}) => {
             </button>
         </div>
     )
+}
+
+const cloneTestAnswers = (questionVariant) => {
+    // ДА ОТВЯЖЫЗЬ ЖЕ ТЫ ОТ НЕВО !!1!!11
+    let colnedTestAnswerVariants = []
+    questionVariant.testAnswerVariants.forEach(answerVar => {
+        colnedTestAnswerVariants.push({...answerVar})
+    })
+    return {...questionVariant, testAnswerVariants: colnedTestAnswerVariants}
 }
