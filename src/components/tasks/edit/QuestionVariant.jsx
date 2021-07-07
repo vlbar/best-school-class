@@ -1,4 +1,4 @@
-import React, { useState, useRef, useContext, useEffect } from 'react'
+import React, { useState, useRef, useContext, useEffect, useReducer } from 'react'
 import { Row, Col, Button, Form, Dropdown } from 'react-bootstrap'
 import { sortableContainer, sortableElement, sortableHandle, arrayMove } from 'react-sortable-hoc'
 import './QuestionVariant.less'
@@ -25,24 +25,92 @@ const SortableItem = sortableElement(({index_, answerVariant}) => (
     <TestQuestionAnswerVariant index={index_} answerVariant={answerVariant} />
 ))
 
-//Reducer
-const AD_IS_RIGHT = 'IS_RIGHT'
-const AD_ANSWER = 'ANSWER'
-const AD_DELETE = 'DELETE'
+//flux
+const FORMULATION = 'FORMULATION'
+const QUESTION_TYPE = 'QUESTION_TYPE'
 
-//context
+//text question
+const NUMBER_OF_SYMBOLS = 'NUMBER_OF_SYMBOLS'
+//test question
+const IS_MULTIPLE_ANSWER = 'IS_MULTIPLE_ANSWER'
+const ADD_ANSWER_VARIANT = 'ADD_ANSWER_VARIANT'
+const IS_RIGHT = 'IS_RIGHT'
+const ANSWER = 'ANSWER'
+const MOVE_ANSWER = 'MOVE_ANSWER'
+const DELETE_ANSWER = 'DELETE_ANSWER'
+
+const variantReducer = (state, action) => {
+    let answer
+    let testAnswerVariants
+    switch (action.type) {
+        case FORMULATION:
+            return { ...state, formulation: action.payload }
+        case QUESTION_TYPE:
+            return { ...state, type: action.payload }
+        case NUMBER_OF_SYMBOLS:
+            return { ...state, numberOfSymbols: action.payload }
+
+        case IS_MULTIPLE_ANSWER:
+            return { ...state, isMultipleAnswer: action.payload}
+        case ADD_ANSWER_VARIANT:
+            if(state.testAnswerVariants) 
+            return { ...state, testAnswerVariants: [...state.testAnswerVariants, action.payload] }
+            else return { ...state, testAnswerVariants: [action.payload] }
+        case IS_RIGHT:
+            testAnswerVariants = state.testAnswerVariants
+            answer = testAnswerVariants[action.payload.answerIndex]
+
+            if(!state.isMultipleAnswer) {
+                testAnswerVariants.forEach(element => {
+                    element.isRight = false
+                })
+                answer.isRight = true
+            } else {
+                answer.isRight = action.payload.isRight
+            }
+            return { ...state, testAnswerVariants: testAnswerVariants }
+        case ANSWER:
+            testAnswerVariants = state.testAnswerVariants
+            answer = testAnswerVariants[action.payload.answerIndex]
+            answer.answer = action.payload.answer
+            return { ...state, testAnswerVariants: testAnswerVariants }
+        case MOVE_ANSWER:
+            testAnswerVariants = state.testAnswerVariants
+            testAnswerVariants = arrayMove(testAnswerVariants, action.payload.oldIndex, action.payload.newIndex)
+            return { ...state, testAnswerVariants: testAnswerVariants }
+        case DELETE_ANSWER:
+            testAnswerVariants = state.testAnswerVariants
+            testAnswerVariants.splice(action.payload, 1)
+            return { ...state, testAnswerVariants: testAnswerVariants }
+        default:
+            return state
+    }
+}
+
+//context for question answer variants
 const QuestionContext = React.createContext();
 
 //requests
 export const variantsPartUrl = 'variants'
 
 export const QuestionVariant = ({show, question, questionVariant, isEditing}) => {
-    const [formulation, setFormulation] = useState(questionVariant.formulation || '')
     const [questionType, setQuestionType] = useState(TEXT_QUESTION)
-    const [questionParams, setQuestionParams] = useState({numberOfSymbols: 0})
-    
+    const [variant, dispatchVariant] = useReducer(variantReducer, questionVariant)
+    const lastSavedData = useRef({})
+
+    const setFormulation = (formulation) => dispatchVariant({ type: FORMULATION, payload: formulation })
+    const setVariantType = (questionType) => dispatchVariant({ type: QUESTION_TYPE, payload: questionType })
+    const setNumberOfSymbols = (numberOfSymbols) => dispatchVariant({type: NUMBER_OF_SYMBOLS, payload: numberOfSymbols})
+    const setIsMultipleAnswer = (isMultipleAnswer) => dispatchVariant({type: IS_MULTIPLE_ANSWER, payload: isMultipleAnswer})
+    const addAnswerVariant = (answerVariant) => dispatchVariant({ type: ADD_ANSWER_VARIANT, payload: answerVariant })
+    const setIsRightAnswer = (answerIndex, isRight) => dispatchVariant({type: IS_RIGHT, payload: { answerIndex, isRight}})
+    const setAnswerText = (answerIndex, answer) => dispatchVariant({type: ANSWER, payload: { answerIndex, answer}})
+    const moveAnswerVariant = ({oldIndex, newIndex}) => dispatchVariant({type: MOVE_ANSWER, payload: { oldIndex, newIndex }})
+    const deleteAnswer = (answerIndex) => dispatchVariant({type: DELETE_ANSWER, payload: answerIndex})
+
     useEffect(() => {
         getQuestionParams()
+        lastSavedData.current = questionVariant
     }, [])
 
     // -Anti select varinat focus. 
@@ -62,96 +130,35 @@ export const QuestionVariant = ({show, question, questionVariant, isEditing}) =>
                 else
                     translatedType = TEST_QUESTION                    
         setQuestionType(translatedType)
-
-        switch(translatedType) {
-            case TEST_QUESTION:
-            case TEST_MULTI_QUESTION:
-                setQuestionParams({testAnswerVariants: questionVariant.testAnswerVariants})
-                break
-            case TEXT_QUESTION:
-                setQuestionParams({numberOfSymbols: questionVariant.numberOfSymbols})
-        }
     }
 
     const onSelectType = (type) => {
         setQuestionType(type)
 
+        if(type == TEST_QUESTION) uncheckMultiVarinats()
         if(type == TEST_MULTI_QUESTION || type == TEST_QUESTION) {
-            if(type == TEST_QUESTION) uncheckMultiVarinats()
-
-            setQuestionParams({ 
-                isMultipleAnswer: type == TEST_MULTI_QUESTION, 
-                testAnswerVariants: questionParams.testAnswerVariants !== undefined ? questionParams.testAnswerVariants : []
-            })
+            setIsMultipleAnswer(type == TEST_MULTI_QUESTION)
         }
     }
 
     const uncheckMultiVarinats = () => {
-        let testAnswerVariants = questionParams.testAnswerVariants
+        let testAnswerVariants = variant.testAnswerVariants
         if(testAnswerVariants !== undefined) {
             let flag = true
-            testAnswerVariants.forEach(x => {
-                if(x.isRight) {
-                    x.isRight = flag
+            for(let i = 0; i < testAnswerVariants.length; i++) {
+                if(testAnswerVariants[i].isRight) {
+                    setIsRightAnswer(i, flag)
                     flag = false
                 }
-            })
+            }
         }
     }
 
-    // и Redux этот ваш не нужон как бы
-    const answerReducer = (index, action) => {
-        let testAnswerVariants = questionParams.testAnswerVariants
-        let targetVariant = testAnswerVariants[index]
-
-        if(index == undefined) {
-            targetVariant = addVarinat(testAnswerVariants.length, testAnswerVariants)
-            focus.current = true
-        } else {
-            focus.current = false
-        }
-
-        switch(action.type) {
-            case AD_IS_RIGHT:
-                if(!questionParams.isMultipleAnswer) { 
-                    testAnswerVariants.forEach(element => {
-                        element.isRight = false
-                    })
-                    targetVariant.isRight = true
-                }
-                else {
-                    targetVariant.isRight = action.payload
-                }
-                break
-            case AD_ANSWER:
-                targetVariant.answer = action.payload
-                break
-            case AD_DELETE:
-                testAnswerVariants.splice(index, 1)
-                break
-        }
-
-        setQuestionParams({
-            isMultipleAnswer: questionParams.isMultipleAnswer,
-            testAnswerVariants: testAnswerVariants
-        })
-    }
-
-    const addVarinat = (index, testAnswerVariants) => {
-        testAnswerVariants.push({
-            answer: '',
+    const addVarinat = (answer) => {
+        focus.current = true
+        addAnswerVariant({
+            answer: answer,
             isRight: false
-        })
-
-        return testAnswerVariants[index]
-    }
-
-    const onSortEnd = ({oldIndex, newIndex}) => {
-        let testAnswerVariants = questionParams.testAnswerVariants
-        testAnswerVariants = arrayMove(testAnswerVariants, oldIndex, newIndex)
-        setQuestionParams({
-            isMultipleAnswer: questionParams.isMultipleAnswer,
-            testAnswerVariants: testAnswerVariants
         })
     }
 
@@ -167,8 +174,8 @@ export const QuestionVariant = ({show, question, questionVariant, isEditing}) =>
                             <Form.Control 
                             type='number' 
                             min={1}
-                            value={questionParams.numberOfSymbols} 
-                            onChange={(e) => setQuestionParams({numberOfSymbols: e.target.value})} 
+                            value={variant.numberOfSymbols} 
+                            onChange={(e) => setNumberOfSymbols(Number(e.target.value))} 
                             className='short-input hover-border'/>
                         </Form.Group>
                     </>
@@ -177,12 +184,23 @@ export const QuestionVariant = ({show, question, questionVariant, isEditing}) =>
             case TEST_MULTI_QUESTION:
                 return (
                     <div>
-                        <QuestionContext.Provider value={{ question, questionParams, answerReducer, focus }}>
-                            <SortableContainer onSortEnd={onSortEnd} useDragHandle>
-                                {questionParams.testAnswerVariants.map((answer, index) => (
+                        <QuestionContext.Provider value={{ question, variant, setIsRightAnswer, setAnswerText, deleteAnswer, focus }}>
+                            <SortableContainer onSortEnd={moveAnswerVariant} useDragHandle>
+                                {(variant.testAnswerVariants) && variant.testAnswerVariants.map((answer, index) => (
                                     <SortableItem key={index} index={index} index_={index} question={question} answerVariant={answer}/>
                                 ))}
-                                {isEditing && questionParams.testAnswerVariants.length < 10 && <TestQuestionAnswerVariant index={undefined} answerVariant={{answer: ''}} />}
+
+                                {(isEditing && (!variant.testAnswerVariants || variant.testAnswerVariants.length < 10)) &&
+                                    <div className='add-question-variant'>
+                                        <Form.Control
+                                            type='text'
+                                            className='hover-border'
+                                            placeholder={'Добавить варинат ответа...'}
+                                            value={''}
+                                            onChange={(e) => addVarinat(e.target.value)}
+                                        />
+                                    </div>
+                                }
                             </SortableContainer>
                         </QuestionContext.Provider>
                     </div>
@@ -199,7 +217,7 @@ export const QuestionVariant = ({show, question, questionVariant, isEditing}) =>
                     wrap='soft' 
                     placeholder='Введите формулировку вопроса...' 
                     className='text-break' 
-                    value={formulation} 
+                    value={variant.formulation} 
                     onChange={(e) => setFormulation(e.target.value)} 
                 />
                 <div className='variant-actions'>
@@ -249,35 +267,30 @@ export const QuestionVariant = ({show, question, questionVariant, isEditing}) =>
 }
 
 const TestQuestionAnswerVariant = ({index, answerVariant}) => {
-    const { question, questionParams, answerReducer, focus } = useContext(QuestionContext)
+    const { question, variant, setIsRightAnswer, setAnswerText, deleteAnswer, focus } = useContext(QuestionContext)
 
-    let isAddVarinat = index == undefined
     return (
-        <div className={`question-answer${isAddVarinat ? ' add-variant':''}`}>
-            {!isAddVarinat &&
-                <>
-                    <AnswerDragHandle/>
-                    <Form.Check
-                        custom
-                        checked={answerVariant.isRight}
-                        onChange={(e) => answerReducer(index, {type: AD_IS_RIGHT, payload: e.target.checked})}
-                        type={questionParams.isMultipleAnswer ? 'checkbox' : 'radio'}
-                        id={`custom-inline-${question.id}-${index}`}
-                        className='label-center mr-2'
-                    />
-                </>
-            }
+        <div className='question-answer'>
+            <AnswerDragHandle/>
+            <Form.Check
+                custom
+                checked={answerVariant.isRight}
+                onChange={(e) => setIsRightAnswer(index, e.target.checked)}
+                type={variant.isMultipleAnswer ? 'checkbox' : 'radio'}
+                id={`custom-inline-${question.id}-${index}`}
+                className='label-center mr-2'
+            />
             <Form.Control
-                autoFocus={!isAddVarinat && focus.current}
+                autoFocus={focus.current}
                 type='text'
                 className='hover-border'
-                placeholder={isAddVarinat ? 'Добавить варинат ответа...' : 'Введите вариант ответа...'}
+                placeholder='Введите вариант ответа...'
                 value={answerVariant.answer}
-                onChange={(e) => answerReducer(index, {type: AD_ANSWER, payload: e.target.value})}
+                onChange={(e) => setAnswerText(index, e.target.value)}
             />
-            {!isAddVarinat && <button className='icon-btn ml-2' title='Удалить' onClick={() => answerReducer(index, {type: AD_DELETE})}>
+            <button className='icon-btn ml-2' title='Удалить' onClick={() => deleteAnswer(index)}>
                 <i className='fas fa-times fa-lg'/>
-            </button>}
+            </button>
         </div>
     )
 }
