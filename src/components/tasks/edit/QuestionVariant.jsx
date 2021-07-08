@@ -22,6 +22,11 @@ const SOURCE_TEST_QUESTION = 'TEST_QUESTION'
 const unambiguousQuestionTypeTranslate = {}
 unambiguousQuestionTypeTranslate[SOURCE_TEXT_QUESTION] = TEXT_QUESTION
 
+const toSourceQuestionTypeTranslator = {}
+toSourceQuestionTypeTranslator[TEXT_QUESTION] = SOURCE_TEXT_QUESTION
+toSourceQuestionTypeTranslator[TEST_QUESTION] = SOURCE_TEST_QUESTION
+toSourceQuestionTypeTranslator[TEST_MULTI_QUESTION] = SOURCE_TEST_QUESTION
+
 //sortable hoc
 const AnswerDragHandle = sortableHandle(() => <button className='icon-btn mr-2' title='Переместить'><i className='fas fa-grip-lines fa-lg'></i></button>)
 const SortableContainer = sortableContainer(({children}) => <div>{children}</div>)
@@ -101,6 +106,10 @@ async function updateVariant(variant, questionId) {
     return axios.put(`${questionPartUrl}/${questionId}/${variantsPartUrl}/${variant.id}`, variant)
 }
 
+async function addVariant(variant, questionId) {
+    return axios.post(`${questionPartUrl}/${questionId}/${variantsPartUrl}`, variant)
+}
+
 export const QuestionVariant = ({show, question, questionVariant, isEditing}) => {
     const [questionType, setQuestionType] = useState(TEXT_QUESTION)
     const [variant, dispatchVariant] = useReducer(variantReducer, questionVariant)
@@ -143,6 +152,7 @@ export const QuestionVariant = ({show, question, questionVariant, isEditing}) =>
 
     const onSelectType = (type) => {
         setQuestionType(type)
+        setVariantType(toSourceQuestionTypeTranslator[type])
 
         if(type == TEST_QUESTION) uncheckMultiVarinats()
         if(type == TEST_MULTI_QUESTION || type == TEST_QUESTION) {
@@ -163,7 +173,7 @@ export const QuestionVariant = ({show, question, questionVariant, isEditing}) =>
         }
     }
 
-    const addVarinat = (answer) => {
+    const addAnswerVarinat = (answer) => {
         focus.current = true
         addAnswerVariant({
             answer: answer,
@@ -177,15 +187,31 @@ export const QuestionVariant = ({show, question, questionVariant, isEditing}) =>
             return
         }
 
-        updateVariant(variant, question.id)
-            .then(res => { 
-                statusBySub(SAVED_STATUS)
-                setLastSavedData(variant)
-            })
-            .catch(error => {
-                statusBySub(ERROR_STATUS)
-                addErrorNotification('Не удалось загрузить информацию о задании. \n' + (error?.response?.data?.message ? error.response.data.message : error))
-            })
+        if(!variant.id) {
+            if(variant.type == SOURCE_TEST_QUESTION) {
+                setIsMultipleAnswer(questionType == TEST_MULTI_QUESTION)
+            }
+
+            addVariant(variant, question.id)
+                .then(res => { 
+                    statusBySub(SAVED_STATUS)
+                    setLastSavedData(variant)
+                })
+                .catch(error => {
+                    statusBySub(ERROR_STATUS)
+                    addErrorNotification('Не удалось сохранить информацию о задании. \n' + (error?.response?.data?.message ? error.response.data.message : error))
+                })
+        } else {
+            updateVariant(variant, question.id)
+                .then(res => { 
+                    statusBySub(SAVED_STATUS)
+                    setLastSavedData(variant)
+                })
+                .catch(error => {
+                    statusBySub(ERROR_STATUS)
+                    addErrorNotification('Не удалось сохранить информацию о задании. \n' + (error?.response?.data?.message ? error.response.data.message : error))
+                })
+        }
     }
 
     const setLastSavedData = (questionVariant) => {
@@ -231,7 +257,7 @@ export const QuestionVariant = ({show, question, questionVariant, isEditing}) =>
                                             className='hover-border'
                                             placeholder={'Добавить варинат ответа...'}
                                             value={''}
-                                            onChange={(e) => addVarinat(e.target.value)}
+                                            onChange={(e) => addAnswerVarinat(e.target.value)}
                                         />
                                     </div>
                                 }
