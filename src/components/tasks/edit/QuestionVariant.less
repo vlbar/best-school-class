@@ -22,7 +22,7 @@
 
 .add-question-variant {
     margin-left: 4.5Rem !important;
-    margin-right: 2.2Rem !important;
+    margin-right: 1.8Rem !important;
 }
 
 .question-formulation-block {
@@ -43,7 +43,7 @@
 }
 
 .variant-actions {
-    width: 2.3Rem;
+    margin-left: .5Rem;
 }
 
 
@@ -70,5 +70,17 @@
 @media screen and (min-width: 768px) {
     .float-right-screen {
         float: right;
+    }
+}
+
+.options-dropdown {
+    .dropdown-toggle::after {
+        display: none;
+    }
+}
+
+.text-danger {
+    &.disabled {
+        color: #f7b6bc!important;
     }
 }

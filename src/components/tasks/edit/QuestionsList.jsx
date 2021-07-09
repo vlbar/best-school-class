@@ -8,7 +8,7 @@ import ProcessBar from '../../process-bar/ProcessBar'
 import axios from 'axios'
 import './TaskEditor.less'
 
-export const QuestionContext = React.createContext()
+export const QuestionsContext = React.createContext()
 
 // sortable hoc
 const SortableContainer = sortableContainer(({children}) => <div>{children}</div>)
@@ -122,13 +122,13 @@ export const QuestionsList = ({taskId}) => {
     return (
         <>
             {(questions !== undefined) &&
-                <QuestionContext.Provider value={{taskId, questionToChange, setQuestionToChange, addQuestionAfter, moveQuestion, deleteQuestion}}>
+                <QuestionsContext.Provider value={{taskId, questionToChange, setQuestionToChange, addQuestionAfter, moveQuestion, deleteQuestion}}>
                     <SortableContainer onSortEnd={moveQuestion} useDragHandle>
                         {questions.map((question, index) => (
                             <SortableItem key={question.id} index={index} index_={index + 1} question={question}/>
                         ))}
                     </SortableContainer>
-                </QuestionContext.Provider>}
+                </QuestionsContext.Provider>}
             {(questions !== undefined && !isQuestionsFetching && pagination.current.page * pagination.current.size < pagination.current.total) &&
                 <button 
                     className="fetch-types-btn mb-2" 

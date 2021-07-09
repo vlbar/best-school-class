@@ -4,7 +4,7 @@ import { sortableHandle } from 'react-sortable-hoc'
 import { addErrorNotification } from '../../notifications/notifications'
 import ProcessBar from '../../process-bar/ProcessBar'
 import { useTaskSaveManager, isEquivalent, SAVED_STATUS, ERROR_STATUS, VALIDATE_ERROR_STATUS } from './TaskSaveManager'
-import { QuestionContext } from './QuestionsList'
+import { QuestionsContext } from './QuestionsList'
 import { QuestionVariant } from './QuestionVariant'
 import { tasksBaseUrl } from './TaskEditor'
 import { questionPartUrl } from './QuestionsList'
@@ -33,9 +33,11 @@ async function fetchQuestionVariants(question) {
 //react-sortable-hoc
 const DragHandle = sortableHandle(() => <button className='icon-btn' title='Переместить'><i className='fas fa-grip-lines fa-lg'></i></button>)
 
+export const TaskQuestionContext = React.createContext()
+
 export const TaskQuestion = ({index, question}) => {
     let arrayIndex = index - 1
-    const { taskId, questionToChange, setQuestionToChange, addQuestionAfter, moveQuestion, deleteQuestion } = useContext(QuestionContext)
+    const { taskId, questionToChange, setQuestionToChange, addQuestionAfter, moveQuestion, deleteQuestion } = useContext(QuestionsContext)
     const [isFetching, setIsFetching] = useState(false)
     const [isHover, setIsHover] = useState(false)
     const [isDeleted, setIsDeleted] = useState(false)
@@ -119,7 +121,7 @@ export const TaskQuestion = ({index, question}) => {
         questionVariantsVar.push({
             id: undefined,
             formulation: '',
-            position: questionVariantsVar.length,
+            position: questionVariants[questionVariantsVar.length - 1].position + 1,
             questionId: question.id,
             numberOfSymbols: '',
             type: 'TEXT_QUESTION'
@@ -158,9 +160,41 @@ export const TaskQuestion = ({index, question}) => {
             .finally(() => {
                 setIsFetching(false)
             })
-        return true
     }
 
+    const markForDeleteVariant = (index) => {
+        if(questionVariants.filter(x => !x.markForDelete).length == 1) return
+        let newIndex = index + 1
+
+        const isVariantCanSelect = (index) => (questionVariants[index] && !questionVariants[index].markForDelete)
+
+        while(newIndex < questionVariants.filter(x => !x.markForDelete).length && !isVariantCanSelect(newIndex))
+            newIndex++
+
+        if(!isVariantCanSelect(newIndex)) {
+            newIndex = index - 1
+            while(newIndex > 0 && !isVariantCanSelect(newIndex))
+                newIndex--
+        }
+
+        selectVartiant(newIndex)
+
+        let allVariants = questionVariants
+        if(allVariants[index].id !== undefined)
+            allVariants[index].markForDelete = true
+        else deleteQuestionVariant(index)
+        setQuestionVariants(allVariants)
+    }
+
+    const deleteQuestionVariant = (index) => {
+        console.log(questionVariants[index])
+        let cleanedVariants = questionVariants
+        cleanedVariants.splice(index, 1)
+        setQuestionVariants(cleanedVariants)
+    }
+
+    let variantCount = (questionVariants) ? questionVariants.filter(x => !x.markForDelete).length : 0
+    let num = 1
     let isEditing = (questionToChange ? questionToChange === index : false)
     if(!isDeleted) return (
         <div>
@@ -170,16 +204,22 @@ export const TaskQuestion = ({index, question}) => {
                     <div className='question-card-header'>
                         <div>
                             <DragHandle />
-                            {(questionVariants) && questionVariants.map((variant, index) => 
-                                <Button
-                                    key={index}
+                            {(questionVariants) && questionVariants.map((variant, index) => {
+                                    if(!variant.markForDelete) 
+                                        return <Button
+                                            key={index}
+                                            size='sm'
                                     size='sm' 
+                                            size='sm'
+                                            variant={selectedVariant == index ? 'outline-primary' : 'outline-secondary'}
                                     variant={selectedVariant == index ? 'outline-primary' : 'outline-secondary'} 
-                                    onClick={() => selectVartiant(index)}
-                                    className={'question-variant-btn' + (selectedVariant !== index ? ' hover-border':'')}
-                                >
-                                    {index + 1}
-                                </Button>
+                                            variant={selectedVariant == index ? 'outline-primary' : 'outline-secondary'}
+                                            onClick={() => selectVartiant(index)}
+                                            className={`question-variant-btn ${(selectedVariant !== index && ' hover-border')}`}
+                                        >
+                                            {num++}
+                                        </Button>
+                                }
                             )}
                             {(questionVariants) && questionVariants.length < 10 && <Button
                                 size='sm' 
@@ -195,11 +235,13 @@ export const TaskQuestion = ({index, question}) => {
                         </div>
                     </div>
                     <div onClick={() => onQuestionEdit()}>
-                        {(questionVariants) && questionVariants.map((variant, index) => {
-                            if(!isEmpty(variant)) return (
-                                <QuestionVariant key={index} show={selectedVariant == index} question={question} questionVariant={variant} isEditing={isEditing}/>
-                            )
-                        })}
+                        <TaskQuestionContext.Provider value={{ question, variantCount, markForDeleteVariant, deleteQuestionVariant }}>
+                            {(questionVariants) && questionVariants.map((variant, index) => {
+                                if(!isEmpty(variant)) return (
+                                    <QuestionVariant key={index} show={selectedVariant == index} index={index} questionVariant={variant} isEditing={isEditing}/>
+                                )
+                            })}
+                        </TaskQuestionContext.Provider>
                     </div>
                 </div>
             </div>

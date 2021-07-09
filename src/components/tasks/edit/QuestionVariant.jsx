@@ -4,6 +4,7 @@ import { addErrorNotification } from '../../notifications/notifications'
 import { sortableContainer, sortableElement, sortableHandle, arrayMove } from 'react-sortable-hoc'
 import { useTaskSaveManager, isEquivalent, SAVED_STATUS, ERROR_STATUS, VALIDATE_ERROR_STATUS } from './TaskSaveManager'
 import { questionPartUrl } from './QuestionsList'
+import { TaskQuestionContext } from './TaskQuestion'
 import axios from 'axios'
 import './QuestionVariant.less'
 
@@ -97,24 +98,31 @@ const variantReducer = (state, action) => {
 }
 
 //context for question answer variants
-const QuestionContext = React.createContext();
+const QuestionAnswerContext = React.createContext();
 
 //requests
 export const variantsPartUrl = 'variants'
-
-async function updateVariant(variant, questionId) {
-    return axios.put(`${questionPartUrl}/${questionId}/${variantsPartUrl}/${variant.id}`, variant)
-}
 
 async function addVariant(variant, questionId) {
     return axios.post(`${questionPartUrl}/${questionId}/${variantsPartUrl}`, variant)
 }
 
-export const QuestionVariant = ({show, question, questionVariant, isEditing}) => {
+async function updateVariant(variant, questionId) {
+    return axios.put(`${questionPartUrl}/${questionId}/${variantsPartUrl}/${variant.id}`, variant)
+}
+
+async function deleteVariant(variant, questionId) {
+    return axios.delete(`${questionPartUrl}/${questionId}/${variantsPartUrl}/${variant.id}`)
+}
+
+export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
     const [questionType, setQuestionType] = useState(TEXT_QUESTION)
     const [variant, dispatchVariant] = useReducer(variantReducer, questionVariant)
     const statusBySub = useTaskSaveManager(saveVariant)
     const lastSavedData = useRef({})
+
+    const { question, variantCount, markForDeleteVariant, deleteQuestionVariant } = useContext(TaskQuestionContext)
+    const isDeleted = useRef(false)
 
     const setFormulation = (formulation) => dispatchVariant({ type: FORMULATION, payload: formulation })
     const setVariantType = (questionType) => dispatchVariant({ type: QUESTION_TYPE, payload: questionType })
@@ -182,7 +190,7 @@ export const QuestionVariant = ({show, question, questionVariant, isEditing}) =>
     }
 
     function saveVariant() {
-        if(isEquivalent(variant, lastSavedData.current)) { 
+        if(!isDeleted.current && isEquivalent(variant, lastSavedData.current)) { 
             statusBySub(SAVED_STATUS)
             return
         }
@@ -202,15 +210,26 @@ export const QuestionVariant = ({show, question, questionVariant, isEditing}) =>
                     addErrorNotification('Не удалось сохранить информацию о задании. \n' + (error?.response?.data?.message ? error.response.data.message : error))
                 })
         } else {
-            updateVariant(variant, question.id)
-                .then(res => { 
-                    statusBySub(SAVED_STATUS)
-                    setLastSavedData(variant)
-                })
-                .catch(error => {
-                    statusBySub(ERROR_STATUS)
-                    addErrorNotification('Не удалось сохранить информацию о задании. \n' + (error?.response?.data?.message ? error.response.data.message : error))
-                })
+            if(!isDeleted.current)
+                updateVariant(variant, question.id)
+                    .then(res => { 
+                        statusBySub(SAVED_STATUS)
+                        setLastSavedData(variant)
+                    })
+                    .catch(error => {
+                        statusBySub(ERROR_STATUS)
+                        addErrorNotification('Не удалось сохранить информацию о задании. \n' + (error?.response?.data?.message ? error.response.data.message : error))
+                    })
+            else
+                deleteVariant(variant, question.id)
+                    .then(res => { 
+                        statusBySub(SAVED_STATUS)
+                        deleteQuestionVariant(index)
+                    })
+                    .catch(error => {
+                        statusBySub(ERROR_STATUS)
+                        addErrorNotification('Не удалось сохранить информацию о задании. \n' + (error?.response?.data?.message ? error.response.data.message : error))
+                    })
         }
     }
 
@@ -244,7 +263,7 @@ export const QuestionVariant = ({show, question, questionVariant, isEditing}) =>
             case TEST_MULTI_QUESTION:
                 return (
                     <div>
-                        <QuestionContext.Provider value={{ question, variant, setIsRightAnswer, setAnswerText, deleteAnswer, focus }}>
+                        <QuestionAnswerContext.Provider value={{ question, variant, setIsRightAnswer, setAnswerText, deleteAnswer, focus }}>
                             <SortableContainer onSortEnd={moveAnswerVariant} useDragHandle>
                                 {(variant.testAnswerVariants) && variant.testAnswerVariants.map((answer, index) => (
                                     <SortableItem key={index} index={index} index_={index} question={question} answerVariant={answer}/>
@@ -262,10 +281,15 @@ export const QuestionVariant = ({show, question, questionVariant, isEditing}) =>
                                     </div>
                                 }
                             </SortableContainer>
-                        </QuestionContext.Provider>
+                        </QuestionAnswerContext.Provider>
                     </div>
                 )
         }
+    }
+
+    const markVariantForDelete = () => {
+        isDeleted.current = true
+        markForDeleteVariant(index)
     }
 
     if(show) return (
@@ -281,12 +305,14 @@ export const QuestionVariant = ({show, question, questionVariant, isEditing}) =>
                     onChange={(e) => setFormulation(e.target.value)} 
                 />
                 <div className='variant-actions'>
-                    <button className='icon-btn ml-2' title='Удалить данный вариант вопроса' onClick={() => answerReducer(index, {type: AD_DELETE})}>
-                        <i className='fas fa-times fa-lg'/>
-                    </button>
-                    <button className='icon-btn ml-2 mt-2' title='Скопировать' onClick={() => answerReducer(index, {type: AD_DELETE})}>
-                        <i className='far fa-copy fa-lg'/>
-                    </button>
+                    <Dropdown className='options-dropdown'>
+                        <Dropdown.Toggle size='sm' variant='best' id='dropdown-basic'>⋮</Dropdown.Toggle>
+                        <Dropdown.Menu>
+                            <Dropdown.Item disabled={true}>Вставить</Dropdown.Item>
+                            <Dropdown.Item>Скопировать</Dropdown.Item>
+                            <Dropdown.Item className='text-danger' disabled={variantCount == 1} onClick={() => markVariantForDelete()}>Удалить вариант</Dropdown.Item>
+                        </Dropdown.Menu>
+                    </Dropdown>
                 </div>
             </div>
                     
@@ -327,7 +353,7 @@ export const QuestionVariant = ({show, question, questionVariant, isEditing}) =>
 }
 
 const TestQuestionAnswerVariant = ({index, answerVariant}) => {
-    const { question, variant, setIsRightAnswer, setAnswerText, deleteAnswer, focus } = useContext(QuestionContext)
+    const { question, variant, setIsRightAnswer, setAnswerText, deleteAnswer, focus } = useContext(QuestionAnswerContext)
 
     return (
         <div className='question-answer'>
@@ -349,7 +375,7 @@ const TestQuestionAnswerVariant = ({index, answerVariant}) => {
                 onChange={(e) => setAnswerText(index, e.target.value)}
             />
             <button className='icon-btn ml-2' title='Удалить' onClick={() => deleteAnswer(index)}>
-                <i className='fas fa-times fa-lg'/>
+                <i className='fas fa-times fa-sm'/>
             </button>
         </div>
     )
