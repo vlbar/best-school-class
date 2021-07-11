@@ -36,6 +36,7 @@ const SortableItem = sortableElement(({index_, answerVariant}) => (
 ))
 
 //flux
+const ID = 'ID'
 const FORMULATION = 'FORMULATION'
 const QUESTION_TYPE = 'QUESTION_TYPE'
 
@@ -218,36 +219,44 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
             }
 
             addVariant(variant, question.id)
-                .then(res => { 
-                    statusBySub(SAVED_STATUS)
-                    setLastSavedData(variant)
-                })
-                .catch(error => {
-                    statusBySub(ERROR_STATUS)
-                    addErrorNotification('Не удалось сохранить информацию о задании. \n' + (error?.response?.data?.message ? error.response.data.message : error))
-                })
+                .then(res => successfulSaved())
+                .catch(error => catchSaveError(error))
         } else {
             if(!isDeleted.current)
-                updateVariant(variant, question.id)
-                    .then(res => { 
-                        statusBySub(SAVED_STATUS)
-                        setLastSavedData(variant)
+                if(lastSavedData.current.type !== variant.type) {
+                    deleteVariant(variant, question.id)
+                    .then(res => {
+                        addVariant(variant, question.id)
+                        .then(res => { 
+                            statusBySub(SAVED_STATUS)
+                            setLastSavedData(variant)
+                        })
+                        .catch(error => catchSaveError(error))
                     })
-                    .catch(error => {
-                        statusBySub(ERROR_STATUS)
-                        addErrorNotification('Не удалось сохранить информацию о задании. \n' + (error?.response?.data?.message ? error.response.data.message : error))
-                    })
+                    .catch(error => catchSaveError(error))
+                } else {
+                    updateVariant(variant, question.id)
+                    .then(res => successfulSaved())
+                    .catch(error => catchSaveError(error))
+                }
             else
                 deleteVariant(variant, question.id)
                     .then(res => { 
                         statusBySub(SAVED_STATUS)
                         deleteQuestionVariant(index)
                     })
-                    .catch(error => {
-                        statusBySub(ERROR_STATUS)
-                        addErrorNotification('Не удалось сохранить информацию о задании. \n' + (error?.response?.data?.message ? error.response.data.message : error))
-                    })
+                    .catch(error => catchSaveError(error))
         }
+    }
+
+    const successfulSaved = () => {
+        statusBySub(SAVED_STATUS)
+        setLastSavedData(variant)
+    }
+
+    const catchSaveError = (error) => {
+        statusBySub(ERROR_STATUS)
+        addErrorNotification('Не удалось сохранить информацию о задании. \n' + (error?.response?.data?.message ? error.response.data.message : error))
     }
 
     const setLastSavedData = (questionVariant) => {
