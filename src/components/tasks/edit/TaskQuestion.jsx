@@ -154,9 +154,15 @@ export const TaskQuestion = ({index, question}) => {
         setIsFetching(true)
         await fetchQuestionVariants(question)
             .then(res => {
-                let fetchedData = res.data
-                fetchedData[0] = questionVariants[0]
-                setQuestionVariants(fetchedData)
+                let fetchedData = res.data 
+                
+                let allQuestionVariants = questionVariants
+                let j = 1;
+                for(let i = 0; i < allQuestionVariants.length; i++)
+                    if(isEmpty(allQuestionVariants[i]))
+                        allQuestionVariants[i] = fetchedData[j++]
+
+                setQuestionVariants(allQuestionVariants)
             })
             .catch(error => {
                 addErrorNotification('Не удалось загрузить варианты задания. \n' + error)
