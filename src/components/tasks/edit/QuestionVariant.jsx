@@ -120,8 +120,9 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
     const [variant, dispatchVariant] = useReducer(variantReducer, questionVariant)
     const statusBySub = useTaskSaveManager(saveVariant)
     const lastSavedData = useRef({})
+    const awaitQuestionSave = useRef(false)
 
-    const { question, variantCount, markForDeleteVariant, deleteQuestionVariant } = useContext(TaskQuestionContext)
+    const { question, setQuestionVariant, variantCount, markForDeleteVariant, deleteQuestionVariant } = useContext(TaskQuestionContext)
     const isDeleted = useRef(false)
 
     const setFormulation = (formulation) => dispatchVariant({ type: FORMULATION, payload: formulation })
@@ -138,6 +139,17 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
         getQuestionParams()
         setLastSavedData(questionVariant)
     }, [])
+
+    useEffect(() => {
+        setQuestionVariant(variant, index)
+    }, [variant])
+
+    useEffect(() => {
+        if(!question.detached && awaitQuestionSave.current) {
+            awaitQuestionSave.current = false
+            saveVariant()
+        }
+    }, [question.id])
 
     // -Anti select varinat focus. 
     // -Ford?
@@ -190,6 +202,11 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
     }
 
     function saveVariant() {
+        if(question?.detached) {
+            awaitQuestionSave.current = true
+            return
+        }
+
         if(!isDeleted.current && isEquivalent(variant, lastSavedData.current)) { 
             statusBySub(SAVED_STATUS)
             return

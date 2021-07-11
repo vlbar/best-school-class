@@ -69,6 +69,9 @@ export const TaskQuestion = ({index, question}) => {
     }, [])
 
     function updateQuestion() {
+        question.questionVariantsCount = questionVariants.length
+        question.questionVariants = questionVariants
+
         if(!isDeleted && isEquivalent(question, lastSavedData.current)) { 
             statusBySub(SAVED_STATUS)
             return
@@ -128,6 +131,7 @@ export const TaskQuestion = ({index, question}) => {
         })
 
         setQuestionVariants([...questionVariantsVar])
+        setSelectedVariant(questionVariantsVar.length - 1)
     }
 
     const onQuestionEdit = () => {
@@ -187,10 +191,15 @@ export const TaskQuestion = ({index, question}) => {
     }
 
     const deleteQuestionVariant = (index) => {
-        console.log(questionVariants[index])
         let cleanedVariants = questionVariants
         cleanedVariants.splice(index, 1)
         setQuestionVariants(cleanedVariants)
+    }
+
+    const setQuestionVariant = (variant, index) => {
+        let targetVariants = questionVariants
+        targetVariants[index] = variant
+        setQuestionVariants(targetVariants)
     }
 
     let variantCount = (questionVariants) ? questionVariants.filter(x => !x.markForDelete).length : 0
@@ -235,7 +244,7 @@ export const TaskQuestion = ({index, question}) => {
                         </div>
                     </div>
                     <div onClick={() => onQuestionEdit()}>
-                        <TaskQuestionContext.Provider value={{ question, variantCount, markForDeleteVariant, deleteQuestionVariant }}>
+                        <TaskQuestionContext.Provider value={{ question, setQuestionVariant, variantCount, markForDeleteVariant, deleteQuestionVariant }}>
                             {(questionVariants) && questionVariants.map((variant, index) => {
                                 if(!isEmpty(variant)) return (
                                     <QuestionVariant key={index} show={selectedVariant == index} index={index} questionVariant={variant} isEditing={isEditing}/>

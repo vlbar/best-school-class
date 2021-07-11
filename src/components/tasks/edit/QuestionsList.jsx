@@ -86,7 +86,8 @@ export const QuestionsList = ({taskId}) => {
         targetQuestions.filter(x => x.position >= position).forEach(x => x.position++)
 
         let newQuestion = {
-            id: Math.random(),
+            id: undefined,
+            key: Math.random(),
             detached: true,
             position: position,
             maxScore: 1
@@ -125,7 +126,7 @@ export const QuestionsList = ({taskId}) => {
                 <QuestionsContext.Provider value={{taskId, questionToChange, setQuestionToChange, addQuestionAfter, moveQuestion, deleteQuestion}}>
                     <SortableContainer onSortEnd={moveQuestion} useDragHandle>
                         {questions.map((question, index) => (
-                            <SortableItem key={question.id} index={index} index_={index + 1} question={question}/>
+                            <SortableItem key={question.key ?? question.id} index={index} index_={index + 1} question={question}/>
                         ))}
                     </SortableContainer>
                 </QuestionsContext.Provider>}
