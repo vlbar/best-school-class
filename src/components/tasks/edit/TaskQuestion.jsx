@@ -65,7 +65,7 @@ export const TaskQuestion = ({index, question}) => {
             ])
         }
 
-        if(!question.detached) lastSavedData.current = question
+        if(!question.detached) lastSavedData.current = {...question}
     }, [])
 
     function updateQuestion() {
@@ -85,7 +85,7 @@ export const TaskQuestion = ({index, question}) => {
                     question.detached = false
                     question.id = fetchedData.id
 
-                    lastSavedData.current = question
+                    lastSavedData.current = {...question}
                     statusBySub(SAVED_STATUS)
                 })
                 .catch(error => {
@@ -97,7 +97,7 @@ export const TaskQuestion = ({index, question}) => {
             if(!isDeleted) {
                 update(question, taskId)
                     .then(res => {
-                        lastSavedData.current = question
+                        lastSavedData.current = {...question}
                         statusBySub(SAVED_STATUS)
                     })
                     .catch(error => {
@@ -155,7 +155,7 @@ export const TaskQuestion = ({index, question}) => {
         await fetchQuestionVariants(question)
             .then(res => {
                 let fetchedData = res.data 
-                
+
                 let allQuestionVariants = questionVariants
                 let j = 1;
                 for(let i = 0; i < allQuestionVariants.length; i++)
