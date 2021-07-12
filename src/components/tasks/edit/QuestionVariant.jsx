@@ -144,6 +144,10 @@ const variantValidationSchema = {
     }
 }
 
+const answerVariantsValidarionSсhema = {
+    noIsRight: 'Не отмечен правильный вариант ответа'
+}
+
 //context for question answer variants
 const QuestionAnswerContext = React.createContext();
 
@@ -189,6 +193,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
     const deleteAnswer = (answerIndex) => dispatchVariant({type: DELETE_ANSWER, payload: answerIndex})
 
     const variantValidation = useBestValidation(variantValidationSchema)
+    const answerVariantsValdiation = useAnswerVariantsValidationHook(answerVariantsValidarionSсhema)
 
     useEffect(() => {
         getQuestionParams()
@@ -226,6 +231,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
     }
 
     const onSelectType = (type) => {
+        let latestType = questionType
         setQuestionType(type)
         setVariantType(toSourceQuestionTypeTranslator[type])
 
@@ -240,7 +246,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
 
         if(type == TEST_QUESTION) uncheckMultiVarinats()
         if(type == TEST_MULTI_QUESTION || type == TEST_QUESTION) {
-            resetAnswerVariants()
+            if(!(latestType === TEST_MULTI_QUESTION || latestType === TEST_QUESTION)) resetAnswerVariants()
             setIsMultipleAnswer(type == TEST_MULTI_QUESTION)
         }
     }
@@ -275,8 +281,15 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
         variantValidation.blurHandle({target: {name: 'testAnswerVariants', value: fakeVariants}})
     }
 
+    const setIsRightAnswerVariant = (answerIndex, isRight) => {
+        setIsRightAnswer(answerIndex, isRight)
+        let testAnswerVariants = variant.testAnswerVariants
+        testAnswerVariants[answerIndex].isRight = isRight
+        answerVariantsValdiation.changeHandle(NO_IS_RIGHT_VALIDATION, testAnswerVariants)
+    }
+
     async function saveVariant() {
-        if(!variantValidation.validate(variant)) {
+        if(!variantValidation.validate(variant) | (variant.type === SOURCE_TEST_QUESTION && !answerVariantsValdiation.validate([...variant.testAnswerVariants]))) {
             statusBySub(VALIDATE_ERROR_STATUS)
             return
         }
@@ -378,7 +391,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
             case TEST_MULTI_QUESTION:
                 return (
                     <div>
-                        <QuestionAnswerContext.Provider value={{ question, variant, setIsRightAnswer, setAnswerText, deleteAnswerVariant, focus, variantValidation }}>
+                        <QuestionAnswerContext.Provider value={{ question, variant, setIsRightAnswerVariant, setAnswerText, deleteAnswerVariant, focus, variantValidation }}>
                             <SortableContainer onSortEnd={moveAnswerVariant} useDragHandle>
                                 {(variant.testAnswerVariants) && variant.testAnswerVariants.map((answer, index) => (
                                     <SortableItem key={index} index={index} index_={index} question={question} answerVariant={answer}/>
@@ -397,7 +410,8 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
                                 }
 
                                 <div className='invalid-feedback d-block'>
-                                    {variantValidation.errors.testAnswerVariants}
+                                    {variantValidation.errors.testAnswerVariants}<br/>
+                                    {answerVariantsValdiation.errors.noIsRight}
                                 </div>
                             </SortableContainer>
                         </QuestionAnswerContext.Provider>
@@ -482,7 +496,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
 }
 
 const TestQuestionAnswerVariant = ({index, answerVariant}) => {
-    const { question, variant, setIsRightAnswer, setAnswerText, deleteAnswerVariant, focus, variantValidation } = useContext(QuestionAnswerContext)
+    const { question, variant, setIsRightAnswerVariant, setAnswerText, deleteAnswerVariant, focus, variantValidation } = useContext(QuestionAnswerContext)
 
     let fieldName = `testAnswerVariants[${index}].answer`
     return (<>
@@ -491,7 +505,7 @@ const TestQuestionAnswerVariant = ({index, answerVariant}) => {
             <Form.Check
                 custom
                 checked={answerVariant.isRight}
-                onChange={(e) => setIsRightAnswer(index, e.target.checked)}
+                onChange={(e) => setIsRightAnswerVariant(index, e.target.checked)}
                 type={variant.isMultipleAnswer ? 'checkbox' : 'radio'}
                 id={`custom-inline-${question.id}-${index}`}
                 className='label-center mr-2'
@@ -527,4 +541,63 @@ const cloneTestAnswers = (questionVariant) => {
         colnedTestAnswerVariants.push({...answerVar})
     })
     return {...questionVariant, testAnswerVariants: colnedTestAnswerVariants}
+}
+
+/*
+    {
+        noIsRight: ''
+    }
+*/
+
+const NO_IS_RIGHT_VALIDATION = 'noIsRight'
+
+function useAnswerVariantsValidationHook(validationSchema) {
+    const [errors, setErrors] = useState({})
+
+    function changeHandle(fieldName, variants) {
+        let targetErrors = errors
+        delete targetErrors[fieldName]
+        setErrors(targetErrors)
+
+        switch(fieldName) {
+            case NO_IS_RIGHT_VALIDATION:
+                let hasCheked = false
+                variants.forEach(variant => {
+                    if(variant.isRight) {
+                        hasCheked = true
+                    }
+                })
+
+                if(!hasCheked)
+                    addError(NO_IS_RIGHT_VALIDATION, validationSchema[NO_IS_RIGHT_VALIDATION])
+                break
+        }
+    }
+
+    function addError(fieldName, error) {
+        let targetErrors = errors
+        targetErrors[fieldName] = error
+        setErrors(targetErrors)
+    }
+
+    function validate(variants) {
+        setErrors({})
+
+        let targetFields = Object.getOwnPropertyNames(validationSchema)
+        targetFields.forEach(x => {
+            changeHandle(x, variants)
+        })
+
+        return isEmpty(errors)
+    }
+
+    return {
+        changeHandle,
+        validate,
+        errors
+    }
+}
+
+function isEmpty(obj) {
+    return Object.keys(obj).length === 0;
 }

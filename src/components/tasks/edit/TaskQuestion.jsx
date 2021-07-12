@@ -69,13 +69,13 @@ export const TaskQuestion = ({index, question}) => {
     }, [])
 
     function updateQuestion() {
-        question.questionVariantsCount = questionVariants.length
-        question.questionVariants = questionVariants
-
         if(!isDeleted && isEquivalent(question, lastSavedData.current)) { 
             statusBySub(SAVED_STATUS)
             return
         }
+
+        question.questionVariantsCount = questionVariants.length
+        question.questionVariants = questionVariants
 
         if(question.detached) {
             let addableQuestion = {...question, id: null}
