@@ -5,6 +5,7 @@ import { sortableContainer, sortableElement, sortableHandle, arrayMove } from 'r
 import { useTaskSaveManager, isEquivalent, SAVED_STATUS, ERROR_STATUS, VALIDATE_ERROR_STATUS } from './TaskSaveManager'
 import { questionPartUrl } from './QuestionsList'
 import { TaskQuestionContext } from './TaskQuestion'
+import useBestValidation from './useBestValidation'
 import axios from 'axios'
 import './QuestionVariant.less'
 
@@ -45,6 +46,8 @@ const NUMBER_OF_SYMBOLS = 'NUMBER_OF_SYMBOLS'
 //test question
 const IS_MULTIPLE_ANSWER = 'IS_MULTIPLE_ANSWER'
 const ADD_ANSWER_VARIANT = 'ADD_ANSWER_VARIANT'
+const RESET_ANSWER_VARIANTS = 'RESET_ANSWER_VARIANTS'
+const DELETE_ANSWER_VARIANTS = 'DELETE_ANSWER_VARIANTS'
 const IS_RIGHT = 'IS_RIGHT'
 const ANSWER = 'ANSWER'
 const MOVE_ANSWER = 'MOVE_ANSWER'
@@ -59,14 +62,27 @@ const variantReducer = (state, action) => {
         case QUESTION_TYPE:
             return { ...state, type: action.payload }
         case NUMBER_OF_SYMBOLS:
+            if(action.payload === undefined) {
+                delete state.numberOfSymbols
+                return { ...state }
+            }
             return { ...state, numberOfSymbols: action.payload }
 
         case IS_MULTIPLE_ANSWER:
+            if(action.payload === undefined) {
+                delete state.isMultipleAnswer
+                return { ...state }
+            }
             return { ...state, isMultipleAnswer: action.payload}
         case ADD_ANSWER_VARIANT:
             if(state.testAnswerVariants) 
             return { ...state, testAnswerVariants: [...state.testAnswerVariants, action.payload] }
             else return { ...state, testAnswerVariants: [action.payload] }
+        case RESET_ANSWER_VARIANTS:
+            return { ...state, testAnswerVariants: []}
+        case DELETE_ANSWER_VARIANTS:
+            delete state.testAnswerVariants
+            return { ...state }
         case IS_RIGHT:
             testAnswerVariants = state.testAnswerVariants
             answer = testAnswerVariants[action.payload.answerIndex]
@@ -95,6 +111,36 @@ const variantReducer = (state, action) => {
             return { ...state, testAnswerVariants: testAnswerVariants }
         default:
             return state
+    }
+}
+
+//validation
+const variantValidationSchema = {
+    formulation: {
+        type: 'string',
+        required: ['Не введена формулировка вопроса'],
+        min: [5, 'Слишком короткая формулировка вопроса'],
+        max: [1024, 'Слишком длинная формулировка вопроса']
+    },
+
+    // text variant
+    numberOfSymbols: {
+        type: 'number',
+        min: [1, 'Длина ответа должна быть больше 0'],
+        max: [9223372036854775807, 'Слишком большая длина ответа']
+    },
+
+    //test variant
+    testAnswerVariants: {
+        type: 'array', of: {
+            answer: {
+                type: 'string',
+                required: ['Не введен вариант ответа'],
+                max: [1024, 'Слишком длинный вариант ответа']
+            }
+        },
+        required: ['Не введены ответы на вопрос'],
+        min: [2, 'Необходимо добавить минимум 2 ответа']
     }
 }
 
@@ -128,13 +174,21 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
 
     const setFormulation = (formulation) => dispatchVariant({ type: FORMULATION, payload: formulation })
     const setVariantType = (questionType) => dispatchVariant({ type: QUESTION_TYPE, payload: questionType })
+
+    // text variant
     const setNumberOfSymbols = (numberOfSymbols) => dispatchVariant({type: NUMBER_OF_SYMBOLS, payload: numberOfSymbols})
+
+    //test variant
     const setIsMultipleAnswer = (isMultipleAnswer) => dispatchVariant({type: IS_MULTIPLE_ANSWER, payload: isMultipleAnswer})
     const addAnswerVariant = (answerVariant) => dispatchVariant({ type: ADD_ANSWER_VARIANT, payload: answerVariant })
+    const resetAnswerVariants = () => dispatchVariant({ type : RESET_ANSWER_VARIANTS })
+    const deleteAnswerVariants = () => dispatchVariant({ type : DELETE_ANSWER_VARIANTS })
     const setIsRightAnswer = (answerIndex, isRight) => dispatchVariant({type: IS_RIGHT, payload: { answerIndex, isRight}})
     const setAnswerText = (answerIndex, answer) => dispatchVariant({type: ANSWER, payload: { answerIndex, answer}})
     const moveAnswerVariant = ({oldIndex, newIndex}) => dispatchVariant({type: MOVE_ANSWER, payload: { oldIndex, newIndex }})
     const deleteAnswer = (answerIndex) => dispatchVariant({type: DELETE_ANSWER, payload: answerIndex})
+
+    const variantValidation = useBestValidation(variantValidationSchema)
 
     useEffect(() => {
         getQuestionParams()
@@ -175,8 +229,18 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
         setQuestionType(type)
         setVariantType(toSourceQuestionTypeTranslator[type])
 
+        if(!(type == TEST_MULTI_QUESTION || type == TEST_QUESTION)) {
+            setIsMultipleAnswer(undefined)
+            deleteAnswerVariants()
+        }
+
+        if(type !== TEXT_QUESTION) { 
+            setNumberOfSymbols(undefined)
+        }
+
         if(type == TEST_QUESTION) uncheckMultiVarinats()
         if(type == TEST_MULTI_QUESTION || type == TEST_QUESTION) {
+            resetAnswerVariants()
             setIsMultipleAnswer(type == TEST_MULTI_QUESTION)
         }
     }
@@ -200,9 +264,23 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
             answer: answer,
             isRight: false
         })
+
+        let fakeVariants = new Array(variant.testAnswerVariants.length + 1).fill({})
+        variantValidation.blurHandle({target: {name: 'testAnswerVariants', value: fakeVariants}})
     }
 
-    function saveVariant() {
+    const deleteAnswerVariant = (answerIndex) => {
+        deleteAnswer(answerIndex)
+        let fakeVariants = new Array(variant.testAnswerVariants.length - 1).fill({})
+        variantValidation.blurHandle({target: {name: 'testAnswerVariants', value: fakeVariants}})
+    }
+
+    async function saveVariant() {
+        if(!variantValidation.validate(variant)) {
+            statusBySub(VALIDATE_ERROR_STATUS)
+            return
+        }
+
         if(question?.detached) {
             awaitQuestionSave.current = true
             return
@@ -277,11 +355,22 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
                                 Макс. длина ответа
                             </Form.Label>
                             <Form.Control 
-                            type='number' 
-                            min={1}
-                            value={variant.numberOfSymbols} 
-                            onChange={(e) => setNumberOfSymbols(Number(e.target.value))} 
-                            className='short-input hover-border'/>
+                                type='number'
+                                min={1}
+                                className='short-input hover-border'
+                                value={variant.numberOfSymbols}
+                                name='numberOfSymbols'
+                                isInvalid={variantValidation.errors.numberOfSymbols}
+                                onBlur={variantValidation.blurHandle}
+                                onChange={(e) => { 
+                                    setNumberOfSymbols(Number(e.target.value))
+                                    variantValidation.changeHandle(e)
+                                }}
+                            />
+                            
+                            <Form.Control.Feedback type="invalid" className='pt-1 w-25 ml-2'>
+                                {variantValidation.errors.numberOfSymbols}
+                            </Form.Control.Feedback>
                         </Form.Group>
                     </>
                 )
@@ -289,7 +378,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
             case TEST_MULTI_QUESTION:
                 return (
                     <div>
-                        <QuestionAnswerContext.Provider value={{ question, variant, setIsRightAnswer, setAnswerText, deleteAnswer, focus }}>
+                        <QuestionAnswerContext.Provider value={{ question, variant, setIsRightAnswer, setAnswerText, deleteAnswerVariant, focus, variantValidation }}>
                             <SortableContainer onSortEnd={moveAnswerVariant} useDragHandle>
                                 {(variant.testAnswerVariants) && variant.testAnswerVariants.map((answer, index) => (
                                     <SortableItem key={index} index={index} index_={index} question={question} answerVariant={answer}/>
@@ -306,6 +395,10 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
                                         />
                                     </div>
                                 }
+
+                                <div className='invalid-feedback d-block'>
+                                    {variantValidation.errors.testAnswerVariants}
+                                </div>
                             </SortableContainer>
                         </QuestionAnswerContext.Provider>
                     </div>
@@ -327,8 +420,14 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
                     wrap='soft' 
                     placeholder='Введите формулировку вопроса...' 
                     className='text-break' 
+                    name='formulation'
+                    onBlur={variantValidation.blurHandle}
+                    isInvalid={variantValidation.errors.formulation}
                     value={variant.formulation} 
-                    onChange={(e) => setFormulation(e.target.value)} 
+                    onChange={(e) => {
+                        setFormulation(e.target.value)
+                        variantValidation.changeHandle(e)
+                    }} 
                 />
                 <div className='variant-actions'>
                     <Dropdown className='options-dropdown'>
@@ -340,6 +439,10 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
                         </Dropdown.Menu>
                     </Dropdown>
                 </div>
+            </div>
+
+            <div className='invalid-feedback d-block'>
+                {variantValidation.errors.formulation}
             </div>
                     
             <Row>
@@ -369,7 +472,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
                 </Col>
             </Row>
         
-            <div className='mt-2'>
+            <div>
                 {getQuestionInputs(questionType)}
             </div>
         </>
@@ -379,9 +482,10 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
 }
 
 const TestQuestionAnswerVariant = ({index, answerVariant}) => {
-    const { question, variant, setIsRightAnswer, setAnswerText, deleteAnswer, focus } = useContext(QuestionAnswerContext)
+    const { question, variant, setIsRightAnswer, setAnswerText, deleteAnswerVariant, focus, variantValidation } = useContext(QuestionAnswerContext)
 
-    return (
+    let fieldName = `testAnswerVariants[${index}].answer`
+    return (<>
         <div className='question-answer'>
             <AnswerDragHandle/>
             <Form.Check
@@ -395,16 +499,25 @@ const TestQuestionAnswerVariant = ({index, answerVariant}) => {
             <Form.Control
                 autoFocus={focus.current}
                 type='text'
+                name={fieldName}
                 className='hover-border'
                 placeholder='Введите вариант ответа...'
                 value={answerVariant.answer}
-                onChange={(e) => setAnswerText(index, e.target.value)}
+                onBlur={variantValidation.blurHandle}
+                isInvalid={variantValidation.errors[fieldName]}
+                onChange={(e) => {
+                    setAnswerText(index, e.target.value)
+                    variantValidation.changeHandle(e)
+                }}
             />
-            <button className='icon-btn ml-2' title='Удалить' onClick={() => deleteAnswer(index)}>
+            <button className='icon-btn ml-2' title='Удалить' onClick={() => deleteAnswerVariant(index)}>
                 <i className='fas fa-times fa-sm'/>
             </button>
         </div>
-    )
+        <div className='invalid-feedback d-block mb-2' style={{marginLeft: '4.5Rem'}}>
+            {variantValidation.errors[fieldName]}
+        </div>
+    </>)
 }
 
 const cloneTestAnswers = (questionVariant) => {
