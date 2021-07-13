@@ -28,20 +28,42 @@ export const TaskSaveManager = ({children}) => {
         subscribers.current.splice(removedSubIndex, 1)
     }
 
+    let generalSaveStatus = SAVING_STATUS
     const canSave = useRef(true)
     const isFakeSaving = useRef(false)
+    const expectedSubResponses = useRef(undefined)
     const onSaveClick = () => {
         if(canSave.current) {
             canSave.current = false
+            expectedSubResponses.current = subscribers.current.length
             setUpdateCycle(updateCycle + 1)
         } else {
             if(saveStatus !== SAVING_STATUS) isFakeSaving.current = true
         }
 
         setSaveStatus(SAVING_STATUS)
+        generalSaveStatus = SAVING_STATUS
     }
 
-    const manualSaveCooldown = () => {
+    
+    const statusBySub = (status) => {
+        if(status === VALIDATE_ERROR_STATUS && generalSaveStatus === SAVING_STATUS) {
+            generalSaveStatus = VALIDATE_ERROR_STATUS
+        } else if(status === ERROR_STATUS) {
+            generalSaveStatus = ERROR_STATUS
+        }
+
+        checkedSubs.current++
+        if(checkedSubs.current == expectedSubResponses.current) {
+            if(generalSaveStatus === SAVING_STATUS) generalSaveStatus = SAVED_STATUS
+            setSaveStatus(generalSaveStatus)
+
+            checkedSubs.current = 0
+            manualSaveCooldown()
+        }
+    }
+
+    function manualSaveCooldown() {
         setTimeout(() => {
             canSave.current = true
             if(isFakeSaving.current) {
@@ -49,23 +71,6 @@ export const TaskSaveManager = ({children}) => {
                 onSaveClick()
             }
         }, 10000)
-    }
-
-    const statusBySub = (status) => {
-        switch(status) {
-            case VALIDATE_ERROR_STATUS:
-            case ERROR_STATUS:
-                setSaveStatus(status)
-                break
-            case SAVED_STATUS:
-                checkedSubs.current++
-                if(saveStatus !== ERROR_STATUS && checkedSubs.current == subscribers.current.length) {
-                    setSaveStatus(SAVED_STATUS)
-                    manualSaveCooldown()
-                    checkedSubs.current = 0
-                }
-                break
-        }
     }
 
     //bar show
