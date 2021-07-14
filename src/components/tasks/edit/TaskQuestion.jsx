@@ -12,6 +12,7 @@ import { variantsPartUrl } from './QuestionVariant'
 import useBestValidation from './useBestValidation'
 import axios from 'axios'
 import './TaskQuestion.less'
+import FeedbackMessage from '../../feedback/FeedbackMessage'
 
 //reducer
 const MAX_SCORE = 'MAX_SCORE'
@@ -312,9 +313,7 @@ export const TaskQuestion = ({index, question}) => {
                                         }}
                                     />
                                 </Form.Group>
-                                {(questionValidation.errors.maxScore) && <div className='invalid-feedback d-block'>
-                                    {questionValidation.errors.maxScore}
-                                </div>}
+                                <FeedbackMessage message={questionValidation.errors.maxScore}/>
                             </Col>
                         </Row>
                     </div>

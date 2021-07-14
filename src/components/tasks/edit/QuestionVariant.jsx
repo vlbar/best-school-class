@@ -8,6 +8,7 @@ import { TaskQuestionContext } from './TaskQuestion'
 import useBestValidation from './useBestValidation'
 import axios from 'axios'
 import './QuestionVariant.less'
+import FeedbackMessage from '../../feedback/FeedbackMessage'
 
 //question types
 const TEXT_QUESTION = 'TEXT_QEUSTION'
@@ -409,10 +410,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
                                     </div>
                                 }
 
-                                <div className='invalid-feedback d-block'>
-                                    {variantValidation.errors.testAnswerVariants}<br/>
-                                    {answerVariantsValdiation.errors.noIsRight}
-                                </div>
+                                <FeedbackMessage message={[variantValidation.errors.testAnswerVariants, answerVariantsValdiation.errors.noIsRight]}/>
                             </SortableContainer>
                         </QuestionAnswerContext.Provider>
                     </div>
@@ -454,10 +452,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
                     </Dropdown>
                 </div>
             </div>
-
-            <div className='invalid-feedback d-block'>
-                {variantValidation.errors.formulation}
-            </div>
+            <FeedbackMessage message={variantValidation.errors.formulation}/>
                     
             <Row>
                 <Col className='mt-2'>
@@ -519,9 +514,7 @@ const TestQuestionAnswerVariant = ({index, answerVariant}) => {
                 <i className='fas fa-times fa-sm'/>
             </button>
         </div>
-        <div className='invalid-feedback d-block mb-2' style={{marginLeft: '4.5Rem'}}>
-            {variantValidation.errors[fieldName]}
-        </div>
+        <FeedbackMessage message={variantValidation.errors[fieldName]} className='varinat-answer-feedback'/>
     </>)
 }
 
