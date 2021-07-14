@@ -99,13 +99,13 @@ export const QuestionsList = ({taskId}) => {
         else
             targetQuestions.splice(targetIndex, 0, newQuestion)
 
-        setQuestions(targetQuestions)
+        setQuestions([...targetQuestions])
     }
 
     const setQuestion = (question, index) => {
         let targetQuestions = questions
         targetQuestions[index - 1] = question
-        setQuestions(targetQuestions)
+        setQuestions([...targetQuestions])
     }
 
     const getMessage = () => {
