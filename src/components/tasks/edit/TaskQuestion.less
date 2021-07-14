@@ -29,6 +29,12 @@
         border-top-left-radius: .25Rem;
         border-top-right-radius: .25Rem;
     }
+
+    hr {
+        margin-top: .5Rem;
+        margin-bottom: .5Rem;
+        border-top: 0px;
+    }
 }
 
 .hover-border {
@@ -76,8 +82,17 @@
     }
 }
 
+.question-card-hr {
+    margin-top: .5Rem;
+    margin-bottom: .5Rem;
+    border-top: 0px;
+
+    .question-card.edit & {
+        border-top: 1px solid rgba(0,0,0,.1);
+    }
+}
+
 .question-card-header {
-    height: 26px;
     margin-bottom: 1Rem;
     transition: height 0.2s;
     display: flex;

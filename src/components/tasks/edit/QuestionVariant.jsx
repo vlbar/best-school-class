@@ -364,7 +364,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
                 return (
                     <>
                         <Form.Group className='d-flex justify-content-start mb-0'>
-                            <Form.Label className='label-center'>
+                            <Form.Label className='label-center mb-0'>
                                 Макс. длина ответа
                             </Form.Label>
                             <Form.Control 
@@ -398,7 +398,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
                                 ))}
 
                                 {(isEditing && (!variant.testAnswerVariants || variant.testAnswerVariants.length < 10)) &&
-                                    <div className='add-question-variant'>
+                                    <div className='add-question-variant mt-2'>
                                         <Form.Control
                                             type='text'
                                             className='hover-border'
@@ -474,15 +474,6 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
                             </Dropdown.Menu>
                         </Dropdown>
                     </div>
-                </Col>
-
-                <Col md={4} className='mt-2'>
-                    <Form.Group className='flex-between float-right-screen mb-0' style ={{width: '155px'}}>
-                        <Form.Label className='label-sm-center mr-3'>
-                            Балл.
-                        </Form.Label>
-                        <Form.Control size='sm' type='number' className='hover-border' min={1} defaultValue={1}/>
-                    </Form.Group>
                 </Col>
             </Row>
         

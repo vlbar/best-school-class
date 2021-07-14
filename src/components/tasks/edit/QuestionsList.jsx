@@ -102,6 +102,12 @@ export const QuestionsList = ({taskId}) => {
         setQuestions(targetQuestions)
     }
 
+    const setQuestion = (index, question) => {
+        let targetQuestions = questions
+        targetQuestions[index - 1] = question
+        setQuestions(targetQuestions)
+    }
+
     const getMessage = () => {
         if(questions) {
             if(questions.length == 0)
@@ -123,7 +129,7 @@ export const QuestionsList = ({taskId}) => {
     return (
         <>
             {(questions !== undefined) &&
-                <QuestionsContext.Provider value={{taskId, questionToChange, setQuestionToChange, addQuestionAfter, moveQuestion, deleteQuestion}}>
+                <QuestionsContext.Provider value={{taskId, questionToChange, setQuestionToChange, setQuestion, addQuestionAfter, moveQuestion, deleteQuestion}}>
                     <SortableContainer onSortEnd={moveQuestion} useDragHandle>
                         {questions.map((question, index) => (
                             <SortableItem key={question.key ?? question.id} index={index} index_={index + 1} question={question}/>

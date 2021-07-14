@@ -1,5 +1,5 @@
-import React, { useContext, useState, useEffect, useRef } from 'react'
-import { Button } from 'react-bootstrap'
+import React, { useContext, useState, useEffect, useRef, useReducer } from 'react'
+import { Button, Form, Col, Row } from 'react-bootstrap'
 import { sortableHandle } from 'react-sortable-hoc'
 import { addErrorNotification } from '../../notifications/notifications'
 import ProcessBar from '../../process-bar/ProcessBar'
@@ -9,8 +9,30 @@ import { QuestionVariant } from './QuestionVariant'
 import { tasksBaseUrl } from './TaskEditor'
 import { questionPartUrl } from './QuestionsList'
 import { variantsPartUrl } from './QuestionVariant'
+import useBestValidation from './useBestValidation'
 import axios from 'axios'
 import './TaskQuestion.less'
+
+//reducer
+const MAX_SCORE = 'MAX_SCORE'
+
+const questionReducer = (state, action) => {
+    switch (action.type) {
+        case MAX_SCORE:
+            return { ...state, maxScore: action.payload }
+        default:
+            return state
+    }
+}
+
+//validation
+const questionValidationSchema = {
+    maxScore: {
+        type: 'number',
+        min: [1, 'Балл должен быть больше 0'],
+        max: [9223372036854775807, 'Слишком большое количество баллов']
+    }
+}
 
 //questions task requests
 async function add(question, taskId) {
@@ -37,7 +59,7 @@ export const TaskQuestionContext = React.createContext()
 
 export const TaskQuestion = ({index, question}) => {
     let arrayIndex = index - 1
-    const { taskId, questionToChange, setQuestionToChange, addQuestionAfter, moveQuestion, deleteQuestion } = useContext(QuestionsContext)
+    const { taskId, questionToChange, setQuestionToChange, setQuestion, addQuestionAfter, moveQuestion, deleteQuestion } = useContext(QuestionsContext)
     const [isFetching, setIsFetching] = useState(false)
     const [isHover, setIsHover] = useState(false)
     const [isDeleted, setIsDeleted] = useState(false)
@@ -46,6 +68,16 @@ export const TaskQuestion = ({index, question}) => {
 
     const statusBySub = useTaskSaveManager(updateQuestion)
     const lastSavedData = useRef({})
+
+    const questionValidation = useBestValidation(questionValidationSchema)
+    const [taskQuestion, dispatchQuestion] = useReducer(questionReducer, question)
+
+    const setMaxScore = (maxScore) => dispatchQuestion({ type: MAX_SCORE, payload: maxScore })
+
+    useEffect(() => {
+        setQuestion(index, taskQuestion)
+        question = taskQuestion
+    }, [taskQuestion])
 
     useEffect(() => {
         if(question.questionVariantsCount > 0) {
@@ -69,6 +101,11 @@ export const TaskQuestion = ({index, question}) => {
     }, [])
 
     function updateQuestion() {
+        if(!questionValidation.validate(taskQuestion)) {
+            statusBySub(VALIDATE_ERROR_STATUS)
+            return
+        }
+
         if(!isDeleted && isEquivalent(question, lastSavedData.current)) { 
             statusBySub(SAVED_STATUS)
             return
@@ -224,10 +261,6 @@ export const TaskQuestion = ({index, question}) => {
                                         return <Button
                                             key={index}
                                             size='sm'
-                                    size='sm' 
-                                            size='sm'
-                                            variant={selectedVariant == index ? 'outline-primary' : 'outline-secondary'}
-                                    variant={selectedVariant == index ? 'outline-primary' : 'outline-secondary'} 
                                             variant={selectedVariant == index ? 'outline-primary' : 'outline-secondary'}
                                             onClick={() => selectVartiant(index)}
                                             className={`question-variant-btn ${(selectedVariant !== index && ' hover-border')}`}
@@ -245,7 +278,7 @@ export const TaskQuestion = ({index, question}) => {
                         </div>
                         <div>
                             <button className='icon-btn' title='Переместить ниже' onClick={() => moveQuestion({oldIndex: arrayIndex, newIndex: arrayIndex + 1})}><i className='fas fa-angle-down fa-lg'/></button>
-                            <button className='icon-btn' title='Переместить выше' onClick={() => moveQuestion({oldIndex: arrayIndex, newIndex: arrayIndex - 1})}><i className='fas fa-angle-up fa-lg'/></button>
+                            <button className='icon-btn mr-2' title='Переместить выше' onClick={() => moveQuestion({oldIndex: arrayIndex, newIndex: arrayIndex - 1})}><i className='fas fa-angle-up fa-lg'/></button>
                             <button className='icon-btn' title='Удалить вопрос' onClick={() => markForDeletion()}><i className='fas fa-times fa-lg'/></button>
                         </div>
                     </div>
@@ -257,6 +290,33 @@ export const TaskQuestion = ({index, question}) => {
                                 )
                             })}
                         </TaskQuestionContext.Provider>
+                        <hr className='question-card-hr'/>
+                        <Row>
+                            <Col>
+                                <Form.Group className='flex-between mb-0' style ={{width: '155px', marginRight: '1.85Rem'}}>
+                                    <Form.Label className='label-sm-center mb-0 mr-3'>
+                                        Балл.
+                                    </Form.Label>
+                                    <Form.Control
+                                        type='number'
+                                        min={1}
+                                        size='sm'
+                                        className='hover-border'
+                                        name='maxScore'
+                                        value={taskQuestion.maxScore}
+                                        isInvalid={questionValidation.errors.maxScore}
+                                        onBlur={questionValidation.blurHandle}
+                                        onChange={(e) => {
+                                            setMaxScore(Number(e.target.value))
+                                            questionValidation.changeHandle(e)
+                                        }}
+                                    />
+                                </Form.Group>
+                                {(questionValidation.errors.maxScore) && <div className='invalid-feedback d-block'>
+                                    {questionValidation.errors.maxScore}
+                                </div>}
+                            </Col>
+                        </Row>
                     </div>
                 </div>
             </div>
