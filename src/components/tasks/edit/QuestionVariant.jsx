@@ -197,6 +197,12 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
     const answerVariantsValdiation = useAnswerVariantsValidationHook(answerVariantsValidarionSсhema)
 
     useEffect(() => {
+        let targetVariant = variant
+        targetVariant.isValid = variantValidation.isValid
+        setQuestionVariant(targetVariant, index)
+    }, [variantValidation.isValid])
+
+    useEffect(() => {
         getQuestionParams()
         setLastSavedData(questionVariant)
     }, [])

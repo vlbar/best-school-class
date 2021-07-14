@@ -34,6 +34,7 @@ export default function useBestValidation(validationSchema) {
 
         setIsTouched(true)
         validateField(e.target.name, e.target.value, pathToSchema(e.target.name, validationSchema))
+        setIsValid(isEmpty(errors))
     }
 
     function changeHandle(e) {
@@ -42,8 +43,10 @@ export default function useBestValidation(validationSchema) {
             return
         }
 
-        if(isTouched)
+        if(isTouched) {
             validateField(e.target.name, e.target.value, pathToSchema(e.target.name, validationSchema))
+            setIsValid(isEmpty(errors))
+        }
     }
 
     function validate(obj) {

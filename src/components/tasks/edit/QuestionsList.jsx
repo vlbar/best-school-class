@@ -102,7 +102,7 @@ export const QuestionsList = ({taskId}) => {
         setQuestions(targetQuestions)
     }
 
-    const setQuestion = (index, question) => {
+    const setQuestion = (question, index) => {
         let targetQuestions = questions
         targetQuestions[index - 1] = question
         setQuestions(targetQuestions)

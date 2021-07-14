@@ -70,13 +70,22 @@ export const TaskQuestion = ({index, question}) => {
     const statusBySub = useTaskSaveManager(updateQuestion)
     const lastSavedData = useRef({})
 
-    const questionValidation = useBestValidation(questionValidationSchema)
     const [taskQuestion, dispatchQuestion] = useReducer(questionReducer, question)
-
     const setMaxScore = (maxScore) => dispatchQuestion({ type: MAX_SCORE, payload: maxScore })
 
+    const questionValidation = useBestValidation(questionValidationSchema)
+    const [isValid, setIsValid] = useState(question.isValid !== undefined ? question.isValid : true)
+
     useEffect(() => {
-        setQuestion(index, taskQuestion)
+        setIsValid((questionValidation.isValid) ? checkIsValid() : false)
+    }, [questionValidation.isValid])
+
+    function checkIsValid(targetVariants = questionVariants) {
+        return !(!questionValidation.isValid || isVariantsHasInvalid(targetVariants))
+    }
+
+    useEffect(() => {
+        setQuestion(taskQuestion, index)
         question = taskQuestion
     }, [taskQuestion])
 
@@ -243,14 +252,35 @@ export const TaskQuestion = ({index, question}) => {
     const setQuestionVariant = (variant, index) => {
         let targetVariants = questionVariants
         targetVariants[index] = variant
+
+        if(variant.isValid) {
+            if(!isValid) {
+                setIsValid(checkIsValid(targetVariants))
+            }
+        } else {
+            setIsValid(false)
+        }
+
         setQuestionVariants(targetVariants)
+    }
+
+    function isVariantsHasInvalid(targetVariants = questionVariants) {
+        if(targetVariants) {
+            let isHasInvalid = false // осуждаю
+            targetVariants.forEach(variant => {
+                if(variant.isValid !== undefined && !variant.isValid)
+                    isHasInvalid = true
+            })
+            return isHasInvalid
+        }
+        return false
     }
 
     let variantCount = (questionVariants) ? questionVariants.filter(x => !x.markForDelete).length : 0
     let num = 1
     let isEditing = (questionToChange ? questionToChange === index : false)
     if(!isDeleted) return (
-        <div>
+        <div className={!isValid ? 'invalid-question':''}>
             <div className={'question-card' + (isHover || isEditing ? ' hover':'') + (isEditing ? ' edit':'')} onMouseEnter={() => setIsHover(true)} onMouseLeave={() => setIsHover(false)}>
                 {(isFetching) && <ProcessBar height='.18Rem' className='position-absolute'/>}
                 <div className='m-3'>
@@ -262,9 +292,9 @@ export const TaskQuestion = ({index, question}) => {
                                         return <Button
                                             key={index}
                                             size='sm'
-                                            variant={selectedVariant == index ? 'outline-primary' : 'outline-secondary'}
+                                            variant={(variant.isValid == undefined || variant.isValid) ? selectedVariant == index ? 'outline-primary' : 'outline-secondary' : 'outline-danger'}
                                             onClick={() => selectVartiant(index)}
-                                            className={`question-variant-btn ${(selectedVariant !== index && ' hover-border')}`}
+                                            className={'question-variant-btn' + (selectedVariant !== index ? ' hover-border':'')}
                                         >
                                             {num++}
                                         </Button>
@@ -322,7 +352,7 @@ export const TaskQuestion = ({index, question}) => {
             {isEditing &&
                 <div className='question-card-actions'>
                     <Button 
-                        variant='outline-primary'
+                        variant={isValid ? 'outline-primary' : 'outline-danger'}
                         onClick={() => addQuestionAfter(question.position + 1)}
                     >
                         Добавить вопрос

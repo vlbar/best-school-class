@@ -40,6 +40,10 @@
 .hover-border {
     border-color: transparent;
 
+    &.btn-outline-danger {
+        border-color: #dc3545 !important;
+    }
+
     &:hover, .question-card.edit & {
         border-color: rgba(0,0,0,.125);
         &.is-invalid {
@@ -101,6 +105,12 @@
 
 .question-variant-btn {
     margin-left: .25Rem;
+}
+
+.invalid-question {
+    .question-card {
+        border-color: #dc3545 !important;
+    }
 }
 
 .icon-btn {
