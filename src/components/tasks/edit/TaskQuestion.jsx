@@ -67,8 +67,8 @@ export const TaskQuestion = ({index, question}) => {
     const [selectedVariant, setSelectedVariant] = useState(0)
     const [questionVariants, setQuestionVariants] = useState(undefined)
 
-    const statusBySub = useTaskSaveManager(updateQuestion)
-    const lastSavedData = useRef({})
+    const { statusBySub, setIsChanged } = useTaskSaveManager(updateQuestion)
+    const lastSavedData = useRef(question)
 
     const [taskQuestion, dispatchQuestion] = useReducer(questionReducer, question)
     const setMaxScore = (maxScore) => dispatchQuestion({ type: MAX_SCORE, payload: maxScore })
@@ -84,9 +84,11 @@ export const TaskQuestion = ({index, question}) => {
         return !(!questionValidation.isValid || isVariantsHasInvalid(targetVariants))
     }
 
-    useEffect(() => {
+    useEffect(() => {  
         setQuestion(taskQuestion, index)
         question = taskQuestion
+
+        setIsChanged(!isEquivalent(taskQuestion, lastSavedData.current))
     }, [taskQuestion])
 
     useEffect(() => {

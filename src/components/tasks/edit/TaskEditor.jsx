@@ -105,8 +105,12 @@ export const TaskEditor = ({taskId}) => {
     const setMaxScore = (maxScore) => taskDispatch({ type: TASK_MAX_SCORE, payload: maxScore })
     const setDuration = (duration) => taskDispatch({ type: TASK_DURATION, payload: duration })
 
-    const statusBySub = useTaskSaveManager(saveTaskDetails)
+    const { statusBySub, setIsChanged } = useTaskSaveManager(saveTaskDetails)
     const lastSavedData = useRef({})
+
+    useEffect(() => {
+        setIsChanged(!isEquivalent(taskDetails, lastSavedData.current))
+    }, [taskDetails])
 
     useEffect(() => {
         fetchTask()

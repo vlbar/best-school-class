@@ -1,5 +1,6 @@
 import React, { useState, useLayoutEffect, useRef, useEffect, useContext } from 'react'
 import { Button, Container, Row, Col, Dropdown, ButtonGroup } from 'react-bootstrap'
+import { Prompt } from 'react-router'
 import './TaskEditor.less'
 
 const SAVING_STATUS = 'Сохранение...'
@@ -11,6 +12,7 @@ export const TaskSaveContext = React.createContext()
 
 export const TaskSaveManager = ({children}) => {
     const [isBarShow, setIsBarShow] = useState(false)
+    const [isHasChanges, setIsHasChanges] = useState(false)
     const [saveStatus, setSaveStatus] = useState(SAVED_STATUS)
     const [displayStatus, setDisplayStatus] = useState('')
     const [taskName, setTaskName] = useState('')
@@ -18,6 +20,7 @@ export const TaskSaveManager = ({children}) => {
     const [updateCycle, setUpdateCycle] = useState(0)
     const subscribers = useRef([])
     const checkedSubs = useRef(0)
+    const changedSubs = useRef([])
 
     const addSubscriber = (id) => {
         subscribers.current.push(id)
@@ -36,6 +39,10 @@ export const TaskSaveManager = ({children}) => {
         if(canSave.current) {
             canSave.current = false
             expectedSubResponses.current = subscribers.current.length
+
+            changedSubs.current = []
+            setIsHasChanges(false)
+
             setUpdateCycle(updateCycle + 1)
         } else {
             if(saveStatus !== SAVING_STATUS) isFakeSaving.current = true
@@ -45,6 +52,28 @@ export const TaskSaveManager = ({children}) => {
         generalSaveStatus = SAVING_STATUS
     }
 
+    const setIsSubHaveChanges = (id, isChanged) => {
+        let changedSubList = changedSubs.current
+        let index = changedSubList.indexOf(id)
+
+        if(isChanged) {
+            if(index < 0) changedSubList.push(id)
+        } else
+            if(index >= 0) changedSubList.splice(index, 1)
+
+        changedSubs.current = changedSubList
+        setIsHasChanges(changedSubList.length !== 0)
+    }
+
+    useEffect(() => {
+        if(isHasChanges) 
+            window.onbeforeunload = (ev) => {
+                ev.preventDefault()
+                return ev.returnValue = 'Есть несохраненные изменения, вы уверены, что хотите закрыть редактор задания?';
+            }
+        else
+            window.onbeforeunload = undefined
+    }, [isHasChanges])
     
     const statusBySub = (status) => {
         if(status === VALIDATE_ERROR_STATUS && generalSaveStatus === SAVING_STATUS) {
@@ -79,11 +108,11 @@ export const TaskSaveManager = ({children}) => {
     }
 
     useLayoutEffect(() => {
-        window.addEventListener('scroll', listener);
+        window.addEventListener('scroll', listener)
         return () => {
-            window.removeEventListener('scroll', listener);
-        };
-    })
+            window.removeEventListener('scroll', listener)
+        }
+    }, [])
 
     const savedTimer = useRef(null)
     useEffect(() => {
@@ -107,8 +136,12 @@ export const TaskSaveManager = ({children}) => {
     }, [saveStatus])
 
     return (
-        <TaskSaveContext.Provider value={{displayStatus, setTaskName, addSubscriber, removeSubscriber, updateCycle, onSaveClick, statusBySub}}>
+        <TaskSaveContext.Provider value={{displayStatus, setTaskName, addSubscriber, removeSubscriber, updateCycle, onSaveClick, statusBySub, setIsSubHaveChanges}}>
             <div className={'task-save-panel' + (isBarShow ? ' show':'')}>
+                <Prompt
+                    when={isHasChanges}
+                    message='Есть несохраненные изменения, вы уверены, что хотите закрыть редактор задания?'
+                />
                 <Container>
                     <Row>
                         <Col md={8} className='d-flex mt-2'>
@@ -140,12 +173,14 @@ export const TaskSaveManager = ({children}) => {
 }
 
 export function useTaskSaveManager(onSave) {
-    const { addSubscriber, removeSubscriber, updateCycle, statusBySub } = useContext(TaskSaveContext)
+    const { addSubscriber, removeSubscriber, updateCycle, statusBySub, setIsSubHaveChanges } = useContext(TaskSaveContext)
+    const uid = useRef(undefined)
 
     useEffect(() => {
-        let uid = Math.random()
-        addSubscriber(uid)
-        return () => removeSubscriber(uid)
+        let id = Math.random()
+        uid.current = id
+        addSubscriber(id)
+        return () => removeSubscriber(id)
     }, [])
     
     const firstCycle = useRef(true)
@@ -156,7 +191,11 @@ export function useTaskSaveManager(onSave) {
         firstCycle.current = false
     }, [updateCycle])
 
-    return statusBySub
+    function setIsChanged(flag) {
+        setIsSubHaveChanges(uid.current, flag)
+    }
+
+    return { statusBySub, setIsChanged }
 }
 
 export function isEquivalent(a, b) {

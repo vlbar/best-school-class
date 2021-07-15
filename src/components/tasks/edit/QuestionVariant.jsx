@@ -170,8 +170,8 @@ async function deleteVariant(variant, questionId) {
 export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
     const [questionType, setQuestionType] = useState(TEXT_QUESTION)
     const [variant, dispatchVariant] = useReducer(variantReducer, questionVariant)
-    const statusBySub = useTaskSaveManager(saveVariant)
-    const lastSavedData = useRef({})
+    const { statusBySub, setIsChanged } = useTaskSaveManager(saveVariant)
+    const lastSavedData = useRef({...questionVariant})
     const awaitQuestionSave = useRef(false)
 
     const { question, setQuestionVariant, variantCount, markForDeleteVariant, deleteQuestionVariant } = useContext(TaskQuestionContext)
@@ -209,6 +209,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
 
     useEffect(() => {
         setQuestionVariant(variant, index)
+        setIsChanged(!isEquivalent(variant, lastSavedData.current))
     }, [variant])
 
     useEffect(() => {
