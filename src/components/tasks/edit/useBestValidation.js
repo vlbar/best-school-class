@@ -5,15 +5,16 @@ import { useState, useCallback, useEffect } from 'react'
         type:      string or number or array,    (default is string)
         of:        {}                            (only for array type)
         required:  [Message] or [false],
-        trim:      true,                         (default is true)
+        nullable:  boolean
+        trim:      boolean,                       (default is true)
         min:       [minValue, Message],
         max:       [maxValue, Message],
     ]
 */
 
-const STRING_TYPE = 'STRING'
-const NUMBER_TYPE = 'NUMBER'
-const ARRAY_TYPE = 'ARRAY'
+export const STRING_TYPE = 'STRING'
+export const NUMBER_TYPE = 'NUMBER'
+export const ARRAY_TYPE = 'ARRAY'
 
 export default function useBestValidation(validationSchema) {
     const [isValid, setIsValid] = useState(true)
@@ -105,33 +106,28 @@ export default function useBestValidation(validationSchema) {
 
     //   TYPES
     function validateString(value, fieldPath, validationSchema) {
-        let fieldName = getFieldName(fieldPath)
-        let fieldSchema = validationSchema[fieldName]
-        
+        let fieldSchema = validationSchema[getFieldName(fieldPath)]
         if(!fieldSchema.trim || fieldSchema.trim !== false) value = value.trim()
-        if(!requiredCheck(fieldPath, value, fieldSchema)) return
-        if(!valueCheck(fieldPath, (x) => x > value.length, fieldSchema, 'min')) return
-        if(!valueCheck(fieldPath, (x) => x < value.length, fieldSchema, 'max')) return
+        isValidateType(value, fieldPath, validationSchema, (x) => x > value.length, (x) => x < value.length)
     }
 
     function validateNumber(value, fieldPath, validationSchema) {
-        let fieldName = getFieldName(fieldPath)
-        let fieldSchema = validationSchema[fieldName]
-
-        if(!requiredCheck(fieldPath, value, fieldSchema)) return
-        if(!valueCheck(fieldPath, (x) => x > value, fieldSchema, 'min')) return
-        if(!valueCheck(fieldPath, (x) => x < value, fieldSchema, 'max')) return
+        isValidateType(value, fieldPath, validationSchema, (x) => x > value, (x) => x < value)
     }
 
     function validateArray(value, fieldPath, validationSchema) {
+        isValidateType(value, fieldPath, validationSchema, (x) => x > value.length, (x) => x < value.length)
+    }
+
+    function isValidateType(value, fieldPath, validationSchema, minPred, maxPred) {
         let fieldName = getFieldName(fieldPath)
         let fieldSchema = validationSchema[fieldName]
 
-        if(!requiredCheck(fieldPath, value, fieldSchema)) return
-        if(!valueCheck(fieldPath, (x) => x > value.length, fieldSchema, 'min')) return
-        if(!valueCheck(fieldPath, (x) => x < value.length, fieldSchema, 'max')) return
+        if(!requiredCheck(fieldPath, value, fieldSchema)) return false
+        if(fieldSchema.nullable && (value.length == 0 || value == null)) return false
+        if(!valueCheck(fieldPath, minPred, fieldSchema, 'min')) return false
+        if(!valueCheck(fieldPath, maxPred, fieldSchema, 'max')) return false
     }
-
 
     function requiredCheck(fieldPath, value, fieldSchema) {
         if(fieldSchema.required && fieldSchema.required[0] !== false && (value === undefined || value.length === 0)) {
