@@ -4,8 +4,7 @@ import { addErrorNotification } from '../../notifications/notifications'
 import { TaskSaveContext, useTaskSaveManager, isEquivalent, SAVED_STATUS, ERROR_STATUS, VALIDATE_ERROR_STATUS } from './TaskSaveManager'
 import { QuestionsList } from './QuestionsList'
 import ProcessBar from '../../process-bar/ProcessBar'
-import { useFormik } from 'formik'
-import * as Yup from 'yup'
+import useBestValidation, { STRING_TYPE, NUMBER_TYPE } from './useBestValidation'
 import axios from 'axios'
 import './TaskEditor.less'
 
@@ -55,23 +54,26 @@ const taskReducer = (state, action) => {
 }
 
 //validation
-const taskSchema = Yup.object().shape({
-    name: Yup.string()
-        .trim()
-        .min(5, 'Слишком короткое название')
-        .max(100, 'Слишком длинное название')
-        .required('Не введено название задания'),
-    maxScore: Yup.number()
-        .integer()
-        .min(1, 'Оценка должа быть положительной')
-        .max(9223372036854775807, 'Слишком большая оценка')
-        .required('Не введена оценка'),
-    duration: Yup.number()
-        .integer()
-        .nullable()
-        .min(1, 'Время должна быть положительным')
-        .max(99999, 'Слишком большое время')
-})
+const taskValidationSchema = {
+    name: {
+        type: STRING_TYPE,
+        required: ['Не введено название задания'],
+        min: [5, 'Слишком короткое название'],
+        max: [100, 'Слишком длинное название']
+    },
+    maxScore: {
+        type: NUMBER_TYPE,
+        required: ['Не введена оценка'],
+        min: [1, 'Оценка должа быть положительной'],
+        max: [9223372036854775807, 'Слишком большая оценка']
+    },
+    duration: {
+        type: NUMBER_TYPE,
+        nullable: true,
+        min: [1, 'Время должна быть положительным'],
+        max: [99999, 'Слишком большое время']
+    }
+}
 
 //requests
 export const tasksBaseUrl = '/tasks'
@@ -88,15 +90,7 @@ export const TaskEditor = ({taskId}) => {
     const [isTaskFetching, setIsTaskFetching] = useState(true)
     const [isInputBlock, setIsInputBlock] = useState(true)
 
-    const formik = useFormik({
-        initialValues: {
-          name: '',
-          maxScore: 100,
-          duration: null
-        },
-        validationSchema: taskSchema,
-        onSubmit: values => {}
-    })
+    const taskValidation = useBestValidation(taskValidationSchema)
 
     const [taskDetails, taskDispatch] = useReducer(taskReducer, {})
     const setTask = (task) => taskDispatch({ type: TASK, payload: task })
@@ -126,14 +120,6 @@ export const TaskEditor = ({taskId}) => {
                 lastSavedData.current = fetchedData
                 setTaskName(fetchedData.name)
 
-                // пожилой маппер
-                for (const [key, value] of Object.entries(formik.values)) {
-                    if(key in fetchedData) {
-                        formik.setFieldValue(key, fetchedData[key], true)
-                    }
-                }
-                formik.validateForm()
-
                 setIsTaskFetching(false)
                 setIsInputBlock(false)
             })
@@ -151,8 +137,7 @@ export const TaskEditor = ({taskId}) => {
             return
         }
 
-        formik.validateForm()
-        if(!formik.isValid) {
+        if(!taskValidation.validate(taskDetails)) {
             statusBySub(VALIDATE_ERROR_STATUS)
             return
         }
@@ -196,18 +181,18 @@ export const TaskEditor = ({taskId}) => {
                             name='name'
                             placeholder='Введите название задания...'
                             disabled={isInputBlock}
-                            autoFocus={formik.errors.name !== undefined}
-                            isInvalid={formik.errors.name !== undefined}
+                            autoFocus={taskValidation.errors.name !== undefined}
+                            isInvalid={taskValidation.errors.name !== undefined}
                             value={taskDetails?.name || ''}
-                            onBlur={formik.handleBlur}
+                            onBlur={taskValidation.blurHandle}
                             onChange={(e) => {
                                 setName(e.target.value)
                                 setTaskName(e.target.value)
-                                formik.handleChange(e)
+                                taskValidation.changeHandle(e)
                             }}
                         />
                         <Form.Control.Feedback type="invalid">
-                            {formik.errors.name}
+                            {taskValidation.errors.name}
                         </Form.Control.Feedback>
                     </Col>
                 </Form.Group>
@@ -237,16 +222,16 @@ export const TaskEditor = ({taskId}) => {
                             name='maxScore'
                             placeholder='Введите максимальный балл...'
                             disabled={isInputBlock}                          
-                            autoFocus={formik.errors.maxScore !== undefined}
-                            isInvalid={formik.errors.maxScore !== undefined}
+                            autoFocus={taskValidation.errors.maxScore !== undefined}
+                            isInvalid={taskValidation.errors.maxScore !== undefined}
                             value={(taskDetails?.maxScore && taskDetails.maxScore !== null) ? taskDetails.maxScore : ''}
-                            onBlur={formik.handleBlur}
+                            onBlur={taskValidation.blurHandle}
                             onChange={(e) => {
                                 setMaxScore(e.target.value)
-                                formik.handleChange(e)
+                                taskValidation.changeHandle(e)
                             }} />
                         <Form.Control.Feedback type='invalid'>
-                            {formik.errors.maxScore}
+                            {taskValidation.errors.maxScore}
                         </Form.Control.Feedback>
                         <Form.Text className='text-muted'>
                             К этому числу будут переводится количество баллов, полученные учеником
@@ -265,13 +250,13 @@ export const TaskEditor = ({taskId}) => {
                                 min={1}
                                 max={99999}
                                 disabled={isInputBlock}
-                                autoFocus={formik.errors.duration !== undefined}
-                                isInvalid={formik.errors.duration !== undefined}
+                                autoFocus={taskValidation.errors.duration !== undefined}
+                                isInvalid={taskValidation.errors.duration !== undefined}
                                 value={taskDetails?.duration || ''}
-                                onBlur={formik.handleBlur}
+                                onBlur={taskValidation.blurHandle}
                                 onChange={(e) => {
                                     setDuration(e.target.value)
-                                    formik.handleChange(e)
+                                    taskValidation.changeHandle(e)
                                 }}
                             />
                             <Form.Control as='select'>
@@ -280,13 +265,13 @@ export const TaskEditor = ({taskId}) => {
                                 <option>{getTimeName(DAYS, taskDetails?.duration || '')}</option>
                             </Form.Control>
                             <Form.Control.Feedback type='invalid'>
-                                {formik.errors.duration}
+                                {taskValidation.errors.duration}
                             </Form.Control.Feedback>
                         </div>
                     </Col>
                 </Form.Group>
                 <hr/>
-                {(!taskDetails?.name && !isTaskFetching) ? <div className='task-message-container'>
+                {(taskDetails?.name === undefined && !isTaskFetching) ? <div className='task-message-container'>
                     <h5>Произошла ошибка</h5>
                     <p className='text-muted'>Не удалось загрузить данные задания.</p>
                 </div>
