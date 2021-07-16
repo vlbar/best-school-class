@@ -164,8 +164,8 @@ export const TaskList = ({selectedCourse}) => {
                                         </div>
                                     </div>
                                     <div className='w-100'>
-                                        <span className='text-description text-ellipsis' title={task.description}>
-                                            {task.description}
+                                        <span className='text-description text-ellipsis' title={task.description?.replace(/<[^>]*>?/gm, '')}>
+                                            {task.description?.replace(/<[^>]*>?/gm, '')}
                                         </span>
                                     </div>
                                 </div>
