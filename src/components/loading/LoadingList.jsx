@@ -8,7 +8,7 @@ export const LoadingList = ({widths = [20, 70, 50, 40, 60], itemHeight='1Rem', i
                 return <div 
                     key={i} 
                     className={'fake-item ' + itemClassName} 
-                    style={{width: `${x}%`, height: itemHeight, marginLeft: itemMarginLeft, marginBottom: itemMarginBottom,  itemStyle}}
+                    style={{width: `${x}%`, height: itemHeight, marginLeft: itemMarginLeft, marginBottom: itemMarginBottom,  ...itemStyle}}
                 />
             })}
         </div>
