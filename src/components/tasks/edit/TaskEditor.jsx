@@ -86,7 +86,7 @@ async function updateTaskDetails(taskId, task) {
 }
 
 export const TaskEditor = ({taskId}) => {
-    const { displayStatus, setTaskName, onSaveClick } = useContext(TaskSaveContext)
+    const { taskDisplay, autoSave, displayStatus, onSaveClick } = useContext(TaskSaveContext)
     const [isTaskFetching, setIsTaskFetching] = useState(true)
     const [isInputBlock, setIsInputBlock] = useState(true)
 
@@ -118,7 +118,7 @@ export const TaskEditor = ({taskId}) => {
                 let fetchedData = res.data
                 setTask(fetchedData)
                 lastSavedData.current = fetchedData
-                setTaskName(fetchedData.name)
+                taskDisplay.setTaskName(fetchedData.name)
 
                 setIsTaskFetching(false)
                 setIsInputBlock(false)
@@ -166,6 +166,7 @@ export const TaskEditor = ({taskId}) => {
 
                             <Dropdown.Menu>
                                 <Dropdown.Item>Завершить</Dropdown.Item>
+                                <Dropdown.Item onClick={() => autoSave.setIsAutoSaveEnabled(!autoSave.isEnabled)}>{(autoSave.isEnabled) && <i className='fas fa-check'></i>} Автосохранение</Dropdown.Item>
                             </Dropdown.Menu>
                         </Dropdown>
                     </div>
@@ -187,7 +188,7 @@ export const TaskEditor = ({taskId}) => {
                             onBlur={taskValidation.blurHandle}
                             onChange={(e) => {
                                 setName(e.target.value)
-                                setTaskName(e.target.value)
+                                taskDisplay.setTaskName(e.target.value)
                                 taskValidation.changeHandle(e)
                             }}
                         />

@@ -7,8 +7,8 @@ function Task() {
     const { courseId, taskId } = useParams()
 
     return (
-        <TaskSaveManager>
-            <TaskEditor taskId={taskId}/>
+        <TaskSaveManager autoSaveDelay={20000}>
+            <TaskEditor taskId={Number(taskId)}/>
         </TaskSaveManager>
     )
 }

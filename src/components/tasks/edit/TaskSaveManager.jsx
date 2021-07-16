@@ -10,7 +10,7 @@ export const VALIDATE_ERROR_STATUS = 'Исправьте ошибки!'
 
 export const TaskSaveContext = React.createContext()
 
-export const TaskSaveManager = ({children}) => {
+export const TaskSaveManager = ({children, autoSaveDelay = 30000}) => {
     const [isBarShow, setIsBarShow] = useState(false)
     const [isHasChanges, setIsHasChanges] = useState(false)
     const [saveStatus, setSaveStatus] = useState(SAVED_STATUS)
@@ -22,6 +22,10 @@ export const TaskSaveManager = ({children}) => {
     const checkedSubs = useRef(0)
     const changedSubs = useRef([])
 
+    const autoSaveTimer = useRef(undefined)
+    const [isAutoSaveEnabled, setIsAutoSaveEnabled] = useState(true)
+
+    // subscribers
     const addSubscriber = (id) => {
         subscribers.current.push(id)
     }
@@ -31,6 +35,7 @@ export const TaskSaveManager = ({children}) => {
         subscribers.current.splice(removedSubIndex, 1)
     }
 
+    // save
     let generalSaveStatus = SAVING_STATUS
     const canSave = useRef(true)
     const isFakeSaving = useRef(false)
@@ -38,6 +43,7 @@ export const TaskSaveManager = ({children}) => {
     const onSaveClick = () => {
         if(canSave.current) {
             canSave.current = false
+            autoSaveTimer.current = undefined
             expectedSubResponses.current = subscribers.current.length
 
             changedSubs.current = []
@@ -52,6 +58,7 @@ export const TaskSaveManager = ({children}) => {
         generalSaveStatus = SAVING_STATUS
     }
 
+    // changes
     const setIsSubHaveChanges = (id, isChanged) => {
         let changedSubList = changedSubs.current
         let index = changedSubList.indexOf(id)
@@ -66,15 +73,24 @@ export const TaskSaveManager = ({children}) => {
     }
 
     useEffect(() => {
-        if(isHasChanges) 
+        if(isHasChanges) {
             window.onbeforeunload = (ev) => {
                 ev.preventDefault()
                 return ev.returnValue = 'Есть несохраненные изменения, вы уверены, что хотите закрыть редактор задания?';
             }
-        else
+
+            if(isAutoSaveEnabled) {
+                autoSaveTimer.current = setTimeout(() => {
+                    canSave.current = true
+                    onSaveClick()
+                }, autoSaveDelay)
+            }
+        } else {
             window.onbeforeunload = undefined
+        }
     }, [isHasChanges])
     
+    // status chages
     const statusBySub = (status) => {
         if(status === VALIDATE_ERROR_STATUS && generalSaveStatus === SAVING_STATUS) {
             generalSaveStatus = VALIDATE_ERROR_STATUS
@@ -135,8 +151,18 @@ export const TaskSaveManager = ({children}) => {
         setDisplayStatus(<span className={`trans-span ${additionalClassName}`}>{saveStatus}</span>)
     }, [saveStatus])
 
+    // auto save
+    useEffect(() => {
+        if(isAutoSaveEnabled) {
+            setIsAutoSaveEnabled(true)
+        } else {
+            autoSaveTimer.current = undefined
+            setIsAutoSaveEnabled(false)
+        }
+    }, [isAutoSaveEnabled])
+
     return (
-        <TaskSaveContext.Provider value={{displayStatus, setTaskName, addSubscriber, removeSubscriber, updateCycle, onSaveClick, statusBySub, setIsSubHaveChanges}}>
+        <>
             <div className={'task-save-panel' + (isBarShow ? ' show':'')}>
                 <Prompt
                     when={isHasChanges}
@@ -161,14 +187,20 @@ export const TaskSaveManager = ({children}) => {
 
                                 <Dropdown.Menu>
                                     <Dropdown.Item>Завершить</Dropdown.Item>
+                                    <Dropdown.Item onClick={() => setIsAutoSaveEnabled(!isAutoSaveEnabled)}>{(isAutoSaveEnabled) && <i className='fas fa-check'></i>} Автосохранение</Dropdown.Item>
                                 </Dropdown.Menu>
                             </Dropdown>
                         </Col>
                     </Row>
                 </Container>
             </div>
-            {children}
-        </TaskSaveContext.Provider>
+            <TaskSaveContext.Provider value={{addSubscriber, removeSubscriber, updateCycle, onSaveClick, statusBySub, setIsSubHaveChanges, displayStatus, 
+                taskDisplay: { taskName, setTaskName },
+                autoSave:    { isEnabled: isAutoSaveEnabled, setIsAutoSaveEnabled }
+            }}>
+                {children}
+            </TaskSaveContext.Provider>
+        </>
     )
 }
 
