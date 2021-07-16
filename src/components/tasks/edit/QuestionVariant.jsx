@@ -6,9 +6,10 @@ import { useTaskSaveManager, isEquivalent, SAVED_STATUS, ERROR_STATUS, VALIDATE_
 import { questionPartUrl } from './QuestionsList'
 import { TaskQuestionContext } from './TaskQuestion'
 import useBestValidation from './useBestValidation'
+import FeedbackMessage from '../../feedback/FeedbackMessage'
+import JoditEditor from 'jodit-react'
 import axios from 'axios'
 import './QuestionVariant.less'
-import FeedbackMessage from '../../feedback/FeedbackMessage'
 
 //question types
 const TEXT_QUESTION = 'TEXT_QEUSTION'
@@ -152,6 +153,29 @@ const answerVariantsValidarionSсhema = {
     noIsRight: 'Не отмечен правильный вариант ответа'
 }
 
+//Jodit editor config
+const formulationEditorConfig = {
+    readonly: false,
+    showXPathInStatusbar: true,
+    showCharsCounter: false,
+    showWordsCounter: false,
+    enter: 'br',
+    width: '100%',
+    minHeight: '2Rem',
+    buttons: [
+        'bold', 'strikethrough', 'underline', 'italic', '|',
+        'ul', 'ol', '|',
+        'outdent', 'indent',  '|',
+        'image', 'link', '|',
+        'align', 'undo', 'redo', '|',
+        'eraser', 'about'
+    ],
+    removeButtons: [
+        'source', 'table', 'font', 'fontsize', 'brush',
+        'video', 'copyformat', 'fullsize', 'print', 'color'
+    ]
+}
+
 //context for question answer variants
 const QuestionAnswerContext = React.createContext();
 
@@ -199,6 +223,8 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
 
     const variantValidation = useBestValidation(variantValidationSchema)
     const answerVariantsValdiation = useAnswerVariantsValidationHook(answerVariantsValidarionSсhema)
+
+    const formulationEditor = useRef(null)
 
     useEffect(() => {
         let targetVariant = variant
@@ -449,21 +475,16 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
 
     if(show) return (
         <>
-            <div className='question-formulation-block'>
-                <Form.Control 
-                    as='textarea' 
-                    rows='2' 
-                    wrap='soft' 
-                    placeholder='Введите формулировку вопроса...' 
-                    className='text-break' 
-                    name='formulation'
-                    onBlur={variantValidation.blurHandle}
-                    isInvalid={variantValidation.errors.formulation}
-                    value={variant.formulation} 
-                    onChange={(e) => {
-                        setFormulation(e.target.value)
-                        variantValidation.changeHandle(e)
-                    }} 
+            <div className={'question-formulation-block' + ((variantValidation.errors.formulation) ? ' jodit-invalid' : '')}>
+                <JoditEditor
+                    ref={formulationEditor}
+                    value={variant.formulation}
+                    config={formulationEditorConfig}
+                    tabIndex={1}
+                    onBlur={newContent => {
+                        setFormulation(newContent)
+                        variantValidation.blurHandle({target: {name: 'formulation', value: newContent?.replace(/<[^>]*>?/gm, '')}})
+                    }}
                 />
                 <div className='variant-actions'>
                     <Dropdown className='options-dropdown'>

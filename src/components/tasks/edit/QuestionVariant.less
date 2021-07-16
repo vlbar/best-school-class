@@ -29,6 +29,10 @@
     display: flex;
     justify-content: flex-start;
 
+    .jodit-status-bar {
+        display: none;
+    }
+
     .icon-btn {
         color: transparent !important;
 
@@ -42,6 +46,22 @@
     }
 }
 
+// Jodit
+.question-card .jodit-toolbar__box {
+    display: none;
+}
+
+.question-card.edit .jodit-toolbar__box {
+    display: block;
+}
+
+.jodit-invalid {
+    .jodit {
+        border-color: #dc3545 !important;
+    }
+}
+
+// variants
 .variant-actions {
     margin-left: .5Rem;
 }
@@ -51,6 +71,7 @@
     margin-bottom: .5Rem;
 }
 
+// utils
 .flex-between {
     display: flex;
     justify-content: space-between;
