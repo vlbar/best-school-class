@@ -5,6 +5,7 @@ import { TaskSaveContext, useTaskSaveManager, isEquivalent, SAVED_STATUS, ERROR_
 import { QuestionsList } from './QuestionsList'
 import ProcessBar from '../../process-bar/ProcessBar'
 import useBestValidation, { STRING_TYPE, NUMBER_TYPE } from './useBestValidation'
+import JoditEditor from 'jodit-react'
 import axios from 'axios'
 import './TaskEditor.less'
 
@@ -101,6 +102,29 @@ export const TaskEditor = ({taskId}) => {
 
     const { statusBySub, setIsChanged } = useTaskSaveManager(saveTaskDetails)
     const lastSavedData = useRef({})
+
+    const descriptionEditor = useRef(null)
+    
+    // all options from https://xdsoft.net/jodit/doc/
+    const descriptionEditorConfig = {
+        readonly: isInputBlock,
+        showCharsCounter: false,
+        showWordsCounter: false,
+        showXPathInStatusbar: false,
+        enter: 'br',
+        buttons: [
+            'bold', 'strikethrough', 'underline', 'italic', 'paragraph', '|',
+            'ul', 'ol', '|',
+            'outdent', 'indent',  '|',
+            'image', 'link', '|',
+            'align', 'undo', 'redo', '|',
+            'eraser', 'about'
+        ],
+        removeButtons: [
+            'source', 'table', 'font', 'fontsize', 'brush',
+            'video', 'copyformat', 'fullsize', 'print', 'color'
+        ]
+    }
 
     useEffect(() => {
         setIsChanged(!isEquivalent(taskDetails, lastSavedData.current))
@@ -202,17 +226,17 @@ export const TaskEditor = ({taskId}) => {
                         Описание задания
                     </Form.Label>
                     <Col sm={10}>
-                        <Form.Control 
-                            as='textarea' 
-                            placeholder='Введите описание задания...' 
-                            rows={3}
-                            disabled={isInputBlock}
-                            value={taskDetails?.description || ''}
-                            onChange={(e) => setDescription(e.target.value)}
-                            style={{maxHeight: '86px', minHeight: '40px'}}
+                        <JoditEditor
+                            ref={descriptionEditor}
+                            value={taskDetails.description}
+                            config={descriptionEditorConfig}
+                            tabIndex={1} 
+                            onBlur={newContent => setDescription(newContent)} 
+                            onChange={newContent => {}}
                         />
                     </Col>
                 </Form.Group>
+
                 <Form.Group as={Row}>
                     <Form.Label column sm={2} className='pt-0'>
                         Максимальная оценка

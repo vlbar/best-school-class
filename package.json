@@ -19,6 +19,7 @@
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "formik": "^2.2.6",
+    "jodit-react": "^1.1.1",
     "md5": "^2.3.0",
     "react": "^17.0.2",
     "react-animate-height": "^2.0.23",
