@@ -266,6 +266,12 @@ export const TaskQuestion = ({index, question}) => {
         setQuestionVariants(targetVariants)
     }
 
+    const pasteVariantAfter = (variant, index) => {
+        let targetVariants = questionVariants
+        targetVariants[index] = variant
+        setQuestionVariants([...targetVariants])
+    }
+
     function isVariantsHasInvalid(targetVariants = questionVariants) {
         if(targetVariants) {
             let isHasInvalid = false // осуждаю
@@ -316,7 +322,7 @@ export const TaskQuestion = ({index, question}) => {
                         </div>
                     </div>
                     <div onClick={() => onQuestionEdit()}>
-                        <TaskQuestionContext.Provider value={{ question, setQuestionVariant, variantCount, markForDeleteVariant, deleteQuestionVariant }}>
+                        <TaskQuestionContext.Provider value={{ question, setQuestionVariant, pasteVariantAfter, variantCount, markForDeleteVariant, deleteQuestionVariant }}>
                             {(questionVariants) && questionVariants.map((variant, index) => {
                                 if(!isEmpty(variant)) return (
                                     <QuestionVariant key={index} show={selectedVariant == index} index={index} questionVariant={variant} isEditing={isEditing}/>

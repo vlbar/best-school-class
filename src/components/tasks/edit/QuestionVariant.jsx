@@ -38,7 +38,7 @@ const SortableItem = sortableElement(({index_, answerVariant}) => (
 ))
 
 //flux
-const ID = 'ID'
+const SET = 'SET'
 const FORMULATION = 'FORMULATION'
 const QUESTION_TYPE = 'QUESTION_TYPE'
 
@@ -58,6 +58,9 @@ const variantReducer = (state, action) => {
     let answer
     let testAnswerVariants
     switch (action.type) {
+        case SET:
+            state = action.payload
+            return { ...state }
         case FORMULATION:
             return { ...state, formulation: action.payload }
         case QUESTION_TYPE:
@@ -174,9 +177,10 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
     const lastSavedData = useRef({...questionVariant})
     const awaitQuestionSave = useRef(false)
 
-    const { question, setQuestionVariant, variantCount, markForDeleteVariant, deleteQuestionVariant } = useContext(TaskQuestionContext)
+    const { question, setQuestionVariant, pasteVariantAfter, variantCount, markForDeleteVariant, deleteQuestionVariant } = useContext(TaskQuestionContext)
     const isDeleted = useRef(false)
 
+    const setVariant = (variant) => dispatchVariant({ type: SET, payload: variant })
     const setFormulation = (formulation) => dispatchVariant({ type: FORMULATION, payload: formulation })
     const setVariantType = (questionType) => dispatchVariant({ type: QUESTION_TYPE, payload: questionType })
 
@@ -226,12 +230,12 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
         focus.current = false
     }, [show])
 
-    const getQuestionParams = () => {
-        let sourseType = questionVariant.type
+    const getQuestionParams = (targetVartiant = questionVariant) => {
+        let sourseType = targetVartiant.type
         let translatedType = unambiguousQuestionTypeTranslate[sourseType]
         if(!translatedType) 
             if(sourseType == SOURCE_TEST_QUESTION)
-                if(questionVariant.isMultipleAnswer)
+                if(targetVartiant.isMultipleAnswer)
                     translatedType = TEST_MULTI_QUESTION
                 else
                     translatedType = TEST_QUESTION                    
@@ -366,6 +370,19 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
         }
     }
 
+    const saveVariantToStorage = () => {
+        localStorage.copiedVariant = JSON.stringify(variant)
+    }
+
+    const pasteVariantFromStorage = () => {
+        let copiedVariant = JSON.parse(localStorage.copiedVariant)
+        pasteVariantAfter(copiedVariant, index)
+        
+        copiedVariant.id = variant.id
+        setVariant(copiedVariant)
+        getQuestionParams(copiedVariant)
+    }
+
     const getQuestionInputs = (type) => {
         switch (type) {
             case TEXT_QUESTION:
@@ -452,8 +469,8 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
                     <Dropdown className='options-dropdown'>
                         <Dropdown.Toggle size='sm' variant='best' id='dropdown-basic'>⋮</Dropdown.Toggle>
                         <Dropdown.Menu>
-                            <Dropdown.Item disabled={true}>Вставить</Dropdown.Item>
-                            <Dropdown.Item>Скопировать</Dropdown.Item>
+                            <Dropdown.Item disabled={localStorage.copiedVariant == undefined} onClick={() => pasteVariantFromStorage()}>Вставить</Dropdown.Item>
+                            <Dropdown.Item onClick={() => saveVariantToStorage()}>Скопировать</Dropdown.Item>
                             <Dropdown.Item className='text-danger' disabled={variantCount == 1} onClick={() => markVariantForDelete()}>Удалить вариант</Dropdown.Item>
                         </Dropdown.Menu>
                     </Dropdown>
