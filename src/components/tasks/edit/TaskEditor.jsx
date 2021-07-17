@@ -3,6 +3,7 @@ import { Container, Row, Col, Form, Button, Dropdown, ButtonGroup } from 'react-
 import { addErrorNotification } from '../../notifications/notifications'
 import { TaskSaveContext, useTaskSaveManager, isEquivalent, SAVED_STATUS, ERROR_STATUS, VALIDATE_ERROR_STATUS } from './TaskSaveManager'
 import { QuestionsList } from './QuestionsList'
+import TaskTypeDropdown from '../TaskTypeDropdown'
 import ProcessBar from '../../process-bar/ProcessBar'
 import useBestValidation, { STRING_TYPE, NUMBER_TYPE } from './useBestValidation'
 import JoditEditor from 'jodit-react'
@@ -36,6 +37,7 @@ const TASK_NAME = 'NAME'
 const TASK_DESC = 'DESCRIPTION'
 const TASK_MAX_SCORE = 'MAX_SCORE'
 const TASK_DURATION = 'DURATION'
+const TASK_TYPE = 'TASK_TYPE'
 
 const taskReducer = (state, action) => {
     switch (action.type) {
@@ -49,6 +51,8 @@ const taskReducer = (state, action) => {
             return { ...state, maxScore: action.payload }
         case TASK_DURATION:
             return { ...state, duration: action.payload }
+        case TASK_TYPE:
+            return { ...state, taskTypeId: action.payload }
         default:
             return state
     }
@@ -99,6 +103,7 @@ export const TaskEditor = ({taskId}) => {
     const setDescription = (description) => taskDispatch({ type: TASK_DESC, payload: description })
     const setMaxScore = (maxScore) => taskDispatch({ type: TASK_MAX_SCORE, payload: maxScore })
     const setDuration = (duration) => taskDispatch({ type: TASK_DURATION, payload: duration })
+    const setTaskTypeId = (taskTypeId) => taskDispatch({ type: TASK_TYPE, payload: taskTypeId })
 
     const { statusBySub, setIsChanged } = useTaskSaveManager(saveTaskDetails)
     const lastSavedData = useRef({})
@@ -293,6 +298,15 @@ export const TaskEditor = ({taskId}) => {
                                 {taskValidation.errors.duration}
                             </Form.Control.Feedback>
                         </div>
+                    </Col>
+                </Form.Group>
+                
+                <Form.Group as={Row}>
+                    <Form.Label column sm={2}>
+                        Тип задания
+                    </Form.Label>
+                    <Col sm={10}>
+                        <TaskTypeDropdown initialSelectedType={taskDetails.taskType} onSelect={(t) => setTaskTypeId(t ? t.id : null)} placeholder='Выберите тип...' disabled={isInputBlock}/>
                     </Col>
                 </Form.Group>
                 <hr/>
