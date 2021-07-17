@@ -2,11 +2,13 @@ import React, { useState } from 'react'
 import { Row, Col, Container, Alert, Button } from 'react-bootstrap'
 import { CourseHierarchy } from '../components/courses/CourseHierarchy'
 import { SearchCourse } from '../components/courses/SearchCourse'
+import usePageTitle from '../components/feedback/usePageTitle'
 import { TaskList } from '../components/tasks/TaskList'
 
 function Courses() {
     const [isShowHierarhy, setIsShowHierarhy] = useState(false)
     const [selectedCourse, setSelectedCourse] = useState(undefined)
+    usePageTitle({title: 'Курсы'})
 
     return (
         <Container>

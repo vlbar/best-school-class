@@ -5,6 +5,7 @@ import { TaskSaveContext, useTaskSaveManager, isEquivalent, SAVED_STATUS, ERROR_
 import { QuestionsList } from './QuestionsList'
 import TaskTypeDropdown from '../TaskTypeDropdown'
 import ProcessBar from '../../process-bar/ProcessBar'
+import usePageTitle from '../../feedback/usePageTitle'
 import useBestValidation, { STRING_TYPE, NUMBER_TYPE } from './useBestValidation'
 import JoditEditor from 'jodit-react'
 import axios from 'axios'
@@ -130,6 +131,8 @@ export const TaskEditor = ({taskId}) => {
             'video', 'copyformat', 'fullsize', 'print', 'color'
         ]
     }
+
+    usePageTitle({title: taskDetails.name, postfix: 'Best School Class Задания'})
 
     useEffect(() => {
         setIsChanged(!isEquivalent(taskDetails, lastSavedData.current))
