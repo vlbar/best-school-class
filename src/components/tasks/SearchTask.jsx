@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
-import { Button, Form, InputGroup } from 'react-bootstrap'
+import LazySearchInput from '../search/LazySearchInput'
 import TaskTypeDropdown from './TaskTypeDropdown'
 import './SearchTask.less'
 
-export const SearchTask = ({onSubmit}) => {
+export const SearchTask = ({onSubmit, setIsFetching, emptyAfterTaskName}) => {
     const [selectedType, setSelectedType] = useState(undefined)
     const [searchedTaskName, setSearchedTaskName] = useState('')
 
@@ -12,34 +12,26 @@ export const SearchTask = ({onSubmit}) => {
         submitSearchParams({taskTypeId: type?.id})
     }
 
-    const searchTaskKeyDown = (event) => {
-        if(event.key == 'Enter') {
-            submitSearchParams()
-        }
-    }
-
     const submitSearchParams = (forceParam) => {
         let params = {
             name: searchedTaskName,
             taskTypeId: selectedType?.id
         }
+
         if(forceParam) params = {...params, ...forceParam}
         onSubmit(params)
     }
 
     return (<>
         <div className='d-flex flex-row my-3'>        
-            <InputGroup className='mr-2'>
-                <Form.Control
-                    placeholder='Введите название курса'
-                    onKeyPress={(e) => searchTaskKeyDown(e)}
-                    onChange={(e) => setSearchedTaskName(e.target.value)}
-                    value={searchedTaskName}
-                />
-                <div className='input-group-append'>
-                    <Button variant='outline-secondary' onClick={() => submitSearchParams()}><i className='fas fa-search'/></Button>
-                </div>
-            </InputGroup>
+            <LazySearchInput
+                placeholder='Введите название курса'
+                onChange={(value) => setSearchedTaskName(value)}
+                onSubmit={(value) => submitSearchParams({name: value})}
+                onEmpty={() => submitSearchParams({name: ''})}
+                onTimerStart={() => setIsFetching(true)}
+                emptyAfterValue={emptyAfterTaskName}
+            />
             
             <TaskTypeDropdown onSelect={onSelectType}/>
         </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { SearchTask } from './SearchTask'
-import { Button, Table, Badge, Dropdown, Spinner } from 'react-bootstrap'
+import { Button, Table, Badge, Dropdown } from 'react-bootstrap'
 import ProcessBar from '../process-bar/ProcessBar'
 import { addErrorNotification } from '../notifications/notifications'
 import { LoadingList } from '../loading/LoadingList'
@@ -27,7 +27,7 @@ export const TaskList = ({selectedCourse}) => {
 
     const [filterTaskName, setFilterTaskName] = useState(undefined)
     const [searchTaskTypeId, setSearchTaskTypeId] = useState(undefined)
-    const [searchParams, setSearchParams] = useState({
+    const searchParams = useRef({
         name: '',
         taskTypeId: undefined
     })
@@ -46,18 +46,24 @@ export const TaskList = ({selectedCourse}) => {
     const [isTaskAdding, setIsTaskAdding] = useState(false)
     const history = useHistory()
 
+    const emptyResultAfterTaskName = useRef(undefined)
+
     useEffect(() => {
         if(selectedCourse) fetchTasks(1)
     }, [selectedCourse])
 
-    useEffect(() => {
-        if(searchParams.taskTypeId == undefined && searchParams.name == '') {
-            if(selectedCourse)
-            fetchTasks(1)
-            else setTasks(undefined)
+    const setSearchParams = (params) => {
+        searchParams.current = params
+        if(params.taskTypeId == undefined && params.name == '') {
+            if(selectedCourse) fetchTasks(1)
+            else {
+                setTasks(undefined)
+                setIsFetching(false)
+            }
         }
-        else if(searchParams.taskTypeId !== pagination.current.taskTypeId || searchParams.name !== pagination.current.name) fetchTasks(1)
-    }, [searchParams])
+        else 
+            fetchTasks(1)
+    }
 
     const fetchTasks = (page) => {
         setIsFetching(true)
@@ -67,8 +73,8 @@ export const TaskList = ({selectedCourse}) => {
             pagination.current.name = filterTaskName && encodeURIComponent(filterTaskName.trim())
             pagination.current.taskTypeId = searchTaskTypeId
             pagination.current.courseId = selectedCourse?.id
-            if(searchParams.name.length > 0) pagination.current.name = searchParams.name
-            pagination.current.taskTypeId = searchParams.taskTypeId
+            if(searchParams.current.name.length > 0) pagination.current.name = searchParams.current.name
+            pagination.current.taskTypeId = searchParams.current.taskTypeId
         }
 
         fetch(pagination.current.courseId, page, pagination.current.size, pagination.current.name, pagination.current.taskTypeId)
@@ -77,6 +83,9 @@ export const TaskList = ({selectedCourse}) => {
 
                 pagination.current.page = page
                 pagination.current.total = fetchedData.totalItems
+
+                if(fetchedData.totalItems === 0) 
+                    emptyResultAfterTaskName.current = pagination.current.name
   
                 if(page == 1)
                     setTasks(fetchedData.items)
@@ -111,23 +120,24 @@ export const TaskList = ({selectedCourse}) => {
                         <p className='text-muted'>Выберите курс, чтобы отобразить его задания, либо воспользуйтесь поиском.</p>
                     </>
         else
-            if(tasks) {
-                if(tasks.length == 0)
-                    if(searchParams.name !== '' || searchParams.taskTypeId !== undefined)
-                        return  <>
-                                    <h5>Задания не найдены.</h5>
-                                    <p className='text-muted'>Не удалось найти задания, удовлетворяющие условиям поиска.</p>
-                                </>
-                    else return <>
-                                    <h5>Увы, но задания еще не добавлены.</h5>
-                                    <p className='text-muted'>Чтобы задания были в списке, для начали их нужно добавить.</p>
-                                </>
-            }
-            else if(!isFetching)
-                return  <>
-                            <h5>Произошла ошибка</h5>
-                            <p className='text-muted'>Не удалось загрузить список заданий.</p>
-                        </>
+            if(!isFetching)
+                if(tasks) {
+                    if(tasks.length == 0)
+                        if(searchParams.current.name !== '' || searchParams.current.taskTypeId !== undefined)
+                            return  <>
+                                        <h5>Задания не найдены.</h5>
+                                        <p className='text-muted'>Не удалось найти задания, удовлетворяющие условиям поиска.</p>
+                                    </>
+                        else return <>
+                                        <h5>Увы, но задания еще не добавлены.</h5>
+                                        <p className='text-muted'>Чтобы задания были в списке, для начали их нужно добавить.</p>
+                                    </>
+                }
+                else
+                    return  <>
+                                <h5>Произошла ошибка</h5>
+                                <p className='text-muted'>Не удалось загрузить список заданий.</p>
+                            </>
 
         return undefined
     }
@@ -135,13 +145,17 @@ export const TaskList = ({selectedCourse}) => {
     let message = getMessage()
     return (
         <>
-            <SearchTask onSubmit={setSearchParams}/>
-            <div className='task-list'>
+            <SearchTask 
+                onSubmit={(params) => setSearchParams(params)}
+                setIsFetching={setIsFetching}
+                emptyAfterTaskName={emptyResultAfterTaskName.current}
+            />
+            <div className='task-list course-panel'>
                 {isFetching && <ProcessBar className='position-absolute' height='.18Rem'/>}
                 <div className='scroll-container'>
                     {tasks && tasks.length !== 0 && 
                         <div className='tasks-table'>
-                        {tasks && tasks.map(task => {
+                        {(tasks && !isFetching) && tasks.map(task => {
                             return (
                                 <div key={task.id} className='task-table-item'>
                                     <div className='d-flex justify-content-between'>
