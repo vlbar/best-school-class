@@ -1,7 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Button, Form, InputGroup } from 'react-bootstrap'
 
-const LazySearchInput = ({delay = 1200, isCanSubmit = true, isInvalid, isValid, disabled, size, type, initialValue = '', name, onSubmit, onChange, onBlur, onEmpty, onTimerStart, emptyAfterValue, placeholder, variant = 'outline-secondary', isHideButton = false, className, style, children}) => {
+const LazySearchInput = ({
+    delay = 1200, isCanSubmit = true, isHideButton = false, initialValue = '',
+    isInvalid, isValid, disabled, size, type, name, variant = 'outline-secondary', className, style,
+    onSubmit, onChange, onBlur, onEmpty, onTimerStart, 
+    emptyAfterValue,
+    children, ...props
+}) => {
     const [value, setValue] = useState(initialValue)
     const lastSubmitedValue = useRef('')
     const notSubmitAfterValue = useRef(undefined)
@@ -9,6 +15,7 @@ const LazySearchInput = ({delay = 1200, isCanSubmit = true, isInvalid, isValid, 
 
     useEffect(() => {
         if(!isCanSubmit) clearTimeout(delayTimer.current)
+        else updateValue(value)
     }, [isCanSubmit])
 
     useEffect(() => {
@@ -20,11 +27,15 @@ const LazySearchInput = ({delay = 1200, isCanSubmit = true, isInvalid, isValid, 
         if(onSubmit) onSubmit(newValue)
     }
 
-    const updateValue = (event) => {
-        if(onChange) onChange(event)
-
+    const onChagneHadler = (event) => {
         let newValue = event.target.value
-        setValue(newValue)       
+        setValue(newValue)   
+
+        if(onChange) onChange(event)
+        updateValue(newValue)
+    }
+
+    const updateValue = (newValue) => {
         if(onEmpty && newValue.length === 0) {
             onEmpty()
             lastSubmitedValue.current = newValue
@@ -36,7 +47,7 @@ const LazySearchInput = ({delay = 1200, isCanSubmit = true, isInvalid, isValid, 
             if(!newValue.includes(notSubmitAfterValue.current)) {
                 notSubmitAfterValue.current = undefined
                 lastSubmitedValue.current = newValue
-                if(onTimerStart) onTimerStart()
+                if(onTimerStart) onTimerStart(newValue)
 
                 clearTimeout(delayTimer.current)
                 delayTimer.current = setTimeout(() => {
@@ -46,39 +57,39 @@ const LazySearchInput = ({delay = 1200, isCanSubmit = true, isInvalid, isValid, 
         }
     }
 
+    let inputStyle = (isHideButton) && style
     let input = (
         <Form.Control
-            placeholder={placeholder}
             name={name}
-            onChange={(e) => updateValue(e)}
-            onBlur={(e) => onBlur(e)}
+            onChange={(e) => onChagneHadler(e)}
+            onBlur={(e) => { if(onBlur) onBlur(e) }}
             value={value}
-
+            
             isInvalid={isInvalid}
             isValid={isValid}
             disabled={disabled}
             size={size}
             type={type}
-            className={className}
-            style={style}
+            {...props}
+
+            className={(isHideButton) && className}
+            style={{...inputStyle}}
         />
     )
 
     return isHideButton 
         ? (<>{input}{children}</>)
-        : (<InputGroup className='mr-2' size={size}>
+        : (<InputGroup className={'mr-2 ' + className} style={style} size={size}>
             {input}
-            {children}
             <div className='input-group-append'>
                 <Button 
-                    variant={variant}
                     onClick={() => forceSubmit(value)}
-                    className={className}
-                    style={style}
+                    variant={variant}
                 >
                     <i className='fas fa-search'/>
                 </Button>
             </div>
+            {children}
         </InputGroup>)
 }
 
