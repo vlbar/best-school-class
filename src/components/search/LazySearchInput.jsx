@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Button, Form, InputGroup } from 'react-bootstrap'
 
-const LazySearchInput = ({delay = 1200, isCanSubmit = true, isInvalid, isValid, disabled, size, type, initialValue = '', onSubmit, onChange, onEmpty, onTimerStart, emptyAfterValue, placeholder, variant = 'outline-secondary', isHideButton = false, className, style, children}) => {
+const LazySearchInput = ({delay = 1200, isCanSubmit = true, isInvalid, isValid, disabled, size, type, initialValue = '', name, onSubmit, onChange, onBlur, onEmpty, onTimerStart, emptyAfterValue, placeholder, variant = 'outline-secondary', isHideButton = false, className, style, children}) => {
     const [value, setValue] = useState(initialValue)
     const lastSubmitedValue = useRef('')
     const notSubmitAfterValue = useRef(undefined)
@@ -20,10 +20,11 @@ const LazySearchInput = ({delay = 1200, isCanSubmit = true, isInvalid, isValid, 
         if(onSubmit) onSubmit(newValue)
     }
 
-    const updateValue = (newValue) => {
-        setValue(newValue)
-        if(onChange) onChange(newValue)
-        
+    const updateValue = (event) => {
+        if(onChange) onChange(event)
+
+        let newValue = event.target.value
+        setValue(newValue)       
         if(onEmpty && newValue.length === 0) {
             onEmpty()
             lastSubmitedValue.current = newValue
@@ -48,7 +49,9 @@ const LazySearchInput = ({delay = 1200, isCanSubmit = true, isInvalid, isValid, 
     let input = (
         <Form.Control
             placeholder={placeholder}
-            onChange={(e) => updateValue(e.target.value)}
+            name={name}
+            onChange={(e) => updateValue(e)}
+            onBlur={(e) => onBlur(e)}
             value={value}
 
             isInvalid={isInvalid}
