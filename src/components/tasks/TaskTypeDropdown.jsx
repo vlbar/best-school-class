@@ -8,6 +8,7 @@ import { TaskTypeDeleteModal } from './TaskTypeDeleteModal'
 import ProcessBar from '../process-bar/ProcessBar'
 import axios from 'axios'
 import './SearchTask.less'
+import LazySearchInput from '../search/LazySearchInput'
 
 
 const baseUrl = '/task-types'
@@ -43,13 +44,12 @@ const TaskTypeDropdown = ({initialSelectedType, placeholder = 'Тип задан
     const [isDropdownShow, setIsDropdownShow] = useState(false)
     const dropdownLock = useRef(false)
 
-    const [searchedTaskTypeName, setSearchedTaskTypeName] = useState('')
-
     const [isAddTaskTypeModalShow, setIsAddTaskTypeModalShow] = useState(false)
     const [isDeleteTaskTypeModalShow, setIsDeleteTaskTypeModalShow] = useState(false)
     const [typeToUpdate, setTypeToUpdate] = useState(undefined)
     const [typeToDelete, setTypeToDelete] = useState(undefined)
 
+    const emptyResultAfterName = useRef(undefined)
     const pagination = useRef({
         page: 1, 
         size: 10, 
@@ -65,11 +65,6 @@ const TaskTypeDropdown = ({initialSelectedType, placeholder = 'Тип задан
     useEffect(() => {
         if(inView && !isFetching) fetchTypes(pagination.current.page + 1)
     }, [inView])
-
-    //auto empty type name cancel
-    useEffect(() => {
-        if(searchedTaskTypeName.length == 0 && pagination.current.name.length !== 0) fetchTypes(1)
-    }, [searchedTaskTypeName])
 
     //lazy initial select type
     useEffect(() => {
@@ -99,14 +94,6 @@ const TaskTypeDropdown = ({initialSelectedType, placeholder = 'Тип задан
         let targetType = taskTypes.find(x => x.id == taskTypeId)
         setSelectedType(targetType)
         onSelect(targetType)
-    }
-
-    //searching
-    const searchTypeKeyDown = (event) => {
-        if(event.key == 'Enter') {
-            if(searchedTaskTypeName.trim() !== pagination.current.name)
-                fetchTypes(1)
-        }
     }
 
     //modals
@@ -142,10 +129,6 @@ const TaskTypeDropdown = ({initialSelectedType, placeholder = 'Тип задан
     const fetchTypes = (page) => {
         setIsFetching(true)
         setIsLoaded(false)
-
-        if(page == 1) {
-            pagination.current.name = encodeURIComponent(searchedTaskTypeName.trim())
-        }
         
         fetch(page, pagination.current.size, pagination.current.name)
             .then(res => {
@@ -154,6 +137,8 @@ const TaskTypeDropdown = ({initialSelectedType, placeholder = 'Тип задан
                 pagination.current.page = page
                 pagination.current.total = fetchedData.totalItems
                 
+                if(pagination.current.total == 0) emptyResultAfterName.current = pagination.current.name
+
                 if(page == 1)
                     setTaskTypes(fetchedData.items)
                 else
@@ -212,13 +197,15 @@ const TaskTypeDropdown = ({initialSelectedType, placeholder = 'Тип задан
                 </Dropdown.Toggle>
                 <Dropdown.Menu>
                     <div className='m-2'>
-                        <FormControl
+                        <LazySearchInput
                             autoFocus
                             className='w-100'
                             placeholder='Название для поиска...'
-                            onChange={(e) => setSearchedTaskTypeName(e.target.value)}
-                            value={searchedTaskTypeName}
-                            onKeyPress={(e) => searchTypeKeyDown(e)}
+                            onChange={(e) => pagination.current.name = e.target.value}
+                            onSubmit={() => fetchTypes(1)}
+                            onEmpty={() => fetchTypes(1)}
+                            onTimerStart={() => setIsFetching(true)}
+                            emptyAfterValue={emptyResultAfterName.current}
                         />
                     </div>
                     <ProcessBar active={isFetching} height=".18Rem"/>
