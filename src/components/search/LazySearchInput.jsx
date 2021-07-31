@@ -83,7 +83,10 @@ const LazySearchInput = ({
             {input}
             <div className='input-group-append'>
                 <Button 
-                    onClick={() => forceSubmit(value)}
+                    onClick={() => {
+                        if(lastSubmitedValue.current !== value && isCanSubmit)
+                            forceSubmit(value)
+                    }}
                     variant={variant}
                 >
                     <i className='fas fa-search'/>
