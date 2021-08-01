@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { SearchTask } from './SearchTask'
-import { Button, Table, Badge, Dropdown } from 'react-bootstrap'
+import { Button, Table, Badge } from 'react-bootstrap'
 import ProcessBar from '../process-bar/ProcessBar'
 import { addErrorNotification } from '../notifications/notifications'
 import { LoadingList } from '../loading/LoadingList'
 import { TaskAddModal } from './TaskAddModal'
-import { useHistory } from "react-router-dom"
+import { useHistory } from 'react-router-dom'
+import { useInView } from 'react-intersection-observer'
 import axios from 'axios'
 import './TaskList.less'
 
@@ -22,15 +23,9 @@ async function add(task) {
 const taskTypesColors = ['#69c44d', '#007bff', '#db4242', '#2cc7b2', '#8000ff', '#e68e29', '#d4d5d9', '#38c7d1']
 
 export const TaskList = ({selectedCourse}) => {
+    // fetching
     const [tasks, setTasks] = useState(undefined)
     const [isFetching, setIsFetching] = useState(false)
-
-    const [filterTaskName, setFilterTaskName] = useState(undefined)
-    const [searchTaskTypeId, setSearchTaskTypeId] = useState(undefined)
-    const searchParams = useRef({
-        name: '',
-        taskTypeId: undefined
-    })
 
     const pagination = useRef({
         page: 1, 
@@ -41,16 +36,34 @@ export const TaskList = ({selectedCourse}) => {
         courseId: undefined
     })
 
+    // searching
+    const [filterTaskName, setFilterTaskName] = useState(undefined)
+    const [searchTaskTypeId, setSearchTaskTypeId] = useState(undefined)
+    const emptyResultAfterTaskName = useRef(undefined)
+    const searchParams = useRef({
+        name: '',
+        taskTypeId: undefined
+    })
+
+    useEffect(() => {
+        if(selectedCourse) fetchTasks(1)
+    }, [selectedCourse])
+
+    //auto fetch
+    const { ref, inView } = useInView({
+        threshold: 1
+    })
+
+    useEffect(() => {
+        if(inView && !isFetching) fetchTasks(pagination.current.page + 1)
+    }, [inView])
+
+    // modals
     const [isAddTaskModalShow, setIsAddTaskModalShow] = useState(false)
     const [taskToAdd, setTaskToAdd] = useState(undefined)
     const [isTaskAdding, setIsTaskAdding] = useState(false)
     const history = useHistory()
 
-    const emptyResultAfterTaskName = useRef(undefined)
-
-    useEffect(() => {
-        if(selectedCourse) fetchTasks(1)
-    }, [selectedCourse])
 
     const setSearchParams = (params) => {
         searchParams.current = params
@@ -147,7 +160,10 @@ export const TaskList = ({selectedCourse}) => {
         <>
             <SearchTask 
                 onSubmit={(params) => setSearchParams(params)}
-                setIsFetching={setIsFetching}
+                setIsFetching={(isFetching) => {
+                    setIsFetching(isFetching)
+                    setTasks([])
+                }}
                 emptyAfterTaskName={emptyResultAfterTaskName.current}
             />
             <div className='task-list course-panel'>
@@ -155,7 +171,7 @@ export const TaskList = ({selectedCourse}) => {
                 <div className='scroll-container'>
                     {tasks && tasks.length !== 0 && 
                         <div className='tasks-table'>
-                        {(tasks && !isFetching) && tasks.map(task => {
+                        {(tasks) && tasks.map(task => {
                             return (
                                 <div key={task.id} className='task-table-item'>
                                     <div className='d-flex justify-content-between'>
@@ -192,6 +208,7 @@ export const TaskList = ({selectedCourse}) => {
                             className="fetch-types-btn" 
                             onClick={() => fetchTasks(pagination.current.page + 1)} 
                             disabled={isFetching}
+                            ref={ref}
                         >
                             Загрузить еще
                         </button>
