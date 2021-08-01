@@ -87,19 +87,18 @@ export default function useBestValidation(validationSchema) {
                 break
             case ARRAY_TYPE:
                 validateArray([...value], fieldPath, validationSchema)
-                forEachValidateField([...value], validationSchema[fieldName].of)
+                forEachValidateField([...value], fieldPath, validationSchema[fieldName].of)
                 break
         }
     }, [])
 
-    function forEachValidateField(array, validationSchema) {
+    function forEachValidateField(array, arrayName, validationSchema) {
         let validationSchemaFields = Object.getOwnPropertyNames(validationSchema)
         array.forEach((item, index) => {
             let validateFields = Object.getOwnPropertyNames(item)
             validateFields.forEach(x => {
-                if(validationSchemaFields.includes(x)) {
-                    validateField(`testAnswerVariants[${index}].${x}`, item[x], validationSchema)
-                }
+                if(validationSchemaFields.includes(x))
+                    validateField(`${arrayName}[${index}].${x}`, item[x], validationSchema)
             })
         })
     }
