@@ -173,7 +173,10 @@ const formulationEditorConfig = {
     removeButtons: [
         'source', 'table', 'font', 'fontsize', 'brush',
         'video', 'copyformat', 'fullsize', 'print', 'color'
-    ]
+    ],
+    askBeforePasteHTML: false,
+    askBeforePasteFromWord: false,
+    defaultActionOnPaste: "insert_clear_html"
 }
 
 //context for question answer variants
