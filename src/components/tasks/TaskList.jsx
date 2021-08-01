@@ -162,7 +162,7 @@ export const TaskList = ({selectedCourse}) => {
                                         <div>
                                             <span 
                                                 className='text-semi-bold task-name' 
-                                                onClick={() => history.push(`courses/${selectedCourse.id}/tasks/${task.id}`)}
+                                                onClick={() => history.push(`courses/${task.courseId}/tasks/${task.id}`)}
                                             >                                           
                                                 {task.name}
                                             </span>
