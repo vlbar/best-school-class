@@ -104,29 +104,29 @@ export default function useBestValidation(validationSchema) {
         })
     }
 
-    //   TYPES
+    // TYPES
     function validateString(value, fieldPath, validationSchema) {
         let fieldSchema = validationSchema[getFieldName(fieldPath)]
         if(!fieldSchema.trim || fieldSchema.trim !== false) value = value.trim()
-        isValidateType(value, fieldPath, validationSchema, (x) => x > value.length, (x) => x < value.length)
+        validateType(value, fieldPath, validationSchema, (x) => x > value.length, (x) => x < value.length)
     }
 
     function validateNumber(value, fieldPath, validationSchema) {
-        isValidateType(value, fieldPath, validationSchema, (x) => x > value, (x) => x < value)
+        validateType(value, fieldPath, validationSchema, (x) => x > value, (x) => x < value)
     }
 
     function validateArray(value, fieldPath, validationSchema) {
-        isValidateType(value, fieldPath, validationSchema, (x) => x > value.length, (x) => x < value.length)
+        validateType(value, fieldPath, validationSchema, (x) => x > value.length, (x) => x < value.length)
     }
 
-    function isValidateType(value, fieldPath, validationSchema, minPred, maxPred) {
+    function validateType(value, fieldPath, validationSchema, minPred, maxPred) {
         let fieldName = getFieldName(fieldPath)
         let fieldSchema = validationSchema[fieldName]
 
-        if(!requiredCheck(fieldPath, value, fieldSchema)) return false
-        if(fieldSchema.nullable && (value.length == 0 || value == null)) return false
-        if(!valueCheck(fieldPath, minPred, fieldSchema, 'min')) return false
-        if(!valueCheck(fieldPath, maxPred, fieldSchema, 'max')) return false
+        if(!requiredCheck(fieldPath, value, fieldSchema)) return
+        if(fieldSchema.nullable && (value == null || value?.length == 0)) return
+        if(!valueCheck(fieldPath, minPred, fieldSchema, 'min')) return
+        if(!valueCheck(fieldPath, maxPred, fieldSchema, 'max')) return
     }
 
     function requiredCheck(fieldPath, value, fieldSchema) {
