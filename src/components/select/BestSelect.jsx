@@ -5,12 +5,13 @@ import { useInView } from 'react-intersection-observer'
 import './BestSelect.less'
 
 export const SelectContext = React.createContext()
+const ToggleContext = React.createContext()
 
 const BestSelect = ({
     onSelect,
-    fieldToDisplay = 'name', initialSelectedItem, placeholder, isDisableListClosing = false,
-    variant = 'white', disabled, toggleStyle, toggleClassName,
-    children, ...props
+    fieldToDisplay = 'name', initialSelectedItem, placeholder = 'Выбрать', isDisableListClosing = false,
+    variant = 'white', disabled = false,
+    toggle, children, ...props
 }) => {
     const [selectedItem, setSelectedItem] = useState(initialSelectedItem)
     const [isDropdownShow, setIsDropdownShow] = useState(false)
@@ -51,16 +52,25 @@ const BestSelect = ({
     }, [isDisableListClosing])
 
     return (
-        <Dropdown show={isDropdownShow} onToggle={onDropdownToggle} className='item-select' {...props}>
-            <Dropdown.Toggle variant={variant} disabled={disabled} {...props} style={toggleStyle} className={toggleClassName}>
-                {selectedItem ? selectedItem[fieldToDisplay] : placeholder}
-            </Dropdown.Toggle>
+        <Dropdown show={isDropdownShow} onToggle={onDropdownToggle} {...props} className={'item-select' + ((props.className) ? ' ' + props.className :'')}>
+            <ToggleContext.Provider value={{ selectedItem, fieldToDisplay, disabled, variant, placeholder }}>
+                {toggle ? toggle(selectedItem) : <BestSelectToggle/>}
+            </ToggleContext.Provider>
             <Dropdown.Menu>
                 <SelectContext.Provider value={{ selectedItem, onSelectItem, fieldToDisplay }}>
                     {children}
                 </SelectContext.Provider>
             </Dropdown.Menu>
         </Dropdown>
+    )
+}
+
+export const BestSelectToggle = ({children, ...props}) => {
+    const { selectedItem, fieldToDisplay, disabled, variant, placeholder } = useContext(ToggleContext)
+    return (
+        <Dropdown.Toggle variant={variant} disabled={disabled} {...props}>
+            {children ? children : <span>{selectedItem ? selectedItem[fieldToDisplay] : placeholder}</span>}
+        </Dropdown.Toggle>
     )
 }
 
@@ -151,7 +161,7 @@ export const BestItemSelector = ({children, ...props}) => {
     const { item } = useContext(SelectItemContext)
 
     return (
-        <div onClick={() => onSelectItem(item)} {...props}>
+        <div onClick={() => onSelectItem(item)} {...props} className={'item-selector' + (props.className ? ' ' + props.className:'')}>
             {children ?
                 children
                 :<span>{item[fieldToDisplay]}</span>    
