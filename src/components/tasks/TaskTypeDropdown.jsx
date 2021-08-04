@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Button } from 'react-bootstrap'
+import { Button, Badge } from 'react-bootstrap'
 import { addErrorNotification } from '../notifications/notifications'
 import { TaskTypeAddUpdateModal } from './TaskTypeAddUpdateModal'
 import { TaskTypeDeleteModal } from './TaskTypeDeleteModal'
-import BestSelect, { BestItemSelector, BestSelectItem, BestSelectList } from '../select/BestSelect'
+import BestSelect, { BestItemSelector, BestSelectItem, BestSelectList, BestSelectToggle } from '../select/BestSelect'
 import LazySearchInput from '../search/LazySearchInput'
 import ProcessBar from '../process-bar/ProcessBar'
 import axios from 'axios'
-import './SearchTask.less'
+import './TaskTypeDropdown.less'
 
 const baseUrl = '/task-types'
 
@@ -33,7 +33,7 @@ export function getTaskTypeColor(id) {
     return taskTypesColors[id % taskTypesColors.length]
 }
 
-const TaskTypeDropdown = ({initialSelectedType, onSelect, placeholder = 'Тип задания', disabled}) => {
+const TaskTypeDropdown = ({initialSelectedType, onSelect, placeholder = 'Тип задания', disabled, className}) => {
     // select
     const [taskTypes, setTaskTypes] = useState([])
     const [selectedType, setSelectedType] = useState(initialSelectedType)
@@ -154,7 +154,6 @@ const TaskTypeDropdown = ({initialSelectedType, onSelect, placeholder = 'Тип 
     return (
         <>
             <BestSelect
-                placeholder={placeholder}
                 disabled={disabled}
                 onSelect={type => {
                     onSelect(type)
@@ -162,8 +161,15 @@ const TaskTypeDropdown = ({initialSelectedType, onSelect, placeholder = 'Тип 
                 }}
                 initialSelectedItem={initialSelectedType}
                 isDisableListClosing={isAddTaskTypeModalShow || isDeleteTaskTypeModalShow}
-                className='task-types-dropdown'
-                toggleStyle={{borderColor: (selectedType ? getTaskTypeColor(selectedType.id) : '#ced4da')}} disabled={disabled}
+                className={'task-types-dropdown ' + ((className) ? ' ' + className:'')}
+                toggle={(type) => {
+                    return (
+                        <BestSelectToggle className='d-flex align-items-center' >
+                            <div className='type-color-circle' style={{backgroundColor: getTaskTypeColor(type?.id)}}/>
+                            <span>{type ? type.name : placeholder}</span>
+                        </BestSelectToggle>
+                    )
+                }}
             >
                 <div className='m-2'>
                     <LazySearchInput
@@ -190,7 +196,10 @@ const TaskTypeDropdown = ({initialSelectedType, onSelect, placeholder = 'Тип 
                 >
                     {taskTypes.map(taskType => 
                         <BestSelectItem key={taskType.id} item={taskType}>
-                            <BestItemSelector/>
+                            <BestItemSelector className='d-flex pl-2'>
+                                <div className='type-color-circle' style={{backgroundColor: getTaskTypeColor(taskType.id)}}/>
+                                <span>{taskType.name}</span>
+                            </BestItemSelector>
                             {taskType.creatorId !== null && 
                                 <>
                                     <span className='task-type-action' onClick={() => showAddTaskTypeModal(taskType)} title='Изменить'>
