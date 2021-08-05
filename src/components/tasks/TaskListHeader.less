@@ -1,0 +1,38 @@
+.task-list-header {
+    display: flex;
+    padding: .5Rem .75Rem;
+
+    border: 1px solid #dee2e6;
+    border-top-left-radius: .25rem;
+    border-top-right-radius: .25rem;
+    border-bottom: 0;
+
+    height: 53px;
+
+    .task-checkbox {
+        margin-top: .7Rem;
+        margin-left: .25Rem;
+    }
+
+    .selected-task-counter {
+        font-size: 12px;
+        color: #6c757d;
+        width: 100%;
+        padding-left: .5Rem;
+        padding-top: .5Rem;
+    }
+
+    .btn-clean .dropdown-toggle {
+        border: 0 !important;
+        outline: none !important;
+        box-shadow: none !important;
+    }
+}
+
+.none-parent {
+    display: none;
+
+    & > * {
+        display: none;
+    }
+}

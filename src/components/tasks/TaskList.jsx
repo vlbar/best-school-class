@@ -1,19 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { SearchTask } from './SearchTask'
-import { Button, Table, Badge } from 'react-bootstrap'
+import { Button, Table, Badge, Dropdown } from 'react-bootstrap'
 import ProcessBar from '../process-bar/ProcessBar'
 import { addErrorNotification } from '../notifications/notifications'
 import { LoadingList } from '../loading/LoadingList'
 import { TaskAddModal } from './TaskAddModal'
 import { useHistory } from 'react-router-dom'
 import { useInView } from 'react-intersection-observer'
+import TaskListHeader from './TaskListHeader'
 import axios from 'axios'
+import './../common/dropdown-action-menu.less'
 import './TaskList.less'
 
 const baseUrl = '/tasks'
 
-async function fetch(courseId, page, size, name, taskTypeId) {
-    return axios.get(`${baseUrl}?page=${page}&size=${size}${courseId !== undefined ? `&courseId=${courseId}`:''}${name !== undefined ? `&name=${name}`:''}${taskTypeId !== undefined ? `&taskTypeId=${taskTypeId}`:''}`)
+async function fetch(courseId, page, size, name, taskTypeId, order) {
+    return axios.get(`${baseUrl}?page=${page}&size=${size}${courseId !== undefined ? `&courseId=${courseId}`:''}${name !== undefined ? `&name=${name}`:''}${taskTypeId !== undefined ? `&taskTypeId=${taskTypeId}`:''}${order !== undefined ? `&order=${order}`:''}`)
 }
 
 async function add(task) {
@@ -33,16 +35,16 @@ export const TaskList = ({selectedCourse}) => {
         total: undefined,
         name: '',
         taskTypeId: undefined,
-        courseId: undefined
+        courseId: undefined,
+        orderBy: 'name-asc'
     })
 
     // searching
-    const [filterTaskName, setFilterTaskName] = useState(undefined)
-    const [searchTaskTypeId, setSearchTaskTypeId] = useState(undefined)
     const emptyResultAfterTaskName = useRef(undefined)
     const searchParams = useRef({
         name: '',
-        taskTypeId: undefined
+        taskTypeId: undefined,
+        orderBy: pagination.current.orderBy
     })
 
     useEffect(() => {
@@ -58,6 +60,34 @@ export const TaskList = ({selectedCourse}) => {
         if(inView && !isFetching) fetchTasks(pagination.current.page + 1)
     }, [inView])
 
+    // select
+    const [selectedTasksCount, setSelectedTasksCount] = useState(0)
+    const selectTask = (task) => {
+        let targetTasks = tasks
+        let taskToSelect = targetTasks.find(x => x.id == task.id)
+        taskToSelect.isSelected = !taskToSelect.isSelected
+
+        if(taskToSelect.isSelected)
+            setSelectedTasksCount(selectedTasksCount + 1)
+        else
+            setSelectedTasksCount(selectedTasksCount - 1)
+        
+        setTasks([...targetTasks])
+    }
+    
+    const onSelectAll = () => {
+        if(!tasks) return
+        let targetTasks = tasks
+        if(selectedTasksCount == tasks.length) {
+            setSelectedTasksCount(0)
+            targetTasks.forEach(x => x.isSelected = false)
+        } else {
+            setSelectedTasksCount(tasks.length)
+            targetTasks.forEach(x => x.isSelected = true)
+        }
+        setTasks([...targetTasks])
+    }
+
     // modals
     const [isAddTaskModalShow, setIsAddTaskModalShow] = useState(false)
     const [taskToAdd, setTaskToAdd] = useState(undefined)
@@ -66,16 +96,15 @@ export const TaskList = ({selectedCourse}) => {
 
 
     const setSearchParams = (params) => {
-        searchParams.current = params
-        if(params.taskTypeId == undefined && params.name == '') {
+        searchParams.current = {...searchParams.current, ...params}
+        if(searchParams.current.name.trim().length > 0)
+            fetchTasks(1)
+        else 
             if(selectedCourse) fetchTasks(1)
             else {
                 setTasks(undefined)
                 setIsFetching(false)
             }
-        }
-        else 
-            fetchTasks(1)
     }
 
     const fetchTasks = (page) => {
@@ -83,14 +112,12 @@ export const TaskList = ({selectedCourse}) => {
 
         if(page == 1) {
             setTasks(undefined)
-            pagination.current.name = filterTaskName && encodeURIComponent(filterTaskName.trim())
-            pagination.current.taskTypeId = searchTaskTypeId
+            setSelectedTasksCount(0)
             pagination.current.courseId = selectedCourse?.id
-            if(searchParams.current.name.length > 0) pagination.current.name = searchParams.current.name
-            pagination.current.taskTypeId = searchParams.current.taskTypeId
+            pagination.current = {...pagination.current, ...searchParams.current}
         }
 
-        fetch(pagination.current.courseId, page, pagination.current.size, pagination.current.name, pagination.current.taskTypeId)
+        fetch(pagination.current.courseId, page, pagination.current.size, pagination.current.name, pagination.current.taskTypeId, pagination.current.orderBy)
             .then(res => {
                 let fetchedData = res.data
 
@@ -166,41 +193,66 @@ export const TaskList = ({selectedCourse}) => {
                 }}
                 emptyAfterTaskName={emptyResultAfterTaskName.current}
             />
+            <TaskListHeader
+                submitSearchParams={(params) => setSearchParams(params)}
+                selectedTasksCount={selectedTasksCount}
+                isSelectedAll={selectedTasksCount == tasks?.length && tasks != undefined && tasks.length !== 0}
+                onSelectAll={onSelectAll}
+            />
             <div className='task-list course-panel'>
                 {isFetching && <ProcessBar className='position-absolute' height='.18Rem'/>}
                 <div className='scroll-container'>
                     {tasks && tasks.length !== 0 && 
                         <div className='tasks-table'>
-                        {(tasks) && tasks.map(task => {
-                            return (
-                                <div key={task.id} className='task-table-item'>
-                                    <div className='d-flex justify-content-between'>
-                                        <div>
-                                            <span 
-                                                className='text-semi-bold task-name' 
-                                                onClick={() => history.push(`courses/${task.courseId}/tasks/${task.id}`)}
-                                            >                                           
-                                                {task.name}
-                                            </span>
+                            {(tasks) && tasks.map(task => {
+                                return (
+                                    <div key={task.id} className='task-table-item d-flex'>
+                                        <input 
+                                            type='checkbox'
+                                            className='ml-1'
+                                            style={{marginTop: '.4Rem'}}
+                                            checked={task?.isSelected ?? false}
+                                            onChange={(e) => selectTask(task)}
+                                        />
                                         
-                                            {task.taskType !== null ?
-                                                <Badge
-                                                    className='ml-2'
-                                                    variant='secondary' 
-                                                    style={{backgroundColor: taskTypesColors[task.taskType.id % taskTypesColors.length]}}
-                                                >
-                                                    {task.taskType.name}
-                                                </Badge>:''}
+                                        <div className='ml-2' style={{width: '95%'}}>
+                                            <div className='d-flex justify-content-between'>
+                                                <div>
+                                                    <span 
+                                                        className='text-semi-bold task-name mr-2' 
+                                                        onClick={() => history.push(`courses/${task.courseId}/tasks/${task.id}`)}
+                                                    >                                           
+                                                        {task.name}
+                                                    </span>
+                                                
+                                                    {task.taskType !== null ?
+                                                        <Badge
+                                                            variant='secondary' 
+                                                            style={{backgroundColor: taskTypesColors[task.taskType.id % taskTypesColors.length]}}
+                                                        >
+                                                            {task.taskType.name}
+                                                        </Badge>:''}
+                                                </div>
+                                                
+                                                <Dropdown className='dropdown-action-menu'>
+                                                    <Dropdown.Toggle size='sm' id='dropdown-basic'>⋮</Dropdown.Toggle>
+                                                    <Dropdown.Menu>
+                                                        <Dropdown.Item onClick={() => history.push(`courses/${task.courseId}/tasks/${task.id}`)}>Изменить</Dropdown.Item>
+                                                        <Dropdown.Item>Переместить</Dropdown.Item>
+                                                        <Dropdown.Item className='text-danger'>Удалить</Dropdown.Item>
+                                                    </Dropdown.Menu>
+                                                </Dropdown>
+                                            </div>
+                                            <div className='w-100'>
+                                                <span className='text-description text-ellipsis' title={task.description?.replace(/<[^>]*>?/gm, '')}>
+                                                    {task.description?.replace(/<[^>]*>?/gm, '')}
+                                                </span>
+                                            </div>
+
                                         </div>
                                     </div>
-                                    <div className='w-100'>
-                                        <span className='text-description text-ellipsis' title={task.description?.replace(/<[^>]*>?/gm, '')}>
-                                            {task.description?.replace(/<[^>]*>?/gm, '')}
-                                        </span>
-                                    </div>
-                                </div>
-                            )
-                        })}
+                                )
+                            })}
                         </div>
                     }
                     {(tasks !== undefined && !isFetching && pagination.current.page * pagination.current.size < pagination.current.total) &&

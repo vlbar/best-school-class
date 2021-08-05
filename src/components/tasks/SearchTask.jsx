@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import LazySearchInput from '../search/LazySearchInput'
-import TaskTypeDropdown from './TaskTypeDropdown'
 import './SearchTask.less'
 import useBestValidation from './edit/useBestValidation'
 
@@ -56,8 +55,6 @@ export const SearchTask = ({onSubmit, setIsFetching, emptyAfterTaskName}) => {
                     {nameValdiationErros}
                 </div>}
             </LazySearchInput>
-            
-            <TaskTypeDropdown onSelect={onSelectType}/>
         </div>
     </>)
 }
