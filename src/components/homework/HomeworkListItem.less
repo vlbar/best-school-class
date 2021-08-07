@@ -1,0 +1,33 @@
+.homework-list-item-container {
+    border-bottom: 1px solid #dee2e6;
+}
+
+.homework-list-item {
+    display: flex;
+    justify-content: space-between;
+    padding: .75rem;
+
+    &:hover {
+        background-color: rgba(0,0,0,.05);
+    }
+}
+
+.fake-homework-list-item {
+    padding: .75rem;
+}
+
+.homework-list-item-task {
+    padding: .5rem;
+    padding-left: 3Rem;
+    border-top: 1px solid #dee2e6;
+}
+
+.arrow svg {
+    transform: rotate(-90deg);
+    transition: transform 0.2s;
+    fill: #212529;
+}
+
+.arrow.expanded svg {
+    transform: rotate(0deg);
+}

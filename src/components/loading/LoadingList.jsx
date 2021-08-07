@@ -14,3 +14,13 @@ export const LoadingList = ({widths = [20, 70, 50, 40, 60], itemHeight='1Rem', i
         </div>
     )
 }
+
+export const LoadingItem = ({width = '20%', height = '1Rem', ...props}) => {
+    return (
+        <div 
+            {...props}
+            className={'fake-item' + (props.className ? ' ' + props.className:'')}
+            style={{width: width, height: height, ...props.style}}
+        />
+    )
+}
