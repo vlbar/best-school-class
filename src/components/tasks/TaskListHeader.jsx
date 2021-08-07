@@ -46,7 +46,7 @@ const TaskListHeader = ({submitSearchParams, selectedTasksCount = 0, isSelectedA
             {(selectedTasksCount != 0) && 
                 <>
                     <span className='selected-task-counter'>{selectedTasksCount} выделено</span>
-                    <Dropdown className='btn-clean'>
+                    <Dropdown className='dropdown-clean'>
                         <Dropdown.Toggle variant='white' id='dropdown-basic'>Действие</Dropdown.Toggle>
                         <Dropdown.Menu>
                             <Dropdown.Item>Переместить</Dropdown.Item>

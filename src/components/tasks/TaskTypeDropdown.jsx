@@ -161,7 +161,7 @@ const TaskTypeDropdown = ({initialSelectedType, onSelect, placeholder = 'Тип 
                 }}
                 initialSelectedItem={initialSelectedType}
                 isDisableListClosing={isAddTaskTypeModalShow || isDeleteTaskTypeModalShow}
-                className={'task-types-dropdown ' + ((className) ? ' ' + className:'')}
+                className={'task-types-dropdown dropdown-clean' + ((className) ? ' ' + className:'')}
                 toggle={(type) => {
                     return (
                         <BestSelectToggle className='d-flex align-items-center' >

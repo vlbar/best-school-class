@@ -9,7 +9,6 @@ import { useHistory } from 'react-router-dom'
 import { useInView } from 'react-intersection-observer'
 import TaskListHeader from './TaskListHeader'
 import axios from 'axios'
-import './../common/dropdown-action-menu.less'
 import './TaskList.less'
 
 const baseUrl = '/tasks'
