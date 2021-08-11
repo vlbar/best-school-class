@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useContext } from 'react'
 import { SearchTask } from './SearchTask'
 import { Button, Table, Badge, Dropdown } from 'react-bootstrap'
 import ProcessBar from '../process-bar/ProcessBar'
@@ -8,6 +8,7 @@ import { TaskAddModal } from './TaskAddModal'
 import { useHistory } from 'react-router-dom'
 import { useInView } from 'react-intersection-observer'
 import TaskListHeader from './TaskListHeader'
+import { HomeworkContext } from '../homework/HomeworkBuilderContext'
 import axios from 'axios'
 import './TaskList.less'
 
@@ -60,39 +61,39 @@ export const TaskList = ({selectedCourse}) => {
     }, [inView])
 
     // select
-    const [selectedTasksCount, setSelectedTasksCount] = useState(0)
-    const selectTask = (task) => {
-        let targetTasks = tasks
-        let taskToSelect = targetTasks.find(x => x.id == task.id)
-        taskToSelect.isSelected = !taskToSelect.isSelected
+    const [selectedTasks, setSelectedTasks] = useState([])
 
-        if(taskToSelect.isSelected)
-            setSelectedTasksCount(selectedTasksCount + 1)
+    const selectTask = (task) => {
+        setSelectedTasks([...selectedTasks, task])
+    }
+
+    const unselectTask = (task) => {
+        setSelectedTasks(selectedTasks.filter(x => x.id !== task.id))
+    }
+
+    const onSelectTaskHandler = (task) => {
+        if(selectedTasks.find(x => x.id == task.id) == undefined)
+            selectTask(task)
         else
-            setSelectedTasksCount(selectedTasksCount - 1)
-        
-        setTasks([...targetTasks])
+            unselectTask(task)
     }
     
     const onSelectAll = () => {
         if(!tasks) return
-        let targetTasks = tasks
-        if(selectedTasksCount == tasks.length) {
-            setSelectedTasksCount(0)
-            targetTasks.forEach(x => x.isSelected = false)
-        } else {
-            setSelectedTasksCount(tasks.length)
-            targetTasks.forEach(x => x.isSelected = true)
-        }
-        setTasks([...targetTasks])
+        if(selectedTasks.length == tasks.length)
+            setSelectedTasks([])
+        else
+            setSelectedTasks(tasks)
     }
+
+    // homework
+    const { homework } = useContext(HomeworkContext)
 
     // modals
     const [isAddTaskModalShow, setIsAddTaskModalShow] = useState(false)
     const [taskToAdd, setTaskToAdd] = useState(undefined)
     const [isTaskAdding, setIsTaskAdding] = useState(false)
     const history = useHistory()
-
 
     const setSearchParams = (params) => {
         searchParams.current = {...searchParams.current, ...params}
@@ -111,7 +112,7 @@ export const TaskList = ({selectedCourse}) => {
 
         if(page == 1) {
             setTasks(undefined)
-            setSelectedTasksCount(0)
+            setSelectedTasks([])
             pagination.current.courseId = selectedCourse?.id
             pagination.current = {...pagination.current, ...searchParams.current}
         }
@@ -194,8 +195,8 @@ export const TaskList = ({selectedCourse}) => {
             />
             <TaskListHeader
                 submitSearchParams={(params) => setSearchParams(params)}
-                selectedTasksCount={selectedTasksCount}
-                isSelectedAll={selectedTasksCount == tasks?.length && tasks != undefined && tasks.length !== 0}
+                selectedTasks={selectedTasks}
+                isSelectedAll={selectedTasks.length == tasks?.length && tasks != undefined && tasks.length !== 0}
                 onSelectAll={onSelectAll}
             />
             <div className='task-list course-panel'>
@@ -210,8 +211,8 @@ export const TaskList = ({selectedCourse}) => {
                                             type='checkbox'
                                             className='ml-1'
                                             style={{marginTop: '.4Rem'}}
-                                            checked={task?.isSelected ?? false}
-                                            onChange={(e) => selectTask(task)}
+                                            checked={selectedTasks.find(x => x.id == task.id) !== undefined}
+                                            onChange={(e) => onSelectTaskHandler(task)}
                                         />
                                         
                                         <div className='ml-2' style={{width: '95%'}}>
@@ -237,6 +238,7 @@ export const TaskList = ({selectedCourse}) => {
                                                     <Dropdown.Toggle size='sm' id='dropdown-basic'>⋮</Dropdown.Toggle>
                                                     <Dropdown.Menu>
                                                         <Dropdown.Item onClick={() => history.push(`courses/${task.courseId}/tasks/${task.id}`)}>Изменить</Dropdown.Item>
+                                                        <Dropdown.Item onClick={() => homework.addTask(task)}>Добавить в домашнее</Dropdown.Item>
                                                         <Dropdown.Item>Переместить</Dropdown.Item>
                                                         <Dropdown.Item className='text-danger'>Удалить</Dropdown.Item>
                                                     </Dropdown.Menu>

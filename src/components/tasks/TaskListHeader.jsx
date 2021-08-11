@@ -11,7 +11,7 @@ const orderBy = {
     'complete-asc': 'По завершенности'
 }
 
-const TaskListHeader = ({submitSearchParams, selectedTasksCount = 0, isSelectedAll, onSelectAll}) => {
+const TaskListHeader = ({submitSearchParams, selectedTasks, isSelectedAll, onSelectAll}) => {
     const onSelectType = (type) => {
         submitSearchParams({taskTypeId: type?.id})
     }
@@ -29,7 +29,7 @@ const TaskListHeader = ({submitSearchParams, selectedTasksCount = 0, isSelectedA
                 onChange={() => onSelectAll()}
             />
 
-            <div className={selectedTasksCount == 0 ? 'd-flex justify-content-end w-100' : 'none-parent'}>
+            <div className={selectedTasks.length == 0 ? 'd-flex justify-content-end w-100' : 'none-parent'}>
                 <TaskTypeDropdown
                     className='btn-clean'
                     onSelect={onSelectType}
@@ -43,12 +43,13 @@ const TaskListHeader = ({submitSearchParams, selectedTasksCount = 0, isSelectedA
                 />
             </div>
             
-            {(selectedTasksCount != 0) && 
+            {(selectedTasks.length != 0) && 
                 <>
-                    <span className='selected-task-counter'>{selectedTasksCount} выделено</span>
+                    <span className='selected-task-counter'>{selectedTasks.length} выделено</span>
                     <Dropdown className='dropdown-clean'>
                         <Dropdown.Toggle variant='white' id='dropdown-basic'>Действие</Dropdown.Toggle>
                         <Dropdown.Menu>
+                            <Dropdown.Item onClick={() => homework.addTask(task)}>Добавить в домашнее</Dropdown.Item>
                             <Dropdown.Item>Переместить</Dropdown.Item>
                             <Dropdown.Item className='text-danger'>Удалить</Dropdown.Item>
                         </Dropdown.Menu>
