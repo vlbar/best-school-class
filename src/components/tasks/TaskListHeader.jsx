@@ -1,7 +1,9 @@
-import React from 'react'
+import React, { useContext } from 'react'
 import { Dropdown } from 'react-bootstrap'
+
 import SortOrder from '../search/SortOrder'
 import TaskTypeDropdown from './TaskTypeDropdown'
+import { HomeworkContext } from '../homework/HomeworkBuilderContext'
 import './TaskListHeader.less'
 
 const orderBy = {
@@ -18,6 +20,11 @@ const TaskListHeader = ({submitSearchParams, selectedTasks, isSelectedAll, onSel
 
     const onSelectSort = (sort) => {
         submitSearchParams({orderBy: sort})
+    }
+
+    const { homework } = useContext(HomeworkContext)
+    const addSelectedTasksToHomework = () => {
+        homework.addTasks(selectedTasks)
     }
 
     return (
@@ -49,7 +56,7 @@ const TaskListHeader = ({submitSearchParams, selectedTasks, isSelectedAll, onSel
                     <Dropdown className='dropdown-clean'>
                         <Dropdown.Toggle variant='white' id='dropdown-basic'>Действие</Dropdown.Toggle>
                         <Dropdown.Menu>
-                            <Dropdown.Item onClick={() => homework.addTask(task)}>Добавить в домашнее</Dropdown.Item>
+                            <Dropdown.Item onClick={() => addSelectedTasksToHomework()}>Добавить в домашнее</Dropdown.Item>
                             <Dropdown.Item>Переместить</Dropdown.Item>
                             <Dropdown.Item className='text-danger'>Удалить</Dropdown.Item>
                         </Dropdown.Menu>

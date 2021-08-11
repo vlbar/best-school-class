@@ -132,8 +132,8 @@ const HomeworkBuilderPanel = () => {
                                                 <li key={task.id} className='homework-task-item'>
                                                     <div className='d-flex justify-content-between'>
                                                         <div>
-                                                            <span className='mr-2'>{task.name}</span>
-                                                            {task.taskType !== null ? (
+                                                            <span className='mr-2' title={task.description?.replace(/<[^>]*>?/gm, '')}>{task.name}</span>
+                                                            {task.taskType != null ? (
                                                                 <Badge variant='secondary' style={{ backgroundColor: getTaskTypeColor(task.taskType.id) }}>
                                                                     {task.taskType.name}
                                                                 </Badge>
