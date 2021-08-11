@@ -17,7 +17,7 @@ const HomeworkListItem = ({homework, onSelect}) => {
                 <div>
                     <div className='d-flex' style={{color: (Date.now() > homework.endingDate) && 'gray'}}>
                         <div className={'arrow' + (isExpanded ? ' expanded':'')} onClick={() => setIsExpanded(!isExpanded)}>
-                            <svg width='21' viewBox='0 0 24 24'  xmlns='http://www.w3.org/2000/svg'>
+                            <svg width='21' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
                                 <path d='M7 10l5 5 5-5z'/>
                             </svg>
                         </div>
@@ -32,9 +32,7 @@ const HomeworkListItem = ({homework, onSelect}) => {
                     </div>
                 </div>
                 <div className='d-block'>
-                    <Button variant='outline-primary' size='sm' className='mt-2' onClick={() => onSelect()}>
-                        Выбрать    
-                    </Button>
+                    <Button variant='outline-primary' size='sm' className='mt-2' onClick={() => onSelect()}>Изменить</Button>
                 </div>
             </div>
             <AnimateHeight animateOpacity duration={220} height={isExpanded ? 'auto' : 0}>

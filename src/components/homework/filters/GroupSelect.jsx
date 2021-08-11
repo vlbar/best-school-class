@@ -12,25 +12,9 @@ async function fetch(page, size, name) {
     return axios.get(`${baseUrl}?page=${page}&size=${size}${name.length > 0 ? `&name=${name}`:''}`)
 }
 
-const GroupSelect = ({onSelect}) => {
+const GroupSelect = ({onSelect, initialSelectedGroup, placeholder, ...props}) => {
     const [isFetching, setIsFetching] = useState(true)
-    const [groups, setGroups] = useState([
-        {
-            id: 2,
-            name: 'mylove',
-            color: '#32a852'
-        },
-        {
-            id: 3,
-            name: 'mylore',
-            color: '#3244a8'
-        },
-        {
-            id: 4,
-            name: 'mypain',
-            color: '#ad2f90'
-        },
-    ])
+    const [groups, setGroups] = useState(undefined)
 
     const emptyResultAfterName = useRef(undefined)
     const scrollListRef = useRef()
@@ -71,10 +55,12 @@ const GroupSelect = ({onSelect}) => {
     return (
         <BestSelect
             onSelect={onSelect}
-            className='dropdown-clean'
+            {...props}
+            initialSelectedItem={initialSelectedGroup}
+            className={(props.className ? props.className : 'dropdown-clean')}
             toggle={(group) => {
                 return (
-                    <BestSelectToggle className='d-flex align-items-center'>
+                    <BestSelectToggle className='d-flex align-items-center' size={props.size}>
                         {(group) && <div className='select-group-circle' style={{backgroundColor: group.color ?? '#343a40'}}/>}
                         <span>{group ? group.name : 'Класс'}</span>
                     </BestSelectToggle>
@@ -85,7 +71,7 @@ const GroupSelect = ({onSelect}) => {
                 <LazySearchInput
                     autoFocus
                     className='w-100'
-                    placeholder='Название для поиска...'
+                    placeholder={placeholder ?? 'Название для поиска...'}
                     onSubmit={(value) => searchGroup(value)}
                     onEmpty={() => searchGroup('')}
                     onTimerStart={() => {
@@ -103,7 +89,7 @@ const GroupSelect = ({onSelect}) => {
                 fetchItemsCallback={() => fetchGroup()}
                 scrollListRef={scrollListRef}
             >
-                {groups.map(group => 
+                {groups && groups.map(group => 
                     <BestSelectItem key={group.id} item={group}>
                         <BestItemSelector className='d-flex pl-2'>
                             <div className='select-group-circle' style={{backgroundColor: group.color ?? '#343a40'}}/>
