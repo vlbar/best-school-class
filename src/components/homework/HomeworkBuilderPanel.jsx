@@ -2,14 +2,17 @@ import React, { useState, useContext } from 'react'
 import { Alert, Button, Row, Col, Badge, Dropdown, OverlayTrigger, Tooltip } from 'react-bootstrap'
 import { useHistory } from 'react-router-dom'
 
-import SelectHomeworkModal from './SelectHomeworkModal'
 import { getTaskTypeColor } from '../tasks/TaskTypeDropdown'
-import GroupSelect from './filters/GroupSelect'
 import { HomeworkContext } from './HomeworkBuilderContext'
+import SelectHomeworkModal from './SelectHomeworkModal'
+import ProcessBar from '../process-bar/ProcessBar'
+import GroupSelect from './filters/GroupSelect'
 import './HomeworkBuilderPanel.less'
+
 
 const HomeworkBuilderPanel = () => {
     const { homework } = useContext(HomeworkContext)
+    let isFetching = homework.isFetching ?? false
 
     const [homeworkOpeningDate, setHomeworkOpeningDate] = useState('')
     const [homeworkOpeningTime, setHomeworkOpeningTime] = useState('')
@@ -36,17 +39,19 @@ const HomeworkBuilderPanel = () => {
     }
 
     const setClosingDate = () => {
-        homework.setClosingDate(new Date(homeworkClosingDate + ' ' + (homeworkClosingTime ?? '00:00')).getTime())
+        homework.setEndingDate(new Date(homeworkClosingDate + ' ' + (homeworkClosingTime ?? '00:00')).getTime())
     }
 
     return (
         <>
-            <Alert variant='primary' className='mt-3'>
+            <Alert variant='primary' className='position-relative mt-3 p-0'>
+                {isFetching && (<ProcessBar height='.18Rem' className='position-absolute' />)}
+                <div className='px-4 py-3'>
                 {homework.current ? (
                     <div>
                         <div className='d-flex justify-content-between'>
                             <span className='text-semi-bold'>Домашнее задание</span>
-                            <button className='btn-icon' title='Удалить' onClick={() => homework.setHomework(undefined)}>
+                            <button className='btn-icon' title='Удалить' onClick={() => homework.setHomework(undefined)} disabled={isFetching}>
                                 <i className='fas fa-times fa-sm' />
                             </button>
                         </div>
@@ -65,6 +70,7 @@ const HomeworkBuilderPanel = () => {
                                             className='primary-select'
                                             initialSelectedGroup={homework.current.group}
                                             onSelect={homework.setGroup}
+                                            disabled={isFetching}
                                         />
                                     </Col>
                                 </Row>
@@ -89,6 +95,7 @@ const HomeworkBuilderPanel = () => {
                                             value={homeworkOpeningDate}
                                             onChange={(e) => setHomeworkOpeningDate(e.target.value)}
                                             onBlur={(e) => setOpeningDate(e)}
+                                            disabled={isFetching}
                                         />
                                         <input
                                             type='time'
@@ -96,6 +103,7 @@ const HomeworkBuilderPanel = () => {
                                             value={homeworkOpeningTime}
                                             onChange={(e) => setHomeworkOpeningTime(e.target.value)}
                                             onBlur={(e) => setOpeningDate(e)}
+                                            disabled={isFetching}
                                         />
                                     </Col>
                                 </Row>
@@ -111,6 +119,7 @@ const HomeworkBuilderPanel = () => {
                                             value={homeworkClosingDate}
                                             onChange={(e) => setHomeworkClosingDate(e.target.value)}
                                             onBlur={(e) => setClosingDate(e)}
+                                            disabled={isFetching}
                                         />
                                         <input
                                             type='time'
@@ -118,6 +127,7 @@ const HomeworkBuilderPanel = () => {
                                             value={homeworkClosingTime}
                                             onChange={(e) => setHomeworkClosingTime(e.target.value)}
                                             onBlur={(e) => setClosingDate(e)}
+                                            disabled={isFetching}
                                         />
                                     </Col>
                                 </Row>
@@ -143,7 +153,7 @@ const HomeworkBuilderPanel = () => {
                                                         </div>
                                                         <div className='d-flex'>
                                                             <Dropdown className='dropdown-action-menu my-auto'>
-                                                                <Dropdown.Toggle size='sm' id='dropdown-basic'>
+                                                                <Dropdown.Toggle size='sm' id='dropdown-basic' disabled={isFetching}>
                                                                     <i className='btn-icon fas fa-ellipsis-h' title='Доп. действия' />
                                                                 </Dropdown.Toggle>
                                                                 <Dropdown.Menu>
@@ -165,7 +175,12 @@ const HomeworkBuilderPanel = () => {
                                                                     </Dropdown.Item>
                                                                 </Dropdown.Menu>
                                                             </Dropdown>
-                                                            <button className='btn-icon' title='Удалить' onClick={() => homework.removeTask(task.id)}>
+                                                            <button 
+                                                                title='Удалить' 
+                                                                className='btn-icon' 
+                                                                disabled={isFetching}
+                                                                onClick={() => homework.removeTask(task.id)}
+                                                            >
                                                                 <i className='fas fa-times fa-sm' />
                                                             </button>
                                                         </div>
@@ -183,7 +198,7 @@ const HomeworkBuilderPanel = () => {
                                     )}
                                 </ul>
                                 <div className='d-flex justify-content-end mt-auto'>
-                                    <Button variant='outline-primary' className='mt-2'>
+                                    <Button variant='outline-primary' className='mt-2' disabled={isFetching} onClick={() => homework.askHomework()}>
                                         Задать
                                     </Button>
                                 </div>
@@ -206,6 +221,7 @@ const HomeworkBuilderPanel = () => {
                         </div>
                     </div>
                 )}
+                </div>
             </Alert>
 
             <SelectHomeworkModal show={isHomeworkSelectShow} onSelect={onSelectHomeworkHandler} onClose={() => setIsHomeworkSelectShow(false)} />

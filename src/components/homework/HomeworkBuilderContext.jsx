@@ -1,5 +1,8 @@
-import React, { useReducer } from 'react'
-import { addInfoNotification } from '../notifications/notifications'
+import React, { useReducer, useState } from 'react'
+import axios from 'axios'
+
+import { addInfoNotification, addErrorNotification } from '../notifications/notifications'
+
 
 const MAX_TASKS_IN_HOMEWORK = 10
 
@@ -27,9 +30,9 @@ const homeworkReducer = (state, action) => {
         case GROUP:
             return { ...state, group: action.payload }
         case ADD_TASK:
-            return { ...state, tasks: [...state.tasks, action.payload] }
+            return { ...state, tasks: [...(state.tasks ?? []), action.payload] }
         case ADD_TASKS:
-            return { ...state, tasks: [...state.tasks, ...action.payload] }
+            return { ...state, tasks: [...(state.tasks ?? []), ...action.payload] }
         case REMOVE_TASK:
             return { ...state, tasks: state.tasks.filter((task) => task.id !== action.payload) }
         default:
@@ -37,10 +40,22 @@ const homeworkReducer = (state, action) => {
     }
 }
 
+// requests
+const baseUrl = '/homeworks'
+
+async function add(homework) {
+    return axios.post(`${baseUrl}`, homework)
+}
+
+async function update(homework) {
+    return axios.put(`${baseUrl}/${homework.id}`, homework)
+}
+
 export const HomeworkContext = React.createContext()
 
 const HomeworkBuilderContext = ({ children }) => {
     const [targetHomework, dispatchHomework] = useReducer(homeworkReducer, undefined)
+    const [isFetching, setIsFetching] = useState(false)
 
     // actions
     const setHomework = (homework) => dispatchHomework({ type: SET, payload: homework })
@@ -50,13 +65,19 @@ const HomeworkBuilderContext = ({ children }) => {
 
     const addTask = (task) => {
         createHomeworkIfNotExists()
+
+        if (isFetching) {
+            addInfoNotification('Домашнее задание ещё сохраняется, подождите...')
+            return
+        }
+
         let targetTasks = targetHomework?.tasks ?? []
         if (targetTasks.find((x) => x.id == task.id) != null) {
             addInfoNotification(`Задание "${task.name}" уже добавлено в домашнее`)
             return
         }
 
-        if(targetHomework?.tasks.length >= MAX_TASKS_IN_HOMEWORK) {
+        if (targetHomework?.tasks?.length >= MAX_TASKS_IN_HOMEWORK) {
             addInfoNotification(`В одно домашнее задание можно добавить максимум только ${MAX_TASKS_IN_HOMEWORK} заданий!`)
             return
         }
@@ -67,16 +88,16 @@ const HomeworkBuilderContext = ({ children }) => {
     const addTasks = (tasks) => {
         createHomeworkIfNotExists()
         let targetTasks = targetHomework?.tasks ?? []
-        tasks = tasks.filter(task => {
-            let taskToAdd = targetTasks.find(x => x.id == task.id)
-            if(taskToAdd !== undefined) {
+        tasks = tasks.filter((task) => {
+            let taskToAdd = targetTasks.find((x) => x.id == task.id)
+            if (taskToAdd !== undefined) {
                 addInfoNotification(`Задание "${task.name}" уже добавлено в домашнее`)
                 return false
             } else return true
         })
 
         let currentTaskCount = targetHomework ? targetHomework.tasks.length : 0
-        if(tasks.length + currentTaskCount > MAX_TASKS_IN_HOMEWORK) {
+        if (tasks.length + currentTaskCount > MAX_TASKS_IN_HOMEWORK) {
             tasks.splice(MAX_TASKS_IN_HOMEWORK - currentTaskCount)
             addInfoNotification(`В одно домашнее задание можно добавить максимум только ${MAX_TASKS_IN_HOMEWORK} заданий!`)
         }
@@ -86,9 +107,27 @@ const HomeworkBuilderContext = ({ children }) => {
 
     const removeTask = (taskId) => dispatchHomework({ type: REMOVE_TASK, payload: taskId })
 
+    // homework asking
+    const askHomework = () => {
+        setIsFetching(true)
+        let homeworkDTO = toHomeworkDTO(targetHomework)
+
+        if (homeworkDTO.id)
+            update(homeworkDTO)
+                .then((res) => setHomework(undefined))
+                .catch((error) => addErrorNotification('Не удалось обновить домашнее задание, возможно, изменения не сохранятся. \n' + error))
+                .finally(() => setIsFetching(false))
+        else
+            add(homeworkDTO)
+                .then((res) => setHomework(undefined))
+                .catch((error) => addErrorNotification('Не удалось добавить домашнее задание, возможно, изменения не сохранятся. \n' + error))
+                .finally(() => setIsFetching(false))
+    }
+
     // context
     let homework = {
         current: targetHomework,
+        isFetching,
         setHomework,
         setOpeningDate,
         setEndingDate,
@@ -96,6 +135,7 @@ const HomeworkBuilderContext = ({ children }) => {
         addTask,
         addTasks,
         removeTask,
+        askHomework,
     }
 
     // utils
@@ -105,6 +145,16 @@ const HomeworkBuilderContext = ({ children }) => {
                 tasks: task ? [task] : [],
             })
             return
+        }
+    }
+
+    const toHomeworkDTO = (homework) => {
+        return {
+            id: homework.id,
+            groupId: homework.group.id,
+            openingDate: homework.openingDate,
+            endingDate: homework.endingDate,
+            taskIds: homework.tasks.map((x) => x.id),
         }
     }
 
