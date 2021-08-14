@@ -2,19 +2,22 @@ import { useState, useCallback, useEffect } from 'react'
 
 /*
     fieldName: [
-        type:      string or number or array,    (default is string)
-        of:        {}                            (only for array type)
+        type:      string/number/array/object,    (default is string)
+        of:        {}                             (only for array type (of object is coming 😜 uwu))
         required:  [Message] or [false],
         nullable:  boolean
         trim:      boolean,                       (default is true)
         min:       [minValue, Message],
         max:       [maxValue, Message],
     ]
+
+    TODO: rework validation of nested fields when validate one
 */
 
 export const STRING_TYPE = 'STRING'
 export const NUMBER_TYPE = 'NUMBER'
 export const ARRAY_TYPE = 'ARRAY'
+export const OBJECT_TYPE = 'OBJECT'
 
 export default function useBestValidation(validationSchema) {
     const [isValid, setIsValid] = useState(true)
@@ -27,6 +30,7 @@ export default function useBestValidation(validationSchema) {
         }
     }, [])
 
+    // EVENTS
     function blurHandle(e) {
         if(e.target.name.length === 0) {
             console.error('Input name is required for validation!')
@@ -50,6 +54,7 @@ export default function useBestValidation(validationSchema) {
         }
     }
 
+    // FUNCTIONS
     function validate(obj) {
         if(obj === undefined) {
             console.error('Object to validate is undefined')
@@ -70,6 +75,7 @@ export default function useBestValidation(validationSchema) {
         return isEmpty(errors)
     }
 
+
     const validateField = useCallback(function(fieldPath, value, validationSchema) {
         let fieldName = getFieldName(fieldPath)
         if (validationSchema[fieldName] === undefined) {
@@ -87,11 +93,15 @@ export default function useBestValidation(validationSchema) {
                 break
             case ARRAY_TYPE:
                 validateArray([...value], fieldPath, validationSchema)
-                forEachValidateField([...value], fieldPath, validationSchema[fieldName].of)
+                if(validationSchema[fieldName].of) forEachValidateField([...value], fieldPath, validationSchema[fieldName].of)
+                break
+            case OBJECT_TYPE:
+                validateObject(value, fieldPath, validationSchema)
                 break
         }
     }, [])
 
+    // ARRAY ITEMS VALIDATION
     function forEachValidateField(array, arrayName, validationSchema) {
         let validationSchemaFields = Object.getOwnPropertyNames(validationSchema)
         array.forEach((item, index) => {
@@ -118,6 +128,14 @@ export default function useBestValidation(validationSchema) {
         validateType(value, fieldPath, validationSchema, (x) => x > value.length, (x) => x < value.length)
     }
 
+    function validateObject(value, fieldPath, validationSchema) {
+        let fieldName = getFieldName(fieldPath)
+        let fieldSchema = validationSchema[fieldName]
+        
+        if(!requiredCheck(fieldPath, value, fieldSchema)) return
+    }
+
+    // GENERIC TYPE VALIDATION
     function validateType(value, fieldPath, validationSchema, minPred, maxPred) {
         let fieldName = getFieldName(fieldPath)
         let fieldSchema = validationSchema[fieldName]
@@ -168,6 +186,7 @@ export default function useBestValidation(validationSchema) {
     }
 }
 
+// OTHER UTIL
 function isEmpty(obj) {
     return Object.keys(obj).length === 0;
 }
