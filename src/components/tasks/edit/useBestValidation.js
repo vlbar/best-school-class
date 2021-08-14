@@ -11,7 +11,9 @@ import { useState, useCallback, useEffect } from 'react'
         max:       [maxValue, Message],
     ]
 
-    TODO: rework validation of nested fields when validate one
+    TODO:
+    1. rework validation of nested fields when validate one
+    2. add async validate
 */
 
 export const STRING_TYPE = 'STRING'
@@ -37,9 +39,15 @@ export default function useBestValidation(validationSchema) {
             return
         }
 
+        let error = validateField(e.target.name, e.target.value, pathToSchema(e.target.name, validationSchema))
+
+        let currentErrors = errors
+        if(error) currentErrors[e.target.name] = error
+        else delete currentErrors[e.target.name]
+
         setIsTouched(true)
-        validateField(e.target.name, e.target.value, pathToSchema(e.target.name, validationSchema))
-        setIsValid(isEmpty(errors))
+        setErrors(currentErrors)
+        setIsValid(isEmpty(currentErrors))
     }
 
     function changeHandle(e) {
@@ -49,8 +57,14 @@ export default function useBestValidation(validationSchema) {
         }
 
         if(isTouched) {
-            validateField(e.target.name, e.target.value, pathToSchema(e.target.name, validationSchema))
-            setIsValid(isEmpty(errors))
+            let error = validateField(e.target.name, e.target.value, pathToSchema(e.target.name, validationSchema))
+
+            let currentErrors = errors
+            if(error) currentErrors[e.target.name] = error
+            else delete currentErrors[e.target.name]
+            
+            setErrors(currentErrors)
+            setIsValid(isEmpty(currentErrors))
         }
     }
 
@@ -61,54 +75,54 @@ export default function useBestValidation(validationSchema) {
             return
         }
 
-        setErrors({})
-        setIsTouched(true)
+        let currentErrors = {}
+        const addErrorIfExists = (name, error) => {
+            if(error) currentErrors[name] = error
+        }
+
         let validationSchemaFields = Object.getOwnPropertyNames(validationSchema)
         let validateFields = Object.getOwnPropertyNames(obj)
         validateFields.forEach(x => {
             if(validationSchemaFields.includes(x)) {
-                validateField(x, obj[x], validationSchema)
+                addErrorIfExists(x, validateField(x, obj[x], validationSchema, addErrorIfExists))
             }
         })
 
-        setIsValid(isEmpty(errors))
-        return isEmpty(errors)
+        setIsTouched(true)
+        setErrors(currentErrors)
+        setIsValid(isEmpty(currentErrors))
+        return isEmpty(currentErrors)
     }
 
 
-    const validateField = useCallback(function(fieldPath, value, validationSchema) {
+    const validateField = (fieldPath, value, validationSchema, addErrorCallback) => {
         let fieldName = getFieldName(fieldPath)
         if (validationSchema[fieldName] === undefined) {
-            return
+            return undefined
         }
-
-        resetError(fieldPath)
 
         switch(validationSchema[fieldName].type.toUpperCase()) {
             case STRING_TYPE: 
-                validateString(value, fieldPath, validationSchema)
-                break
+                return validateString(value, fieldPath, validationSchema)
             case NUMBER_TYPE: 
-                validateNumber(value, fieldPath, validationSchema)
-                break
+                return validateNumber(value, fieldPath, validationSchema)
             case ARRAY_TYPE:
-                validateArray([...value], fieldPath, validationSchema)
-                if(validationSchema[fieldName].of) forEachValidateField([...value], fieldPath, validationSchema[fieldName].of)
-                break
+                if(validationSchema[fieldName].of && addErrorCallback) forEachValidateField([...value], fieldPath, validationSchema[fieldName].of, addErrorCallback)
+                return validateArray([...value], fieldPath, validationSchema)
             case OBJECT_TYPE:
-                validateObject(value, fieldPath, validationSchema)
-                break
+                return validateObject(value, fieldPath, validationSchema)
+            default: return undefined
         }
-    }, [])
+    }
 
     // ARRAY ITEMS VALIDATION
-    function forEachValidateField(array, arrayName, validationSchema) {
+    function forEachValidateField(array, arrayName, validationSchema, addErrorCallback) {
         let validationSchemaFields = Object.getOwnPropertyNames(validationSchema)
         array.forEach((item, index) => {
             let validateFields = Object.getOwnPropertyNames(item)
             validateFields.forEach(x => {
                 if(validationSchemaFields.includes(x))
-                    validateField(`${arrayName}[${index}].${x}`, item[x], validationSchema)
+                    addErrorCallback(x, validateField(`${arrayName}[${index}].${x}`, item[x], validationSchema, addErrorCallback))
             })
         })
     }
@@ -117,22 +131,22 @@ export default function useBestValidation(validationSchema) {
     function validateString(value, fieldPath, validationSchema) {
         let fieldSchema = validationSchema[getFieldName(fieldPath)]
         if(!fieldSchema.trim || fieldSchema.trim !== false) value = value.trim()
-        validateType(value, fieldPath, validationSchema, (x) => x > value.length, (x) => x < value.length)
+        return validateType(value, fieldPath, validationSchema, (x) => x > value.length, (x) => x < value.length)
     }
 
     function validateNumber(value, fieldPath, validationSchema) {
-        validateType(value, fieldPath, validationSchema, (x) => x > value, (x) => x < value)
+        return validateType(value, fieldPath, validationSchema, (x) => x > value, (x) => x < value)
     }
 
     function validateArray(value, fieldPath, validationSchema) {
-        validateType(value, fieldPath, validationSchema, (x) => x > value.length, (x) => x < value.length)
+        return validateType(value, fieldPath, validationSchema, (x) => x > value.length, (x) => x < value.length)
     }
 
     function validateObject(value, fieldPath, validationSchema) {
         let fieldName = getFieldName(fieldPath)
         let fieldSchema = validationSchema[fieldName]
-        
-        if(!requiredCheck(fieldPath, value, fieldSchema)) return
+
+        if(!requiredCheck(value, fieldSchema)) return fieldSchema.required[0]
     }
 
     // GENERIC TYPE VALIDATION
@@ -140,24 +154,23 @@ export default function useBestValidation(validationSchema) {
         let fieldName = getFieldName(fieldPath)
         let fieldSchema = validationSchema[fieldName]
 
-        if(!requiredCheck(fieldPath, value, fieldSchema)) return
-        if(fieldSchema.nullable && (value == null || value?.length == 0)) return
-        if(!valueCheck(fieldPath, minPred, fieldSchema, 'min')) return
-        if(!valueCheck(fieldPath, maxPred, fieldSchema, 'max')) return
+        if(!requiredCheck(value, fieldSchema)) return fieldSchema.required[0]
+        if(fieldSchema.nullable && (value == null || value?.length == 0)) return undefined
+        if(fieldSchema.min && !valueCheck(minPred, fieldSchema.min[0])) return fieldSchema.min[1]
+        if(fieldSchema.max && !valueCheck(maxPred, fieldSchema.max[0])) return fieldSchema.max[1]
+        return undefined
     }
 
-    function requiredCheck(fieldPath, value, fieldSchema) {
+    function requiredCheck(value, fieldSchema) {
         if(fieldSchema.required && fieldSchema.required[0] !== false && (value === undefined || value.length === 0)) {
-            addError(fieldPath, fieldSchema.required[0])
             return false
         }
         return true
     }
 
-    function valueCheck(fieldPath, strategy, fieldSchema, inSchemaFieldName) {
-        if(fieldSchema[inSchemaFieldName] && fieldSchema[inSchemaFieldName][0] !== undefined) {
-            if(strategy(fieldSchema[inSchemaFieldName][0])) {
-                addError(fieldPath, fieldSchema[inSchemaFieldName][1])
+    function valueCheck(strategy, value) {
+        if(value !== undefined) {
+            if(strategy(value)) {
                 return false
             }
         }
