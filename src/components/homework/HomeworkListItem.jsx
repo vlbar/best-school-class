@@ -31,9 +31,9 @@ const HomeworkListItem = ({homework, onSelect}) => {
                         <span className='ml-3'><span>Срок: </span>{new Date(homework.openingDate).toLocaleString('ru-RU', options)} - {new Date(homework.endingDate).toLocaleString('ru-RU', options)}</span>
                     </div>
                 </div>
-                <div className='d-block'>
+                {(Date.now() < homework.endingDate) && <div className='d-block'>
                     <Button variant='outline-primary' size='sm' className='mt-2' onClick={() => onSelect()}>Изменить</Button>
-                </div>
+                </div>}
             </div>
             <AnimateHeight animateOpacity duration={220} height={isExpanded ? 'auto' : 0}>
                 <div className='homework-list-item-tasks'>

@@ -24,7 +24,7 @@ const HomeworkList = ({onSelect}) => {
         size: 10, 
         total: undefined,
         groupId: undefined,
-        orderBy: undefined
+        orderBy: 'openingDate-desc',
     })
 
     useEffect(() => {

@@ -2,12 +2,11 @@ import React from 'react'
 
 import SortOrder from '../search/SortOrder'
 import GroupSelect from './filters/GroupSelect'
-import SelectHomeworkTime from './filters/SelectHomeworkTime'
 import './HomeworkListHeader.less'
 
 const orderBy = {
-    'openingDate-asc': 'Сначала позднейшие',
-    'openingDate-desc': 'Сначала ранние'
+    'openingDate-asc': 'Сначала ранние',
+    'openingDate-desc': 'Сначала поздние'
 }
 
 const HomeworkListHeader = ({onSelectFilter}) => {
@@ -19,24 +18,18 @@ const HomeworkListHeader = ({onSelectFilter}) => {
         onSelectFilter({orderBy: sort})
     }
 
-    const onSelectTimer = (filterBy) => {
-        onSelectFilter(filterBy)
-    }
-
     return (
         <div className='homework-list-header justify-content-between'>
-            <GroupSelect
-                onSelect={onSelectGroup}
-            />
+            <span className='mt-2'>ДЗ</span>
             <div className='d-flex'>
-                <SelectHomeworkTime
-                    onSelect={onSelectFilter}
+                <GroupSelect
+                    onSelect={onSelectGroup}
                 />
                 <SortOrder
                     title='Сортировка'
                     orders={orderBy}
-                    initialOrder={'openingDate-asc'}
-                    onSelect={onSelectTimer}
+                    initialOrder={'openingDate-desc'}
+                    onSelect={onSelectSort}
                     className='btn-clean'
                 />
             </div>
