@@ -1,45 +1,70 @@
-import React, { useState, useContext } from 'react'
+import React, { useState, useContext, useEffect } from 'react'
 import { Alert, Button, Row, Col, Badge, Dropdown, OverlayTrigger, Tooltip } from 'react-bootstrap'
 import { useHistory } from 'react-router-dom'
 
+import useBestValidation, { NUMBER_TYPE, OBJECT_TYPE, ARRAY_TYPE } from '../tasks/edit/useBestValidation'
 import { getTaskTypeColor } from '../tasks/TaskTypeDropdown'
 import { HomeworkContext } from './HomeworkBuilderContext'
+import FeedbackMessage from '../feedback/FeedbackMessage'
 import SelectHomeworkModal from './SelectHomeworkModal'
 import ProcessBar from '../process-bar/ProcessBar'
 import GroupSelect from './filters/GroupSelect'
 import './HomeworkBuilderPanel.less'
 
+// validation
+const homeworkValidationSchema = {
+    group: {
+        type: OBJECT_TYPE,
+        required: ['Не выбран класс'],
+    },
+    openingDate: {
+        type: NUMBER_TYPE,
+        required: ['Дата начала ДЗ не введена или недействительна'],
+        invalidTerm: ['Дата начала ДЗ должа быть раньше даты окончания'],
+    },
+    endingDate: {
+        type: NUMBER_TYPE,
+        required: ['Дата окончания ДЗ не введена или недействительна'],
+        min: [Date.now(), 'Некрасиво задавать ДЗ, которое уже завершено'],
+        invalidTerm: ['Дата окончания ДЗ должна быть позже даты начала'],
+    },
+    tasks: {
+        type: ARRAY_TYPE,
+        required: ['Не добавлены задания'],
+    }
+}
 
 const HomeworkBuilderPanel = () => {
     const { homework } = useContext(HomeworkContext)
     let isFetching = homework.isFetching ?? false
 
-    const [homeworkOpeningDate, setHomeworkOpeningDate] = useState('')
-    const [homeworkOpeningTime, setHomeworkOpeningTime] = useState('')
-    const [homeworkClosingDate, setHomeworkClosingDate] = useState('')
-    const [homeworkClosingTime, setHomeworkClosingTime] = useState('')
+    const homeworkValidation = useHomeworkValidation(homework.current)
 
     const [isHomeworkSelectShow, setIsHomeworkSelectShow] = useState(false)
     const history = useHistory()
 
+
     const onSelectHomeworkHandler = (selectedHomework) => {
         if (!selectedHomework) {
-            selectedHomework = {}
-        } else {
-            parseDate(selectedHomework.openingDate, setHomeworkOpeningDate, setHomeworkOpeningTime)
-            parseDate(selectedHomework.endingDate, setHomeworkClosingDate, setHomeworkClosingTime)
+            selectedHomework = {
+                group: undefined,
+                tasks: [],
+                openingDate: undefined,
+                endingDate: undefined,
+            }
         }
 
+        homeworkValidation.clearTouches()
         homework.setHomework(selectedHomework)
         setIsHomeworkSelectShow(false)
     }
 
-    const setOpeningDate = () => {
-        homework.setOpeningDate(new Date(homeworkOpeningDate + ' ' + (homeworkOpeningTime ?? '00:00')).getTime())
-    }
-
-    const setClosingDate = () => {
-        homework.setEndingDate(new Date(homeworkClosingDate + ' ' + (homeworkClosingTime ?? '00:00')).getTime())
+    const onAskHomeworkHandler = () => {
+        if(!homeworkValidation.validate()) {
+            return
+        }
+        
+        homework.askHomework()
     }
 
     return (
@@ -67,11 +92,15 @@ const HomeworkBuilderPanel = () => {
                                         <GroupSelect
                                             placeholder='Выберите'
                                             size='sm'
-                                            className='primary-select'
+                                            className={homeworkValidation.errors.group ? 'invalid-select' : 'primary-select'}
                                             initialSelectedGroup={homework.current.group}
-                                            onSelect={homework.setGroup}
+                                            onSelect={(group) => {
+                                                homework.setGroup(group)
+                                                homeworkValidation.blurHandle(makeTarget('group', group))
+                                            }}
                                             disabled={isFetching}
                                         />
+                                        <FeedbackMessage message={homeworkValidation.errors.group} />
                                     </Col>
                                 </Row>
 
@@ -89,22 +118,19 @@ const HomeworkBuilderPanel = () => {
                                         </OverlayTrigger>
                                     </Col>
                                     <Col sm={8} className='mb-2'>
-                                        <input
-                                            type='date'
-                                            className='light-primary-input mr-2'
-                                            value={homeworkOpeningDate}
-                                            onChange={(e) => setHomeworkOpeningDate(e.target.value)}
-                                            onBlur={(e) => setOpeningDate(e)}
+                                        <DateTimeInput 
+                                            name='openingDate'
+                                            defaultTime='00:00'
+                                            initialValue={homework.current.openingDate}
+                                            onChange={(e) => homeworkValidation.changeHandle(e)}
+                                            onBlur={(e) => {
+                                                homework.setOpeningDate(e.target.value)
+                                                homeworkValidation.blurHandle(e)
+                                            }}
                                             disabled={isFetching}
+                                            isInvalid={homeworkValidation.errors.openingDate}
                                         />
-                                        <input
-                                            type='time'
-                                            className='light-primary-input'
-                                            value={homeworkOpeningTime}
-                                            onChange={(e) => setHomeworkOpeningTime(e.target.value)}
-                                            onBlur={(e) => setOpeningDate(e)}
-                                            disabled={isFetching}
-                                        />
+                                        <FeedbackMessage message={homeworkValidation.errors.openingDate} />
                                     </Col>
                                 </Row>
 
@@ -113,22 +139,19 @@ const HomeworkBuilderPanel = () => {
                                         Дата окончания:
                                     </Col>
                                     <Col sm={8}>
-                                        <input
-                                            type='date'
-                                            className='light-primary-input mr-2'
-                                            value={homeworkClosingDate}
-                                            onChange={(e) => setHomeworkClosingDate(e.target.value)}
-                                            onBlur={(e) => setClosingDate(e)}
+                                        <DateTimeInput 
+                                            name='endingDate'
+                                            defaultTime='23:59'
+                                            initialValue={homework.current.endingDate}
+                                            onChange={(e) => homeworkValidation.changeHandle(e)}
+                                            onBlur={(e) => {
+                                                homework.setEndingDate(e.target.value)
+                                                homeworkValidation.blurHandle(e)
+                                            }}
                                             disabled={isFetching}
+                                            isInvalid={homeworkValidation.errors.endingDate}
                                         />
-                                        <input
-                                            type='time'
-                                            className='light-primary-input'
-                                            value={homeworkClosingTime}
-                                            onChange={(e) => setHomeworkClosingTime(e.target.value)}
-                                            onBlur={(e) => setClosingDate(e)}
-                                            disabled={isFetching}
-                                        />
+                                        <FeedbackMessage message={homeworkValidation.errors.endingDate} />
                                     </Col>
                                 </Row>
                             </Col>
@@ -197,8 +220,9 @@ const HomeworkBuilderPanel = () => {
                                         </div>
                                     )}
                                 </ul>
-                                <div className='d-flex justify-content-end mt-auto'>
-                                    <Button variant='outline-primary' className='mt-2' disabled={isFetching} onClick={() => homework.askHomework()}>
+                                <div className='d-flex flex-row mt-auto'>
+                                    <FeedbackMessage message={homeworkValidation.errors.tasks} className='mt-3' />
+                                    <Button variant='outline-primary' className='ml-auto mt-2' disabled={isFetching} onClick={() => onAskHomeworkHandler()}>
                                         Задать
                                     </Button>
                                 </div>
@@ -229,15 +253,160 @@ const HomeworkBuilderPanel = () => {
     )
 }
 
+const DateTimeInput = ({name, initialValue, defaultTime = '00:00', isInvalid = false, disabled, onChange, onBlur}) => {
+    const [dateTime, setDateTime] = useState({date: '', time: ''})
+
+    useEffect(() => {
+        if(initialValue) {
+            let initialDateTime = new Date(initialValue)
+            setDateTime({
+                date: initialDateTime.toISOString().split('T')[0],
+                time: `${toTwoDigits(initialDateTime.getHours())}:${toTwoDigits(initialDateTime.getMinutes())}`
+            })
+        }
+    }, [initialValue])
+
+    const onChangeHandler = (newValue) => {
+        let newDateTime = {...dateTime, ...newValue}
+        setDateTime(newDateTime)
+        
+        let mills = dateTimeToMills(newDateTime)
+        onChange(makeTarget(name, mills))
+    }
+
+    const onChangeDate = (value) => { onChangeHandler({date: value}) }
+    const onChangeTime = (value) => { onChangeHandler({time: value}) }
+
+    const onBlurHandler = () => { 
+        let mills = dateTimeToMills(dateTime)
+        onBlur(makeTarget(name, mills)) 
+    }
+
+    const dateTimeToMills = (dateTime) => {
+        let mills = dateToTime(dateTime.date, (dateTime.time ? dateTime.time : defaultTime))
+        if(isNaN(mills)) mills = undefined
+        return mills
+    }
+
+    return (
+        <>
+            <input
+                type='date'
+                className={'light-primary-input mr-2' + (isInvalid ? ' invalid-input':'')}
+                value={dateTime.date}
+                onChange={(e) => onChangeDate(e.target.value)}
+                onBlur={() => onBlurHandler()}
+                disabled={disabled}
+            />
+            <input
+                type='time'
+                className={'light-primary-input' + (isInvalid && dateTime.date != '' && dateTime.time != ''  ? ' invalid-input':'')}
+                value={dateTime.time}
+                onChange={(e) => onChangeTime(e.target.value)}
+                onBlur={() => onBlurHandler()}
+                disabled={disabled}
+            />
+        </>
+    )
+}
+
 const toTwoDigits = (num) => {
     let prefix = num > 9 ? '' : '0'
     return prefix + num
 }
 
-const parseDate = (date, setDateCallback, setTimeCallback) => {
-    let targetDate = new Date(date)
-    setDateCallback(targetDate.toISOString().split('T')[0])
-    setTimeCallback(`${toTwoDigits(targetDate.getHours())}:${toTwoDigits(targetDate.getMinutes())}`)
+const dateToTime = (date, time) => {
+    return new Date(date + ' ' + (time ?? '00:00')).getTime()
+}
+
+
+// Le cringe total 🥴🤘
+const OPENING_DATE_FIELD = 'openingDate'
+const ENDING_DATE_FIELD = 'endingDate'
+const useHomeworkValidation = (homework) => {
+    const [isTouched, setIsTouched] = useState(false)
+    const [errors, setErrors] = useState({})
+    const homeworkValidation = useBestValidation(homeworkValidationSchema)
+
+    const blurHandle = (e) => {
+        let fieldName = e.target.name
+        resetError(fieldName)
+
+        setIsTouched(true)
+        termCheck(e)
+        homeworkValidation.blurHandle(e)
+        setErrors({...homeworkValidation.errors, ...errors})
+    }
+
+    const changeHandle = (e) => {
+        let fieldName = e.target.name
+        resetError(fieldName)
+
+        if(isTouched) termCheck(e)
+        homeworkValidation.changeHandle(e)
+        setErrors({...homeworkValidation.errors, ...errors})
+    }
+
+    const termCheck = (e) => {
+        let fieldName = e.target.name
+        if ((fieldName === OPENING_DATE_FIELD || fieldName === ENDING_DATE_FIELD) && e.target.value != null) {
+            
+            if (fieldName === OPENING_DATE_FIELD) {
+                resetError(ENDING_DATE_FIELD)
+                if (e.target.value != null && homework[ENDING_DATE_FIELD] != null && e.target.value > homework[ENDING_DATE_FIELD]) {
+                    addError(fieldName, homeworkValidationSchema[fieldName].invalidTerm[0])
+                }
+            } else if (fieldName === ENDING_DATE_FIELD) {
+                resetError(OPENING_DATE_FIELD)
+                if (e.target.value != null && homework[OPENING_DATE_FIELD] != null && homework[OPENING_DATE_FIELD] > e.target.value) {
+                    addError(fieldName, homeworkValidationSchema[fieldName].invalidTerm[0])
+                }
+            }
+        }
+    }
+
+    const addError = (fieldPath, error) => {
+        let targetErrors = errors
+        targetErrors[fieldPath] = error
+        setErrors(targetErrors)
+    }
+
+    const resetError = (fieldPath) => {
+        let targetErrors = errors
+        delete targetErrors[fieldPath]
+        setErrors(targetErrors)
+    }
+
+    const validate = () => {
+        resetError(ENDING_DATE_FIELD)
+
+        setIsTouched(true)
+        if(homework.openingDate && homework.endingDate && homework.openingDate > homework.endingDate) {
+            if(!errors[OPENING_DATE_FIELD]) addError(ENDING_DATE_FIELD, homeworkValidationSchema[ENDING_DATE_FIELD].invalidTerm)
+        }
+
+        let res = homeworkValidation.validate(homework)
+        setErrors({...homeworkValidation.errors, ...errors})
+        return res
+    }
+
+    const clearTouches = () => {
+        setIsTouched(false)
+        setErrors({})
+    }
+    
+    return { 
+        ...homeworkValidation,
+        errors,
+        blurHandle,
+        changeHandle,
+        validate,
+        clearTouches,
+    }
+}
+
+const makeTarget = (name, value) => {
+    return { target: {name: name, value: value } }
 }
 
 export default HomeworkBuilderPanel
