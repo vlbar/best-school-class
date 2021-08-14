@@ -54,16 +54,16 @@ const HomeworkBuilderPanel = () => {
             }
         }
 
-        homeworkValidation.clearTouches()
+        homeworkValidation.reset()
         homework.setHomework(selectedHomework)
         setIsHomeworkSelectShow(false)
     }
 
     const onAskHomeworkHandler = () => {
-        if(!homeworkValidation.validate()) {
+        if(!homeworkValidation.validate(homework.current)) {
             return
         }
-        
+
         homework.askHomework()
     }
 
@@ -328,6 +328,10 @@ const useHomeworkValidation = (homework) => {
     const [errors, setErrors] = useState({})
     const homeworkValidation = useBestValidation(homeworkValidationSchema)
 
+    useEffect(() => {
+        setErrors({...homeworkValidation.errors, ...errors})
+    }, [homeworkValidation.errors])
+
     const blurHandle = (e) => {
         let fieldName = e.target.name
         resetError(fieldName)
@@ -345,6 +349,7 @@ const useHomeworkValidation = (homework) => {
         if(isTouched) termCheck(e)
         homeworkValidation.changeHandle(e)
         setErrors({...homeworkValidation.errors, ...errors})
+        //setErrors({...homeworkValidation.errors, ...errors})
     }
 
     const termCheck = (e) => {
@@ -377,11 +382,13 @@ const useHomeworkValidation = (homework) => {
         setErrors(targetErrors)
     }
 
-    const validate = () => {
+    const validate = (homework) => {
         resetError(ENDING_DATE_FIELD)
 
         setIsTouched(true)
+        let termValid = true
         if(homework.openingDate && homework.endingDate && homework.openingDate > homework.endingDate) {
+            termValid = false
             if(!errors[OPENING_DATE_FIELD]) addError(ENDING_DATE_FIELD, homeworkValidationSchema[ENDING_DATE_FIELD].invalidTerm)
         }
 
@@ -390,7 +397,8 @@ const useHomeworkValidation = (homework) => {
         return res
     }
 
-    const clearTouches = () => {
+    const reset = () => {
+        homeworkValidation.reset()
         setIsTouched(false)
         setErrors({})
     }
@@ -401,7 +409,7 @@ const useHomeworkValidation = (homework) => {
         blurHandle,
         changeHandle,
         validate,
-        clearTouches,
+        reset,
     }
 }
 

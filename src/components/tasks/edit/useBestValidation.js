@@ -190,10 +190,16 @@ export default function useBestValidation(validationSchema) {
         setErrors(targetErrors)
     }
 
+    function reset() {
+        setErrors({})
+        setIsTouched(false)
+    }
+
     return {
         changeHandle,
         blurHandle,
         validate,
+        reset,
         isValid,
         errors
     }
