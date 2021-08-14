@@ -27,6 +27,7 @@ export const DropZone = ({indent, onDropHandler, upperNode, forceExpandHandler, 
     }
 
     const dragOver = (event) => {
+        if(previousCanExpanded && !upperNode.isExpanded && upperNode.isFetched !== undefined && !upperNode.isFetched) return
         event.preventDefault()
     }
 

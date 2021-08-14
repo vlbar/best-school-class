@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useInView } from 'react-intersection-observer'
 import { Node } from './Node';
 import { NodePlaceholder } from './NodePlaceholder';
 
@@ -15,13 +16,33 @@ import { NodePlaceholder } from './NodePlaceholder';
 
 /*
     onNodeMove(dragNodeId, parentId, position)
-    fetchDataHandler(parentId): array
+    fetchNodesHandler(parentId): { items: array, page: int, size: int, total: int }
+    fetchSubNodesHandler(parentId): { items: array, page: int, size: int, total: int }  (optional if called the same as in 'fetchNodesHandler')
 */
 
-export const TreeHierarchy = ({treeData, setTreeData, fetchDataHandler, onNodeMove, onNodeDelete, onNodeAdd, onNodeClick, canNodeDrag = true}) => {
+export const TreeHierarchy = ({treeData, setTreeData, fetchNodesHandler, fetchSubNodesHandler, onNodeMove, onNodeUpdate, onNodeDelete, onNodeAdd, onNodeClick, canNodeDrag = true}) => {
+    const [treePagination, setTreePagination] = useState({
+        page: 1, 
+        pageSize: undefined, 
+        total: undefined
+    })
+
+    const [isFetching, setIsFetching] = useState(false)
+    const { ref, inView } = useInView({
+        threshold: 1,
+    });
+
     const [draggedNode, setDraggedNode] = useState(undefined)
 
     let flatTreeData = treeToFlat(treeData)
+
+    useEffect(() => {
+        if(fetchNodesHandler !== undefined) fetchNodes(null, 1)
+    }, [])
+
+    useEffect(() => {
+        if(fetchNodesHandler && inView && !isFetching) fetchNodes(null, treePagination.page + 1)
+    }, [inView])
 
     // dragging
     const dragStart = (node) => {
@@ -34,8 +55,8 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchDataHandler, onNodeMo
 
     // force expand
     const setIsExpandedHandler = (node, isExpanded) => {
-        if(fetchDataHandler !== undefined && !node.isFetched) {
-            fetchData(node)
+        if(fetchNodesHandler !== undefined && !node.isFetched) {
+            fetchNodes(node, 1)
         } else {
             node.isExpanded = isExpanded
             setTreeData(flatTreeData.filter(x => x.parentId == null))
@@ -43,11 +64,33 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchDataHandler, onNodeMo
     }
 
     // fetch data
-    const fetchData = async (node) => {
+    const fetchNodes = async (node, page) => {
+        setIsFetching(true)
+        if(node !== null) {
+            fetchSubNodes(node, page)
+        } else {
+            let fetchData = await fetchNodesHandler(node, page)
+            setTreePagination({
+                page: fetchData.page,
+                pageSize: fetchData.size,
+                total: fetchData.total
+            })
+            if(treeData === undefined)
+                setTreeData(fetchData.items)
+            else
+                setTreeData([...treeData, ...fetchData.items])
+        }
+        setIsFetching(false)
+    }
+
+    const fetchSubNodes = async (node, page) => {
         node.isFetched = true //anti ddos
-        node.child = await fetchDataHandler(node)
+        let fetchData = await fetchSubNodesHandler(node, page)
+        let nodeChilds = node.child
+        node.child = [...nodeChilds, ...fetchData.items]
         node.isExpanded = true
         setTreeData(flatTreeData.filter(x => x.parentId == null))
+        return fetchData
     }
 
     //
@@ -62,6 +105,7 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchDataHandler, onNodeMo
         if (dragNode.parentId != null) { 
             let dragNodeParent = flatTreeData.find(x => x.id === dragNode.parentId)
             dragNodeParent.child = dragNodeParent.child.filter(x => x !== dragNode)
+            if(fetchNodesHandler !== undefined) dragNodeParent.isEmpty = dragNodeParent.child.length == 0
         } else {
             newTreeData = treeData.filter(x => x !== dragNode)
         }
@@ -70,7 +114,10 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchDataHandler, onNodeMo
         if (targetParentId != null) {
             let parentNode = flatTreeData.find(x => x.id === targetParentId)
             targetChildrens = parentNode.child
-            if(targetChildrens.length == 0) parentNode.isExpanded = true;
+            if(targetChildrens.length == 0) { 
+                parentNode.isExpanded = true
+                if(parentNode.isFetched !== undefined) parentNode.isFetched = true
+            }
         } else {
             targetChildrens = newTreeData
         }
@@ -88,20 +135,6 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchDataHandler, onNodeMo
         if (onNodeMove !== undefined) onNodeMove(dragNode.id, targetParentId, position)
     }
 
-    // delete node
-    const deleteNode = (node) => {
-        if(node.parentId !== null) {
-            let parentNode = flatTreeData.find(x => x.id == node.parentId)
-            let parentChilds = parentNode.child
-            parentNode.child = parentChilds.filter(x => x.id !== node.id)
-            setTreeData(flatTreeData.filter(x => x.parentId == null))
-        } else {
-            setTreeData(treeData.filter(x => x.id !== node.id))
-        }
-        
-        if (onNodeDelete !== undefined) onNodeDelete(node)
-    }
-
     // decringelization of render
     const upperNode = (index) => {
         if (draggedNode !== undefined 
@@ -113,31 +146,42 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchDataHandler, onNodeMo
 
     return (
         <div className={'tree-hierarchy' + (draggedNode !== undefined ? ' disable-hover':'')}>
-            {treeData.map((nodeData, index) => {
+            {treeData !== undefined && treeData.map((nodeData, index) => {
                 return <Node key={nodeData.id} 
                     upperNodeData={upperNode(index)}
                     nodeData={nodeData}
                     lowerNodeData={treeData[index + 1]}
                     setExpandedHandler={setIsExpandedHandler}
-                    fetchDataHandler={fetchData}
+                    fetchSubNodesHandler={fetchSubNodes}
                     draggedNodeData={draggedNode}
                     dragStartHandle={dragStart}
                     dragEndHandle={dragEnd}
                     addNodeHandler={onNodeAdd}
-                    deleteNodeHandler={deleteNode}
+                    updateNodeHandler={onNodeUpdate}
+                    deleteNodeHandler={onNodeDelete}
                     moveNodeHandler={moveNodeHandler}
                     canNodeDrag={canNodeDrag}
                     onNodeClick={onNodeClick}
                 />
             })}
-            <NodePlaceholder
+            {draggedNode && <NodePlaceholder
                 insteadNode={undefined}
                 upperNode={treeData[treeData.length - 1] == draggedNode 
                     ? treeData[treeData.length - 2]
                     : treeData[treeData.length - 1]}
                 forceExpandHandler={setIsExpandedHandler}
                 dropHandle={(targetParentId, position) => moveNodeHandler(targetParentId, position)}
-            />
+            />}
+            {(fetchNodesHandler && treePagination.page * treePagination.pageSize < treePagination.total) &&
+                <button 
+                    className="fetch-nodes-btn" 
+                    onClick={() => fetchNodes(null, treePagination.page + 1)} 
+                    disabled={isFetching} 
+                    ref={ref}
+                >
+                    {isFetching ? '. . .' : 'Загрузить еще'}
+                </button>
+            }
         </div>
     )
 }
@@ -154,5 +198,19 @@ const getAllChilds = (node) => {
 }
 
 export const treeToFlat = (list) => {
-    return getAllChilds({child: list})
+    if(list !== undefined)
+        return getAllChilds({child: list})
+    else return null
+}
+
+export const deleteNode = (node, treeData, setTreeData) => {
+    if(!(node.parentId === null || node.parentId === undefined)) {
+        let flatTreeData = treeToFlat(treeData)
+        let parentNode = flatTreeData.find(x => x.id == node.parentId)
+        let parentChilds = parentNode.child
+        parentNode.child = parentChilds.filter(x => x.id !== node.id)
+        setTreeData(flatTreeData.filter(x => x.parentId == null))
+    } else {
+        setTreeData(treeData.filter(x => x.id !== node.id))
+    }
 }
