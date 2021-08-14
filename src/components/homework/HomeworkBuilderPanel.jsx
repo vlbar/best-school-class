@@ -189,7 +189,7 @@ const HomeworkBuilderPanel = () => {
                                                                             placement={'right'}
                                                                             overlay={
                                                                                 <Tooltip id={`tooltip-task-date`}>
-                                                                                    Позволяет назначить сроки заданнию внутри сроков всего ДЗ. Подходит для
+                                                                                    Позволяет назначить сроки заданию внутри сроков всего ДЗ. Подходит для
                                                                                     поэтапного выполнения работы (прим. курсовой проект)
                                                                                 </Tooltip>
                                                                             }>
@@ -213,9 +213,9 @@ const HomeworkBuilderPanel = () => {
                                         })}
                                     {(homework.current.tasks == undefined || homework.current.tasks.length == 0) && (
                                         <div className='text-center'>
-                                            <h6>Задания ещё не добавлены.</h6>
+                                            <h6>Задания еще не добавлены.</h6>
                                             <p className='text-muted font-size-14 mb-0'>
-                                                Выбирите задание из вашего списка в курсе, нажмите три точки по заданию и затем "Добавить в домашнее".
+                                                Выберите задание из вашего списка в курсе, нажмите три точки по заданию и затем "Добавить в домашнее".
                                             </p>
                                         </div>
                                     )}
@@ -235,7 +235,7 @@ const HomeworkBuilderPanel = () => {
                             <span className='text-semi-bold'>Домашнее задание</span>
                             <br />
                             <span className='font-size-14'>
-                                Объединятйе выбранные задания в домашнее и назначайте их выполнение студентам группы на определнное время
+                                Объединяйте выбранные задания в домашнее и назначайте их выполнение студентам группы на определенное время
                             </span>
                         </div>
                         <div className='align-self-center'>
@@ -349,7 +349,6 @@ const useHomeworkValidation = (homework) => {
         if(isTouched) termCheck(e)
         homeworkValidation.changeHandle(e)
         setErrors({...homeworkValidation.errors, ...errors})
-        //setErrors({...homeworkValidation.errors, ...errors})
     }
 
     const termCheck = (e) => {
