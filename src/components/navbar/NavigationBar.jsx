@@ -30,9 +30,14 @@ function NavigationBar() {
               Расписание
             </Nav.Link>
           </PrivateContent>
-          <PrivateContent>
+          <PrivateContent  allowedStates={[HELPER, TEACHER]}>
             <Nav.Link as={NavLink} to="/answers">
               Ответы
+            </Nav.Link>
+          </PrivateContent>
+          <PrivateContent  allowedStates={[STUDENT]}>
+            <Nav.Link as={NavLink} to="/homeworks">
+              Задания
             </Nav.Link>
           </PrivateContent>
           <PrivateContent allowedStates={[HELPER, TEACHER]}>

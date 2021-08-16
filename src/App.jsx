@@ -21,6 +21,7 @@ import PublicRoute from "./components/routing/PublicRoute";
 import { HELPER, STUDENT, TEACHER } from "./redux/state/stateActions";
 import configureAxios from "./config/axios-config";
 import Register from "./pages/Register";
+import Homeworks from "./pages/Homeworks";
 
 configureAxios(axios);
 
@@ -40,7 +41,23 @@ function App() {
           component={Shedule}
           allowedStates={[STUDENT, TEACHER]}
         />
-        <PrivateRoute path={"/answers"} component={Answers} />
+        <PrivateRoute
+          exact
+          path={"/answers"}
+          component={Answers}
+          allowedStates={[HELPER, TEACHER]}
+        />
+        <PrivateRoute
+          exact
+          path={"/homeworks/"}
+          component={Homeworks}
+          allowedStates={[STUDENT]}
+        />
+        <PrivateRoute
+          path={"/homeworks/:homeworkId"}
+          component={Homeworks}
+          allowedStates={[STUDENT]}
+        />
         <PrivateRoute
           exact
           path={"/courses"}
