@@ -3,16 +3,19 @@ import { Container } from 'react-bootstrap'
 import { useHistory, useParams } from 'react-router-dom'
 
 import usePageTitle from '../components/feedback/usePageTitle'
+import HomeworkDetails from '../components/homework/HomeworkDetails'
 import HomeworkList from '../components/homework/HomeworkList'
 import { STUDENT } from '../redux/state/stateActions'
 
 function Homeworks() {
     const { homeworkId } = useParams()
     const history = useHistory()
-    usePageTitle({title: homeworkId ? 'Домашнее задание' : 'Задания'})
+    usePageTitle({title: homeworkId ? 'Домашняя работа' : 'Задания'})
 
     return homeworkId ? (
-        <Container>HW {homeworkId}</Container>
+        <Container>
+            <HomeworkDetails homeworkId={homeworkId} />
+        </Container>
     ) : (
         <Container>
             <h4 className='my-3'>Текущие задания</h4>
