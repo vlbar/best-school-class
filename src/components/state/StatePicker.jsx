@@ -3,12 +3,7 @@ import { Dropdown } from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
 import { changed } from "../../redux/state/stateReduser";
 import { selectState } from "../../redux/state/stateSelector";
-import {
-  fromStateToName,
-  HELPER,
-  STUDENT,
-  TEACHER,
-} from "../../redux/state/stateActions";
+import { fromStateToName, types } from "../../redux/state/stateActions";
 
 function StatePicker() {
   const { state } = useSelector(selectState);
@@ -19,23 +14,23 @@ function StatePicker() {
   }
 
   return (
-    <Dropdown className="mr-5">
-      <Dropdown.Toggle
-        variant="outline-light"
-      >
+    <Dropdown>
+      <Dropdown.Toggle variant="outline-light">
         {fromStateToName(state)}
       </Dropdown.Toggle>
 
       <Dropdown.Menu>
-        <Dropdown.Item onSelect={onSelect} eventKey={TEACHER}>
-          {fromStateToName(TEACHER)}
-        </Dropdown.Item>
-        <Dropdown.Item onSelect={onSelect} eventKey={STUDENT}>
-          {fromStateToName(STUDENT)}
-        </Dropdown.Item>
-        <Dropdown.Item onSelect={onSelect} eventKey={HELPER}>
-          {fromStateToName(HELPER)}
-        </Dropdown.Item>
+        {Object.keys(types).map((key, index) => {
+          return (
+            <Dropdown.Item
+              onSelect={onSelect}
+              key={index}
+              eventKey={types[key]}
+            >
+              {fromStateToName(types[key])}
+            </Dropdown.Item>
+          );
+        })}
       </Dropdown.Menu>
     </Dropdown>
   );

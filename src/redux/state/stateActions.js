@@ -1,19 +1,25 @@
-const types = {
+export const types = {
   TEACHER: "teacher",
   STUDENT: "student",
-  HELPER: "helper",
+  ASSISTANT: "assistant",
 };
 
-export const { TEACHER, STUDENT, HELPER } = types;
+export const { TEACHER, STUDENT, ASSISTANT } = types;
 
 export function fromStateToName(state) {
   if (state == TEACHER) return "Преподаватель";
   if (state == STUDENT) return "Ученик";
-  if (state == HELPER) return "Помощник";
+  if (state == ASSISTANT) return "Помощник";
 }
 
 export function fromStateToParameter(state) {
-  if (state == TEACHER) return "r=t";
-  if (state == STUDENT) return "r=s";
-  if (state == HELPER) return "r=a";
+  if (state == TEACHER) return "role=teacher";
+  if (state == STUDENT) return "role=student";
+  if (state == ASSISTANT) return "role=assistant";
+}
+
+export function fromStateToIcon(state) {
+  if (state == TEACHER) return "fas fa-user-tie";
+  if (state == STUDENT) return "fas fa-user-graduate";
+  if (state == ASSISTANT) return "fas fa-hands-helping";
 }

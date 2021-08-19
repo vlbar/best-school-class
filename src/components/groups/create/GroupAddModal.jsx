@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { Button, Modal, Form, Card, Badge, InputGroup } from "react-bootstrap";
+import { Button, Modal, Form, Card, InputGroup } from "react-bootstrap";
 import { ErrorMessage, FastField, Formik } from "formik";
 import * as yup from "yup";
 import { CirclePicker } from "react-color";
-import axios from "axios";
 import ColorPicker from "./ColorPicker";
+import ProcessBar from "../../process-bar/ProcessBar";
+import { createError } from "../../notifications/notifications";
 
 const groupSchema = yup.object().shape({
   name: yup
@@ -18,31 +19,51 @@ const groupSchema = yup.object().shape({
     .trim()
     .min(2, "Слишком короткое название предмета")
     .max(30, "Слишком длинное название предмета"),
-  studentsLimit: yup
-    .number()
-    .min(1, "Лимит группы не может быть меньше 1")
-    .max(50, "Лимит группы не может превышать 50"),
 });
 
-export const GroupAddModal = ({ onClose, onSubmit, values, onNext }) => {
-  const submitHandle = (values) => {
-    onSubmit(values).then((data) => {
-      if (onNext) onNext({ code: data.joinCode, groupId: data.id });
-    });
-  };
+export const GroupAddModal = ({ link, onClose, onSubmit, values }) => {
+  const [loading, setLoading] = useState(false);
+
+  function post(values) {
+    link
+      .post(values, setLoading)
+      .then((group) => {
+        onSubmit(group);
+        onClose();
+      })
+      .catch((err) => {
+        createError("Не удалось добавить группу.", err);
+      });
+  }
+
+  function put(newValues) {
+    link
+      .put(newValues, setLoading)
+      .then(() => {
+        onSubmit(newValues);
+        onClose();
+      })
+      .catch((err) => {
+        createError("Не удалось обновить данные группы.", err);
+      });
+  }
+
+  function handleSubmit(newValues) {
+    if (values) put(newValues);
+    else post(newValues);
+  }
 
   return (
-    <>
+    <Modal show={true} onHide={onClose}>
       <Modal.Body className="p-0">
         <Formik
           initialValues={{
             name: values?.name ?? "",
             subject: values?.subject ?? "",
-            studentsLimit: values?.studentsLimit ?? 50,
             color: values?.color ?? "#343a40",
           }}
           validationSchema={groupSchema}
-          onSubmit={submitHandle}
+          onSubmit={handleSubmit}
         >
           {({ handleSubmit, values, isValid, dirty, handleChange }) => (
             <Form onSubmit={handleSubmit}>
@@ -89,6 +110,7 @@ export const GroupAddModal = ({ onClose, onSubmit, values, onNext }) => {
                     />
                   </Form.Text>
                 </Card.Header>
+                <ProcessBar height="2px" active={loading} />
                 <Card.Body>
                   <CirclePicker
                     color={values.color}
@@ -100,24 +122,6 @@ export const GroupAddModal = ({ onClose, onSubmit, values, onNext }) => {
                     circleSpacing={18}
                     name="color"
                   />
-                  <Form.Text className="float-left" muted>
-                    Ограничение количества учеников: {values.studentsLimit}
-                  </Form.Text>
-                  <FastField
-                    type="range"
-                    name="studentsLimit"
-                    min="1"
-                    max="50"
-                    as={Form.Control}
-                    custom 
-                  />
-                  <Form.Text muted>
-                    <ErrorMessage
-                      component="div"
-                      name="studentsLimit"
-                      className="text-danger"
-                    />
-                  </Form.Text>
                 </Card.Body>
                 <Card.Footer>
                   <div className="float-right">
@@ -139,6 +143,6 @@ export const GroupAddModal = ({ onClose, onSubmit, values, onNext }) => {
           )}
         </Formik>
       </Modal.Body>
-    </>
+    </Modal>
   );
 };
