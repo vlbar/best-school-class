@@ -22,6 +22,7 @@ import { HELPER, STUDENT, TEACHER } from "./redux/state/stateActions";
 import configureAxios from "./config/axios-config";
 import Register from "./pages/Register";
 import Homeworks from "./pages/Homeworks";
+import TaskAnswer from "./pages/TaskAnswer";
 
 configureAxios(axios);
 
@@ -54,8 +55,14 @@ function App() {
           allowedStates={[STUDENT]}
         />
         <PrivateRoute
+          exact
           path={"/homeworks/:homeworkId"}
           component={Homeworks}
+          allowedStates={[STUDENT]}
+        />
+        <PrivateRoute
+          path={"/homeworks/:homeworkId/tasks/:taskId"}
+          component={TaskAnswer}
           allowedStates={[STUDENT]}
         />
         <PrivateRoute
