@@ -1,7 +1,13 @@
 import React from "react";
 import { useEffect } from "react";
 import { useState } from "react";
-import { Form, InputGroup, Button } from "react-bootstrap";
+import {
+  Form,
+  InputGroup,
+  Button,
+  OverlayTrigger,
+  Tooltip,
+} from "react-bootstrap";
 import { createError } from "../../notifications/notifications";
 import ProcessBar from "../../process-bar/ProcessBar";
 import CopyableText from "../../common/CopyableText";
@@ -54,6 +60,18 @@ function InviteForm({ invitesLink, role, isCurrent }) {
           {invite !== null && (
             <Form.Group style={{ marginBottom: 0 }}>
               <Form.Label>Код для присоединения: </Form.Label>
+              <OverlayTrigger
+                placement="auto"
+                delay={{ show: 250, hide: 400 }}
+                overlay={(props) => (
+                  <Tooltip {...props}>
+                    Распространите этот код или ссылку ниже среди участников,
+                    чтобы они могли присоединиться.
+                  </Tooltip>
+                )}
+              >
+                <i className="fas fa-question p-1 float-right"></i>
+              </OverlayTrigger>
               <InputGroup>
                 <div className="form-control bg-light overflow-hidden text-break">
                   <CopyableText text={invite.code} disabled={loading} />
