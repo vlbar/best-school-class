@@ -4,9 +4,9 @@ import { Container } from 'react-bootstrap'
 import { useParams } from 'react-router-dom'
 
 import { addErrorNotification } from '../components/notifications/notifications'
-import ConfirmStartTask from '../components/tasks/execute/ConfirmStartTask'
 import TaskDetails from '../components/tasks/execute/TaskDetails'
 import usePageTitle from '../components/feedback/usePageTitle'
+import AnswerContext from '../components/tasks/execute/AnswerContext'
 
 export const tasksBaseUrl = '/tasks'
 
@@ -32,7 +32,6 @@ function TaskAnswer() {
             .then(res => {
                 let fetchedData = res.data
                 setTask(fetchedData)
-                setTaskCallback(fetchedData)
             })
             .catch(error => addErrorNotification('Не удалось загрузить информацию о задании. \n' + error.message))
             .finally(() => setIsFetching(false))
@@ -42,7 +41,7 @@ function TaskAnswer() {
         <>
             <Container>
                 <TaskDetails task={task} isFetching={isFetching} />
-                <ConfirmStartTask task={task} />
+                {task && <AnswerContext task={task} />}
             </Container>
         </>
     )
