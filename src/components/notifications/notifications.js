@@ -44,3 +44,14 @@ export const addInfoNotification = (message, title) => {
         message: message
     });
 }
+
+export function createError(msg, err) {
+  var errorMsg =
+    "Что-то пошло не так, перезагрузите страницу. Если ошибка повторится, то попробуйте позже";
+  if (err.response?.data?.message) errorMsg = err.response?.data?.message;
+  else errorMsg = err.message;
+  store.addNotification({
+    ...errorNotification,
+    message: `${msg}\n ${errorMsg}`,
+  });
+}
