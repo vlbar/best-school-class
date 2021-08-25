@@ -6,6 +6,7 @@ import { addErrorNotification } from '../../notifications/notifications'
 import ProcessBar from '../../process-bar/ProcessBar'
 import { tasksBaseUrl } from '../../../pages/TaskAnswer'
 import QuestionAnswerList from './question-answer/QuestionAnswerList'
+import { toLocaleTimeDurationString } from '../../common/LocaleTimeString'
 
 export const answersPartUrl = 'answers'
 
@@ -55,9 +56,38 @@ const AnswerContext = ({ task, role = 'student' }) => {
             .finally(() => setIsFetching(false))
     }
 
+    // timer
+    const timeLeftInterval = useRef(undefined)
+    const [secondsLeft, setSecondsLeft] = useState(undefined)
+    useEffect(() => {
+        if (selectedAnswerTry && !timeLeftInterval.current) {
+            setSecondsLeft((selectedAnswerTry.startDate + task.duration * 60 * 1000 - new Date()) / 1000)
+            timeLeftInterval.current = setInterval(() => {
+                setSecondsLeft((selectedAnswerTry.startDate + task.duration * 60 * 1000 - new Date()) / 1000)
+            }, 30000)
+        }
+    }, [selectedAnswerTry])
+
+    useEffect(() => {
+        return () => {
+            clearInterval(timeLeftInterval.current)
+        }
+    }, [])
+
     return (
         <>
-            <h5 className='mb-4'>Вопросы:</h5>
+            <h5 className='mb-1'>Вопросы:</h5>
+            {isConfirmed && selectedAnswerTry && (
+                <div className='d-flex justify-content-between mb-2'>
+                    <div className='my-auto'>Оставшееся время: {toLocaleTimeDurationString(secondsLeft)}</div>
+                    <div>
+                        <Button variant='outline-primary' size='sm' onClick={() => {}}>
+                            Завершить
+                        </Button>
+                    </div>
+                </div>
+            )}
+            {isFetching && <ProcessBar height='.18Rem' className='mt-2' />}
             {isConfirmed === false && (
                 <div className='text-center'>
                     <div className='mx-auto mb-3'>
@@ -65,13 +95,12 @@ const AnswerContext = ({ task, role = 'student' }) => {
                         <br />
                         Вы можете ознакомится с условиями задания и начать его выполнение.
                     </div>
-                    <Button variant='outline-primary' type='submit' onClick={() => createTaskAnswer()}>
+                    <Button variant='outline-primary' type='submit' onClick={() => createTaskAnswer(true)}>
                         Начать выполнение
                     </Button>
                 </div>
             )}
-            {isFetching && <ProcessBar height='.18Rem' className='mt-2' />}
-            {isConfirmed && selectedAnswerTry && (<QuestionAnswerList answerId={selectedAnswerTry.id} />)}
+            {isConfirmed && selectedAnswerTry && <QuestionAnswerList answerId={selectedAnswerTry.id} />}
         </>
     )
 }
