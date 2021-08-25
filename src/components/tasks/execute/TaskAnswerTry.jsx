@@ -18,7 +18,7 @@ async function createAnswer(taskId, role) {
     return axios.post(`${tasksBaseUrl}/${taskId}/${answersPartUrl}?r=${role[0]}`)
 }
 
-const AnswerContext = ({ task, role = 'student' }) => {
+const TaskAnswerTry = ({ task, role = 'student' }) => {
     const [isFetching, setIsFetching] = useState(false)
     const [answers, setAnswers] = useState(undefined)
     const [selectedAnswerTry, setSelectedAnswerTry] = useState(undefined)
@@ -105,4 +105,4 @@ const AnswerContext = ({ task, role = 'student' }) => {
     )
 }
 
-export default AnswerContext
+export default TaskAnswerTry

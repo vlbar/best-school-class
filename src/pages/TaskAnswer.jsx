@@ -6,7 +6,7 @@ import { useParams } from 'react-router-dom'
 import { addErrorNotification } from '../components/notifications/notifications'
 import TaskDetails from '../components/tasks/execute/TaskDetails'
 import usePageTitle from '../components/feedback/usePageTitle'
-import AnswerContext from '../components/tasks/execute/AnswerContext'
+import TaskAnswerTry from '../components/tasks/execute/TaskAnswerTry'
 
 export const tasksBaseUrl = '/tasks'
 
@@ -41,7 +41,7 @@ function TaskAnswer() {
         <>
             <Container>
                 <TaskDetails task={task} isFetching={isFetching} />
-                {task && <AnswerContext task={task} />}
+                {task && <TaskAnswerTry task={task} />}
             </Container>
         </>
     )

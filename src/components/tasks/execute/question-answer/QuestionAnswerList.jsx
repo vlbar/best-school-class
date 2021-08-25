@@ -2,7 +2,7 @@ import axios from 'axios'
 import React, { useState, useRef, useEffect } from 'react'
 import { addErrorNotification } from '../../../notifications/notifications'
 import ProcessBar from '../../../process-bar/ProcessBar'
-import { answersPartUrl } from '../AnswerContext'
+import { answersPartUrl } from '../TaskAnswerTry'
 import QuestionAnswer from './QuestionAnswer'
 
 const questionsPartUrl = 'questions'

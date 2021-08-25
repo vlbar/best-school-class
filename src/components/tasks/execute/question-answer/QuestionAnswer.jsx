@@ -3,7 +3,7 @@ import React, { useEffect, useReducer, useRef } from 'react'
 import { Form } from 'react-bootstrap'
 
 import { addErrorNotification } from '../../../notifications/notifications'
-import { answersPartUrl } from '../AnswerContext'
+import { answersPartUrl } from '../TaskAnswerTry'
 import { isEquivalent } from '../../edit/TaskSaveManager'
 import { questionPartUrl } from '../../edit/QuestionsList'
 import { SOURCE_TEST_QUESTION, SOURCE_TEXT_QUESTION } from '../../edit/QuestionVariant'
