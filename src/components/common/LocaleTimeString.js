@@ -1,40 +1,66 @@
 export const toLocaleSecondsString = seconds => {
-    if (seconds == 1) return '1 секунда'
-    else if (seconds >= 2 && seconds <= 4) return `${seconds} секунды`
-    else return `${seconds} секунд`
+    return timeToRuLocale(seconds, 'секунда', 'секунды', 'секунд')
 }
 
 export const toLocaleMinutesString = minutes => {
-    if (minutes == 1) return '1 минута'
-    else if (minutes >= 2 && minutes <= 4) return `${minutes} минуты`
-    else return `${minutes} минут`
+    return timeToRuLocale(minutes, 'минута', 'минуты', 'минут')
 }
 
 export const toLocaleHoursString = hours => {
-    if (hours == 1) return '1 час'
-    else if (hours >= 2 && hours <= 4) return `${hours} часа`
-    else return `${hours} часов`
+    return timeToRuLocale(hours, 'час', 'часа', 'часов')
 }
 
 export const toLocaleDaysString = days => {
-    if (days == 1) return '1 день'
-    else if (days >= 2 && days <= 4) return `${days} дня`
-    else return `${days} дней`
+    return timeToRuLocale(days, 'день', 'дня', 'дней')
 }
 
-export const toLocaleTimeDurationString = seconds => {
-    let remainSeconds = seconds % 60
+const timeToRuLocale = (time, one, two, more) => {
+    if (time % 10 == 1) return `${time} ${one}`
+    else if (time % 10 >= 2 && time % 10 <= 4) return `${time} ${two}`
+    else return `${time} ${more}`
+}
 
-    let minutes = Math.floor(seconds / 60)
-    let remainMinutes = minutes % 60
+const TYPE_NUMERIC = 'NUMERIC'
+const TYPE_LONG = 'LONG'
 
-    let hours = Math.floor(minutes / 60)
-    let remainHours = hours % 60
+const FORMAT_DAYS = 'd'
+const FORMAT_HOURS = 'h'
+const FORMAT_MINUTES = 'm'
+const FORMAT_SECONDS = 's'
 
-    let days = Math.floor(hours / 24)
+/*
+    options = {
+        trim: boolean,      (hide time if 0)
+        format: string,     (replace d\h\m\s to formatted time if provided, text in [] will be ignored (example: 'd [h]' => '3 дня h'))
+        type: numeric/long  (way of displaying the number (numeric as 2 digits adn more, long as num with words :\))
+    }
+*/
 
-    return `${days > 0 ? toLocaleDaysString(days) + '' : ''}
-    ${remainHours > 0 ? toLocaleHoursString(remainHours) + ' ' : ''}
-    ${remainMinutes > 0 ? toLocaleMinutesString(remainMinutes) + ' ' : ''}
-    ${remainSeconds > 0 ? toLocaleSecondsString(remainSeconds) + ' ' : ''}`
+const defaultOptions = { type: TYPE_LONG, trim: true, format: 'd h m' }
+export const toLocaleTimeDurationString = (seconds, options = defaultOptions) => {
+    if (!options.format) options.format = 'd:h:m:s'
+
+    // a это wee-wee lёt
+    let isNeedDays = options.format.replace(/ *\[[^)]*\] */g, '').includes(FORMAT_DAYS)
+    let isNeedHours = options.format.replace(/ *\[[^)]*\] */g, '').includes(FORMAT_HOURS)
+    let isNeedMinutes = options.format.replace(/ *\[[^)]*\] */g, '').includes(FORMAT_MINUTES)
+    let isNeedSeconds = options.format.replace(/ *\[[^)]*\] */g, '').includes(FORMAT_SECONDS)
+
+    let resultString = options.format
+    let currentSeconds = seconds
+
+    const formatTime = (divide, formatChar, toLocaleCallback, pad = 0) => {
+        let time = Math.floor(currentSeconds / divide)
+        let timeFormatted = options.type.toUpperCase() === TYPE_LONG ? toLocaleCallback(time) : time.toString().padStart(pad, '0')
+        if (options.trim && time === 0) timeFormatted = ''
+        currentSeconds = currentSeconds % divide
+        resultString = resultString.replace(formatChar, timeFormatted)
+    }
+
+    if (isNeedDays) formatTime(60 * 60 * 24, FORMAT_DAYS, days => toLocaleDaysString(days))
+    if (isNeedHours) formatTime(60 * 60, FORMAT_HOURS, hours => toLocaleHoursString(hours), 2)
+    if (isNeedMinutes) formatTime(60, FORMAT_MINUTES, minutes => toLocaleMinutesString(minutes), 2)
+    if (isNeedSeconds) formatTime(1, FORMAT_SECONDS, seconds => toLocaleSecondsString(seconds), 2)
+
+    return resultString.replace('[', '').replace(']', '')
 }
