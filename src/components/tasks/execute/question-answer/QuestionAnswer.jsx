@@ -64,6 +64,15 @@ const initQuestionAnswer = initialQuestionAnswer => {
     }
 }
 
+// progress
+const isQuestionAnswered = (questionAnswer) => {
+    if(questionAnswer.type === SOURCE_TEXT_QUESTION) {
+        return questionAnswer.content.trim().length > 0
+    } else if(questionAnswer.type === SOURCE_TEST_QUESTION) {
+        return questionAnswer.selectedAnswerVariantsIds.length > 0
+    }
+}
+
 // request
 const questionAnswerPartUrl = 'answer'
 
@@ -75,7 +84,7 @@ async function update(taskAnswerId, questionId, questionAnswer) {
     return axios.put(`/${answersPartUrl}/${taskAnswerId}/${questionPartUrl}/${questionId}/${questionAnswerPartUrl}?r=s`, questionAnswer)
 }
 
-const QuestionAnswer = ({ index, taskQuestionAnswer, readOnly = false }) => {
+const QuestionAnswer = ({ index, taskQuestionAnswer, progress, readOnly = false }) => {
     const isDetached = useRef(taskQuestionAnswer.questionAnswer == null)
     const [answer, dispatchAnswer] = useReducer(answerReducer, initQuestionAnswer(taskQuestionAnswer))
     const lastSaveAnswer = useRef(answer)
@@ -127,6 +136,7 @@ const QuestionAnswer = ({ index, taskQuestionAnswer, readOnly = false }) => {
     const answerToSaveRefBecouseSomeKindOfShipIsGoingWithContext = useRef(answer)
     useEffect(() => {
         answerToSaveRefBecouseSomeKindOfShipIsGoingWithContext.current = answer
+        updateProgress(answer)
 
         if (!isSaveBlocked.current) {
             if (!isEquivalent(answer, lastSaveAnswer.current)) {
@@ -161,6 +171,22 @@ const QuestionAnswer = ({ index, taskQuestionAnswer, readOnly = false }) => {
             update(taskQuestionAnswer.taskAnswerId, taskQuestionAnswer.questionVariant.id, answer)
                 .then(res => {})
                 .catch(error => addErrorNotification('Не удалось сохранить ответ на задание. \n' + error))
+        }
+    }
+
+    const isAnswered = useRef(undefined)
+    const updateProgress = (questionAnswer) => {
+        let isCurentAnaswered = isQuestionAnswered(questionAnswer)
+        if(isAnswered.current === undefined) {
+            isAnswered.current = isCurentAnaswered
+        } else {
+            if(isCurentAnaswered) {
+                if(!isAnswered.current) progress.add(1)
+            } else {
+                if(isAnswered.current) progress.remove(1)
+            }
+
+            isAnswered.current = isCurentAnaswered
         }
     }
 

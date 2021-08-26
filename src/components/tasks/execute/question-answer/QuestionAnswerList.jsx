@@ -11,7 +11,7 @@ async function fetch(answerId, role) {
     return axios.get(`/${answersPartUrl}/${answerId}/${questionsPartUrl}?size=20&r=${role[0]}`)
 }
 
-const QuestionAnswerList = ({ answerId, role = 'student', readOnly = false }) => {
+const QuestionAnswerList = ({ answerId, role = 'student', progress, readOnly = false }) => {
     const [isFetching, setIsFetching] = useState(false)
     const [taskAnswerQuestions, setTaskAnswerQuestions] = useState(undefined)
 
@@ -43,7 +43,7 @@ const QuestionAnswerList = ({ answerId, role = 'student', readOnly = false }) =>
             {isFetching && <ProcessBar height='.18Rem' className='mt-2'/>}
             {taskAnswerQuestions &&
                 taskAnswerQuestions.map((questionAnswer, index) => {
-                    return <QuestionAnswer key={questionAnswer.id} index={index} taskQuestionAnswer={questionAnswer} readOnly={readOnly} />
+                    return <QuestionAnswer key={questionAnswer.id} index={index} taskQuestionAnswer={questionAnswer} progress={progress} readOnly={readOnly} />
                 })}
         </>
     )

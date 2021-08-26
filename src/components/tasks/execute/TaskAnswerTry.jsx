@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react'
 import axios from 'axios'
-import { Button } from 'react-bootstrap'
+import { Button, ProgressBar } from 'react-bootstrap'
 
 import { addErrorNotification } from '../../notifications/notifications'
 import ProcessBar from '../../process-bar/ProcessBar'
-import { tasksBaseUrl } from '../../../pages/TaskAnswer'
 import QuestionAnswerList from './question-answer/QuestionAnswerList'
+import { tasksBaseUrl } from '../../../pages/TaskAnswer'
 import { toLocaleTimeDurationString } from '../../common/LocaleTimeString'
 
 export const answersPartUrl = 'answers'
@@ -61,6 +61,7 @@ const TaskAnswerTry = ({ task, role = 'student' }) => {
     const [secondsLeft, setSecondsLeft] = useState(undefined)
     useEffect(() => {
         if (selectedAnswerTry && !timeLeftInterval.current) {
+            setCurrentProgress(selectedAnswerTry.answeredQuestionCount)
             setSecondsLeft((selectedAnswerTry.startDate + task.duration * 60 * 1000 - new Date()) / 1000)
             timeLeftInterval.current = setInterval(() => {
                 setSecondsLeft((selectedAnswerTry.startDate + task.duration * 60 * 1000 - new Date()) / 1000)
@@ -74,19 +75,34 @@ const TaskAnswerTry = ({ task, role = 'student' }) => {
         }
     }, [])
 
+    // progress
+    const [currentProgress, setCurrentProgress] = useState(undefined)
+
+    const addProgress = (count = 1) => {
+        setCurrentProgress(currentProgress + count)
+    }
+
+    const removeProgress = (count = 1) => {
+        setCurrentProgress(currentProgress - count)
+    }
+
     return (
         <>
             <h5 className='mb-1'>Вопросы:</h5>
             {isConfirmed && selectedAnswerTry && (
-                <div className='d-flex justify-content-between mb-2'>
-                    <div className='my-auto'>Оставшееся время: {toLocaleTimeDurationString(secondsLeft)}</div>
-                    <div>
-                        <Button variant='outline-primary' size='sm' onClick={() => {}}>
-                            Завершить
-                        </Button>
+                <>
+                    <div className='d-flex justify-content-between mb-2'>
+                        <div className='my-auto'>Оставшееся время: {toLocaleTimeDurationString(secondsLeft)}</div>
+                        <div>
+                            <Button variant='outline-primary' size='sm' onClick={() => {}}>
+                                Завершить
+                            </Button>
+                        </div>
                     </div>
-                </div>
+                    <ProgressBar max={selectedAnswerTry.questionCount} now={currentProgress} className='mb-2' />
+                </>
             )}
+
             {isFetching && <ProcessBar height='.18Rem' className='mt-2' />}
             {isConfirmed === false && (
                 <div className='text-center'>
@@ -100,7 +116,7 @@ const TaskAnswerTry = ({ task, role = 'student' }) => {
                     </Button>
                 </div>
             )}
-            {isConfirmed && selectedAnswerTry && <QuestionAnswerList answerId={selectedAnswerTry.id} />}
+            {isConfirmed && selectedAnswerTry && <QuestionAnswerList answerId={selectedAnswerTry.id} progress={{add: addProgress, remove: removeProgress}} />}
         </>
     )
 }
