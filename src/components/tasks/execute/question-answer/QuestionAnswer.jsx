@@ -103,7 +103,7 @@ const QuestionAnswer = ({ index, taskQuestionAnswer, progress, readOnly = false 
                             placeholder='Ваш ответ'
                             value={answer.content}
                             onChange={e => setContent(e.target.value)}
-                            readOnly={readOnly}
+                            disabled={readOnly}
                         />
                     </div>
                 )
@@ -121,7 +121,7 @@ const QuestionAnswer = ({ index, taskQuestionAnswer, progress, readOnly = false 
                                 defaultChecked={
                                     answer.selectedAnswerVariantsIds != null && answer.selectedAnswerVariantsIds.find(x => x === answerVariant.id) != null
                                 }
-                                readOnly={readOnly}
+                                disabled={readOnly}
                             />
                         </div>
                     )
@@ -138,7 +138,7 @@ const QuestionAnswer = ({ index, taskQuestionAnswer, progress, readOnly = false 
         answerToSaveRefBecouseSomeKindOfShipIsGoingWithContext.current = answer
         updateProgress(answer)
 
-        if (!isSaveBlocked.current) {
+        if (!isSaveBlocked.current && !readOnly) {
             if (!isEquivalent(answer, lastSaveAnswer.current)) {
                 isSaveBlocked.current = true
                 clearTimeout(saveAnswerTimer.current)
@@ -158,7 +158,7 @@ const QuestionAnswer = ({ index, taskQuestionAnswer, progress, readOnly = false 
 
     const saveQuestionAnswer = () => {
         let answer = answerToSaveRefBecouseSomeKindOfShipIsGoingWithContext.current;
-        if (isEquivalent(answer, lastSaveAnswer.current)) {
+        if (isEquivalent(answer, lastSaveAnswer.current) || readOnly) {
             return
         }
 

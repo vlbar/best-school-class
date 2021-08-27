@@ -1,0 +1,19 @@
+.complete-task-modal {
+    position: relative;
+
+    .confirm-panel {
+        transition: transform .5s;
+    }
+
+    &.saving {
+        .confirm-panel {
+            transform: translateX(-120%);
+        }
+    }
+    
+    .process-bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+}

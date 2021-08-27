@@ -39,13 +39,13 @@ const QuestionAnswerList = ({ answerId, role = 'student', progress, readOnly = f
     }
 
     return (
-        <>
+        <div className='mt-2'>
             {isFetching && <ProcessBar height='.18Rem' className='mt-2'/>}
             {taskAnswerQuestions &&
                 taskAnswerQuestions.map((questionAnswer, index) => {
                     return <QuestionAnswer key={questionAnswer.id} index={index} taskQuestionAnswer={questionAnswer} progress={progress} readOnly={readOnly} />
                 })}
-        </>
+        </div>
     )
 }
 
