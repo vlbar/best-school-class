@@ -49,18 +49,18 @@ export const toLocaleTimeDurationString = (seconds, options = defaultOptions) =>
     let resultString = options.format
     let currentSeconds = seconds
 
-    const formatTime = (divide, formatChar, toLocaleCallback, pad = 0) => {
-        let time = Math.floor(currentSeconds / divide)
+    const formatTime = (divide, formatChar, isCeil, toLocaleCallback, pad = 0) => {
+        let time = isCeil ? Math.ceil(currentSeconds / divide) : Math.floor(currentSeconds / divide)
         let timeFormatted = options.type.toUpperCase() === TYPE_LONG ? toLocaleCallback(time) : time.toString().padStart(pad, '0')
         if (options.trim && time === 0) timeFormatted = ''
         currentSeconds = currentSeconds % divide
         resultString = resultString.replace(formatChar, timeFormatted)
     }
 
-    if (isNeedDays) formatTime(60 * 60 * 24, FORMAT_DAYS, days => toLocaleDaysString(days))
-    if (isNeedHours) formatTime(60 * 60, FORMAT_HOURS, hours => toLocaleHoursString(hours), 2)
-    if (isNeedMinutes) formatTime(60, FORMAT_MINUTES, minutes => toLocaleMinutesString(minutes), 2)
-    if (isNeedSeconds) formatTime(1, FORMAT_SECONDS, seconds => toLocaleSecondsString(seconds), 2)
+    if (isNeedDays) formatTime(60 * 60 * 24, FORMAT_DAYS, !isNeedHours, days => toLocaleDaysString(days))
+    if (isNeedHours) formatTime(60 * 60, FORMAT_HOURS, !isNeedMinutes, hours => toLocaleHoursString(hours), 2)
+    if (isNeedMinutes) formatTime(60, FORMAT_MINUTES, !isNeedSeconds, minutes => toLocaleMinutesString(minutes), 2)
+    if (isNeedSeconds) formatTime(1, FORMAT_SECONDS, false, seconds => toLocaleSecondsString(seconds), 2)
 
     return resultString.replace('[', '').replace(']', '')
 }
