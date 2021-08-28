@@ -3,7 +3,7 @@ import axios from 'axios'
 import { Button, Modal, ProgressBar } from 'react-bootstrap'
 import { useHistory } from 'react-router-dom'
 
-import { addErrorNotification } from '../../notifications/notifications'
+import { addErrorNotification, addInfoNotification } from '../../notifications/notifications'
 import AnimateHeight from 'react-animate-height'
 import ProcessBar from '../../process-bar/ProcessBar'
 import QuestionAnswerList from './question-answer/QuestionAnswerList'
@@ -16,7 +16,8 @@ const STATUS_NOT_PERMITTED = 'NOT_PERFORMED'
 const STATUS_PERFORMED = 'PERFORMED'
 const STATUS_APPRECIATED = 'APPRECIATED'
 
-const UPDATE_TIME_LEFT_INTERVAL = 30 * 1000
+const UPDATE_TIME_LEFT_INTERVAL = 10 * 1000
+const WARNING_AFTER_LEFT_MINUTES = 5
 
 export const AnswerSaveContext = React.createContext()
 
@@ -100,14 +101,22 @@ const TaskAnswerTry = ({ task, homeworkId }) => {
             setSecondsLeft(getSecondsLeft())
             timeLeftInterval.current = setInterval(() => {
                 let currentSeconds = getSecondsLeft()
-                if (currentSeconds <= 0) {
-                    setIsCompleteTaskModalShow(true)
-                    clearInterval(timeLeftInterval.current)
-                }
+                callTimerEvents(currentSeconds)
                 setSecondsLeft(currentSeconds)
             }, UPDATE_TIME_LEFT_INTERVAL)
         }
     }, [selectedAnswerTry])
+
+    const isWarningShowed = useRef(false)
+    const callTimerEvents = secondsLeft => {
+        if (secondsLeft <= 0) {
+            setIsCompleteTaskModalShow(true)
+            clearInterval(timeLeftInterval.current)
+        } else if (task.duration > 5 && secondsLeft < WARNING_AFTER_LEFT_MINUTES * 60 && !isWarningShowed.current) {
+            isWarningShowed.current = true
+            addInfoNotification(`Внимание, до окончания выполнения работы осталось ${WARNING_AFTER_LEFT_MINUTES} минут.`)
+        }
+    }
 
     const getSecondsLeft = () => {
         return (selectedAnswerTry.startDate + task.duration * 60 * 1000 - new Date()) / 1000
