@@ -11,7 +11,7 @@ async function fetch(answerId, role) {
     return axios.get(`/${answersPartUrl}/${answerId}/${questionsPartUrl}?size=20&r=${role[0]}`)
 }
 
-const QuestionAnswerList = ({ answerId, role = 'student', progress, readOnly = false }) => {
+const QuestionAnswerList = ({ answerId, role = 'student', progress, setTaskAnswerQuestionsHandle, setQuestionAnswers, readOnly = false }) => {
     const [isFetching, setIsFetching] = useState(false)
     const [taskAnswerQuestions, setTaskAnswerQuestions] = useState(undefined)
 
@@ -38,12 +38,21 @@ const QuestionAnswerList = ({ answerId, role = 'student', progress, readOnly = f
             .finally(() => setIsFetching(false))
     }
 
+    const setQuestionAnswer = (questionAnswer) => {
+        let targetTaskAnswerQuestions = taskAnswerQuestions
+        let targetQuestionAnswer = targetTaskAnswerQuestions.find(x => x.id === questionAnswer.questionId)
+        targetQuestionAnswer.questionAnswer = questionAnswer
+        setTaskAnswerQuestions(targetTaskAnswerQuestions)
+        if(setTaskAnswerQuestionsHandle) setTaskAnswerQuestionsHandle(targetTaskAnswerQuestions)
+        if(setQuestionAnswers) setQuestionAnswers(targetTaskAnswerQuestions.map(x => x.questionAnswer))
+    }
+
     return (
         <div className='mt-2'>
             {isFetching && <ProcessBar height='.18Rem' className='mt-2'/>}
             {taskAnswerQuestions &&
                 taskAnswerQuestions.map((questionAnswer, index) => {
-                    return <QuestionAnswer key={questionAnswer.id} index={index} taskQuestionAnswer={questionAnswer} progress={progress} readOnly={readOnly} />
+                    return <QuestionAnswer key={questionAnswer.id} index={index} taskQuestionAnswer={questionAnswer} setQuestionAnswer={setQuestionAnswer} progress={progress} readOnly={readOnly} />
                 })}
         </div>
     )

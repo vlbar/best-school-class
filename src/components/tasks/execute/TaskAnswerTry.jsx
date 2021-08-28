@@ -10,6 +10,7 @@ import QuestionAnswerList from './question-answer/QuestionAnswerList'
 import { tasksBaseUrl } from '../../../pages/TaskAnswer'
 import { toLocaleTimeDurationString } from '../../common/LocaleTimeString'
 import './TaskAnswerTry.less'
+import { useContextUpdateCycles } from '../context-function/ContextFunction'
 
 const STATUS_NOT_PERMITTED = 'NOT_PERFORMED'
 const STATUS_PERFORMED = 'PERFORMED'
@@ -17,44 +18,60 @@ const STATUS_APPRECIATED = 'APPRECIATED'
 
 const UPDATE_TIME_LEFT_INTERVAL = 30 * 1000
 
+export const AnswerSaveContext = React.createContext()
+
 // requests
 export const answersPartUrl = 'answers'
 
-async function fetchAnswer(taskId, role) {
-    return axios.get(`${tasksBaseUrl}/${taskId}/${answersPartUrl}?size=1&r=${role[0]}`)
+async function fetchAnswer(taskId) {
+    return axios.get(`${tasksBaseUrl}/${taskId}/${answersPartUrl}?size=1&r=s`)
 }
 
-async function createAnswer(taskId, role) {
-    return axios.post(`${tasksBaseUrl}/${taskId}/${answersPartUrl}?r=${role[0]}`)
+async function createAnswer(taskId) {
+    return axios.post(`${tasksBaseUrl}/${taskId}/${answersPartUrl}?r=s`)
 }
 
-async function updateAnswer(taskId, taskAnswer, role) {
-    return axios.put(`${tasksBaseUrl}/${taskId}/${answersPartUrl}/${taskAnswer.id}?r=${role[0]}`, taskAnswer)
+async function updateAnswer(taskId, taskAnswer) {
+    return axios.put(`${tasksBaseUrl}/${taskId}/${answersPartUrl}/${taskAnswer.id}?r=s`, taskAnswer)
 }
 
-const TaskAnswerTry = ({ task, role = 'student' }) => {
+const TaskAnswerTry = ({ task, homeworkId }) => {
     const [isFetching, setIsFetching] = useState(false)
-    const [answers, setAnswers] = useState(undefined)
     const [selectedAnswerTry, setSelectedAnswerTry] = useState(undefined)
+    const [isCompleteTaskModalShow, setIsCompleteTaskModalShow] = useState(false)
     const [isConfirmed, setIsConfirmed] = useState(undefined)
+
+    const [currentProgress, setCurrentProgress] = useState(undefined)
+
+    // timer
+    const timeLeftInterval = useRef(undefined)
+    const [secondsLeft, setSecondsLeft] = useState(undefined)
+
+    // saving
+    const [isTaskAnswerSaved, setisTaskAnswerSaved] = useState(undefined)
+    const [updateCycle, questionAnswerSaveRequest] = useContextUpdateCycles()
+    const selectedAnswerTryAnswers = useRef(undefined)
 
     const history = useHistory()
 
     useEffect(() => {
-        if (!answers) fetchTaskAnswer()
+        fetchTaskAnswer()
+
+        return () => {
+            stopTimer()
+        }
     }, [])
 
     const fetchTaskAnswer = () => {
         setIsFetching(true)
 
-        fetchAnswer(task.id, role)
+        fetchAnswer(task.id)
             .then(res => {
                 let fetchedData = res.data
 
                 if (fetchedData.items.length > 0 && fetchedData.items[0].answerStatus !== STATUS_NOT_PERMITTED) {
-                    history.push('/homeworks')
+                    history.push(`/homeworks/${homeworkId}`)
                 } else {
-                    setAnswers(fetchedData.items)
                     setSelectedAnswerTry(fetchedData.items[0])
                     setIsConfirmed(fetchedData.items.length > 0)
                 }
@@ -67,10 +84,9 @@ const TaskAnswerTry = ({ task, role = 'student' }) => {
         setIsConfirmed(true)
         setIsFetching(true)
 
-        createAnswer(task.id, role)
+        createAnswer(task.id)
             .then(res => {
                 let fetchedData = res.data
-                setAnswers([...answers, fetchedData])
                 setSelectedAnswerTry(fetchedData)
             })
             .catch(error => addErrorNotification('Не удалось создать ответ на задание. \n' + error))
@@ -78,15 +94,16 @@ const TaskAnswerTry = ({ task, role = 'student' }) => {
     }
 
     // timer
-    const timeLeftInterval = useRef(undefined)
-    const [secondsLeft, setSecondsLeft] = useState(undefined)
     useEffect(() => {
         if (selectedAnswerTry && !timeLeftInterval.current) {
             setCurrentProgress(selectedAnswerTry.answeredQuestionCount)
             setSecondsLeft(getSecondsLeft())
             timeLeftInterval.current = setInterval(() => {
                 let currentSeconds = getSecondsLeft()
-                if (currentSeconds <= 0) clearInterval(timeLeftInterval.current)
+                if (currentSeconds <= 0) {
+                    setIsCompleteTaskModalShow(true)
+                    clearInterval(timeLeftInterval.current)
+                }
                 setSecondsLeft(currentSeconds)
             }, UPDATE_TIME_LEFT_INTERVAL)
         }
@@ -96,15 +113,11 @@ const TaskAnswerTry = ({ task, role = 'student' }) => {
         return (selectedAnswerTry.startDate + task.duration * 60 * 1000 - new Date()) / 1000
     }
 
-    useEffect(() => {
-        return () => {
-            clearInterval(timeLeftInterval.current)
-        }
-    }, [])
+    const stopTimer = () => {
+        clearInterval(timeLeftInterval.current)
+    }
 
     // progress
-    const [currentProgress, setCurrentProgress] = useState(undefined)
-
     const addProgress = (count = 1) => {
         setCurrentProgress(currentProgress + count)
     }
@@ -113,24 +126,51 @@ const TaskAnswerTry = ({ task, role = 'student' }) => {
         setCurrentProgress(currentProgress - count)
     }
 
-    // complete task
-    const [isCompleteTaskModalShow, setIsCompleteTaskModalShow] = useState(false)
-
+    // complete task answer
     const updateStatus = () => {
         let targetAnswer = {
             id: selectedAnswerTry.id,
             answerStatus: STATUS_PERFORMED,
         }
 
-        updateAnswer(task.id, targetAnswer, role)
+        updateAnswer(task.id, targetAnswer)
             .then(res => {
-                history.push('/homeworks')
-            })
+                setisTaskAnswerSaved(true)
+                setTimeout(() => {
+                    history.push(`/homeworks/${homeworkId}`)
+                }, 5000)
+             })
             .catch(error => addErrorNotification('Не удалось обновить статус задания. \n' + error))
             .finally(() => setIsFetching(false))
     }
 
-    let isReadOnly = selectedAnswerTry && !(selectedAnswerTry.answerStatus === STATUS_NOT_PERMITTED && (!secondsLeft || secondsLeft > 0))
+    // save question answers
+    const questionAnswersResponsedCount = useRef(0)
+    const expectedQuestionAnswerResponsesCount = useRef(0)
+    const forceQuestionAnswersSave = () => {
+        questionAnswersResponsedCount.current = 0
+        expectedQuestionAnswerResponsesCount.current = selectedAnswerTryAnswers.current ? selectedAnswerTryAnswers.current.length : 0
+
+        stopTimer()
+        questionAnswerSaveRequest()
+
+        let targetSelectedAnswerTry = selectedAnswerTry
+        targetSelectedAnswerTry.answerStatus = STATUS_PERFORMED
+        setSelectedAnswerTry(targetSelectedAnswerTry)
+    }
+
+    const onTaskAnswerSave = isSuccess => {
+        questionAnswersResponsedCount.current++
+        if (questionAnswersResponsedCount.current >= expectedQuestionAnswerResponsesCount.current) {
+            updateStatus()
+        }
+    }
+
+    const setSelectedAnswerTryAnswers = questionAnswers => {
+        selectedAnswerTryAnswers.current = questionAnswers
+    }
+
+    var isReadOnly = selectedAnswerTry && secondsLeft && !(selectedAnswerTry.answerStatus === STATUS_NOT_PERMITTED && secondsLeft > 0)
     return (
         <>
             <h5 className='mb-1'>Вопросы:</h5>
@@ -146,10 +186,11 @@ const TaskAnswerTry = ({ task, role = 'student' }) => {
                     </div>
                     <ProgressBar max={selectedAnswerTry.questionCount} now={currentProgress} />
                     <CompleteTaskModal
-                        isShow={isCompleteTaskModalShow || isReadOnly}
+                        isShow={isCompleteTaskModalShow}
                         onClose={() => setIsCompleteTaskModalShow(false)}
-                        onConfirm={updateStatus}
+                        onConfirm={forceQuestionAnswersSave}
                         isTaskEnd={isReadOnly}
+                        isSaved={isTaskAnswerSaved}
                     />
                 </>
             )}
@@ -168,13 +209,20 @@ const TaskAnswerTry = ({ task, role = 'student' }) => {
                 </div>
             )}
             {isConfirmed && selectedAnswerTry && (
-                <QuestionAnswerList answerId={selectedAnswerTry.id} progress={{ add: addProgress, remove: removeProgress }} readOnly={isReadOnly} />
+                <AnswerSaveContext.Provider value={{ onTaskAnswerSave, updateCycle }}>
+                    <QuestionAnswerList
+                        answerId={selectedAnswerTry.id}
+                        progress={{ add: addProgress, remove: removeProgress }}
+                        setQuestionAnswers={setSelectedAnswerTryAnswers}
+                        readOnly={isReadOnly}
+                    />
+                </AnswerSaveContext.Provider>
             )}
         </>
     )
 }
 
-const CompleteTaskModal = ({ isShow, isTaskEnd, onClose, onConfirm }) => {
+const CompleteTaskModal = ({ isShow, isTaskEnd, isSaved, onClose, onConfirm }) => {
     const TRANSITION_DURATION = 500
     const [isMakeTransition, setIsMakeTransition] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
@@ -185,7 +233,7 @@ const CompleteTaskModal = ({ isShow, isTaskEnd, onClose, onConfirm }) => {
     }
 
     const onCloseHandle = () => {
-        if (!isSaving) onClose()
+        if (!(isSaving || isTaskEnd || isSaved)) onClose()
     }
 
     useEffect(() => {
@@ -195,6 +243,12 @@ const CompleteTaskModal = ({ isShow, isTaskEnd, onClose, onConfirm }) => {
         }
     }, [isTaskEnd])
 
+    useEffect(() => {
+        if (isSaved) {
+            setIsSaving(false)
+        } 
+    }, [isSaved])
+
     return (
         <Modal show={isShow} onHide={onCloseHandle}>
             <div className={'complete-task-modal' + (isSaving ? ' saving' : '')}>
@@ -203,11 +257,15 @@ const CompleteTaskModal = ({ isShow, isTaskEnd, onClose, onConfirm }) => {
                 </Modal.Header>
                 <Modal.Body className='overflow-hidden'>
                     {isSaving && <ProcessBar height='.18Rem' />}
-                    <AnimateHeight duration={isMakeTransition ? TRANSITION_DURATION : 0} height={isSaving ? 'auto' : 0}>
+                    <AnimateHeight duration={isMakeTransition ? TRANSITION_DURATION : 0} height={isSaving && !isSaved ? 'auto' : 0}>
                         <div className='saving-label'>Сохранение ваших ответов. Пожалуйста подождите...</div>
                     </AnimateHeight>
 
-                    <AnimateHeight duration={isMakeTransition ? TRANSITION_DURATION : 0} height={isSaving ? 0 : 'auto'}>
+                    <AnimateHeight duration={isMakeTransition ? TRANSITION_DURATION : 0} height={isSaved ? 'auto' : 0}>
+                        <div className='saving-label'>Успешно сохранено</div>
+                    </AnimateHeight>
+
+                    <AnimateHeight duration={isMakeTransition ? TRANSITION_DURATION : 0} height={isSaving || isSaved ? 0 : 'auto'}>
                         <div className='confirm-panel'>
                             <div className='confirm-label'>
                                 Вы действительно хотите завершить выполнение этого задания и отправить его на проверку? <br />

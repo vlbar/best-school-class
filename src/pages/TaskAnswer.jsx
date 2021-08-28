@@ -41,7 +41,7 @@ function TaskAnswer() {
         <>
             <Container>
                 <TaskDetails task={task} isFetching={isFetching} />
-                {task && <TaskAnswerTry task={task} />}
+                {task && <TaskAnswerTry task={task} homeworkId={homeworkId} />}
             </Container>
         </>
     )

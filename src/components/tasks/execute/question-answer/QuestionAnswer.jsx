@@ -1,16 +1,17 @@
 import axios from 'axios'
-import React, { useEffect, useReducer, useRef } from 'react'
+import React, { useContext, useEffect, useReducer, useRef } from 'react'
 import { Form } from 'react-bootstrap'
 
 import { addErrorNotification } from '../../../notifications/notifications'
-import { answersPartUrl } from '../TaskAnswerTry'
+import { AnswerSaveContext, answersPartUrl } from '../TaskAnswerTry'
 import { isEquivalent } from '../../edit/TaskSaveManager'
 import { questionPartUrl } from '../../edit/QuestionsList'
 import { SOURCE_TEST_QUESTION, SOURCE_TEXT_QUESTION } from '../../edit/QuestionVariant'
+import { useContextUpdateCyclesSlave } from '../../context-function/ContextFunction'
 import './QuestionAnswer.less'
 
 // auto save
-const SAVE_DELAY = 30 * 1000
+const SAVE_DELAY = 20 * 1000
 
 // flux
 const CONTENT = 'CONTENT'
@@ -84,7 +85,7 @@ async function update(taskAnswerId, questionId, questionAnswer) {
     return axios.put(`/${answersPartUrl}/${taskAnswerId}/${questionPartUrl}/${questionId}/${questionAnswerPartUrl}?r=s`, questionAnswer)
 }
 
-const QuestionAnswer = ({ index, taskQuestionAnswer, progress, readOnly = false }) => {
+const QuestionAnswer = ({ index, taskQuestionAnswer, setQuestionAnswer, progress, readOnly = false }) => {
     const isDetached = useRef(taskQuestionAnswer.questionAnswer == null)
     const [answer, dispatchAnswer] = useReducer(answerReducer, initQuestionAnswer(taskQuestionAnswer))
     const lastSaveAnswer = useRef(answer)
@@ -92,6 +93,23 @@ const QuestionAnswer = ({ index, taskQuestionAnswer, progress, readOnly = false 
 
     const setContent = content => dispatchAnswer({ type: CONTENT, payload: content })
     const selectAnswer = answerId => dispatchAnswer({ type: SELECT_ANSWER, payload: answerId })
+
+    const { onTaskAnswerSave } = useContext(AnswerSaveContext)
+    useContextUpdateCyclesSlave(AnswerSaveContext, forceSaveAnswers)
+
+    // context saving
+    const isForceSave = useRef(false)
+    function forceSaveAnswers() {
+        isForceSave.current = true
+        clearTimeout(saveAnswerTimer.current)
+        saveQuestionAnswer()
+    }
+
+    const setIsSuccessSaved = (isSuccess) => {
+        if(onTaskAnswerSave && isForceSave.current) {
+            onTaskAnswerSave(isSuccess)
+        }
+    }
 
     const getAnswerInput = questionVariant => {
         switch (questionVariant.type) {
@@ -137,6 +155,7 @@ const QuestionAnswer = ({ index, taskQuestionAnswer, progress, readOnly = false 
     useEffect(() => {
         answerToSaveRefBecouseSomeKindOfShipIsGoingWithContext.current = answer
         updateProgress(answer)
+        setQuestionAnswer(answer)
 
         if (!isSaveBlocked.current && !readOnly) {
             if (!isEquivalent(answer, lastSaveAnswer.current)) {
@@ -157,20 +176,32 @@ const QuestionAnswer = ({ index, taskQuestionAnswer, progress, readOnly = false 
     }, [])
 
     const saveQuestionAnswer = () => {
-        let answer = answerToSaveRefBecouseSomeKindOfShipIsGoingWithContext.current;
-        if (isEquivalent(answer, lastSaveAnswer.current) || readOnly) {
+        let answer = answerToSaveRefBecouseSomeKindOfShipIsGoingWithContext.current
+        if (isEquivalent(answer, lastSaveAnswer.current)) {
+            setIsSuccessSaved(true)
             return
         }
 
         lastSaveAnswer.current = answer
         if (isDetached.current) {
             create(taskQuestionAnswer.taskAnswerId, taskQuestionAnswer.questionVariant.id, answer)
-                .then(res => { isDetached.current = false; })
-                .catch(error => addErrorNotification('Не удалось сохранить ответ на задание. \n' + error))
+                .then(res => { 
+                    isDetached.current = false; 
+                    setIsSuccessSaved(true) 
+                })
+                .catch(error => {
+                    addErrorNotification('Не удалось сохранить ответ на задание. \n' + error)
+                    setIsSuccessSaved(false)
+                })
         } else {
             update(taskQuestionAnswer.taskAnswerId, taskQuestionAnswer.questionVariant.id, answer)
-                .then(res => {})
-                .catch(error => addErrorNotification('Не удалось сохранить ответ на задание. \n' + error))
+                .then(res => { 
+                    setIsSuccessSaved(true)
+                })
+                .catch(error => {
+                    addErrorNotification('Не удалось сохранить ответ на задание. \n' + error)
+                    setIsSuccessSaved(false)
+                })
         }
     }
 
