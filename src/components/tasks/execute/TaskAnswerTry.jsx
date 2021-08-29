@@ -12,9 +12,10 @@ import { toLocaleTimeDurationString } from '../../common/LocaleTimeString'
 import './TaskAnswerTry.less'
 import { useContextUpdateCycles } from '../context-function/ContextFunction'
 
-const STATUS_NOT_PERMITTED = 'NOT_PERFORMED'
+const STATUS_NOT_PERFORMED = 'NOT_PERFORMED'
 const STATUS_PERFORMED = 'PERFORMED'
 const STATUS_APPRECIATED = 'APPRECIATED'
+const STATUS_NOT_ACCEPTED = 'NOT_ACCEPTED'
 
 const UPDATE_TIME_LEFT_INTERVAL = 10 * 1000
 const WARNING_AFTER_LEFT_MINUTES = 5
@@ -69,12 +70,22 @@ const TaskAnswerTry = ({ task, homeworkId }) => {
         fetchAnswer(task.id)
             .then(res => {
                 let fetchedData = res.data
+                let targetAnswerTry = fetchedData.items[0]
 
-                if (fetchedData.items.length > 0 && fetchedData.items[0].answerStatus !== STATUS_NOT_PERMITTED) {
-                    history.push(`/homeworks/${homeworkId}`)
+                if (!targetAnswerTry) {
+                    setIsConfirmed(false)
                 } else {
-                    setSelectedAnswerTry(fetchedData.items[0])
-                    setIsConfirmed(fetchedData.items.length > 0)
+                    switch (targetAnswerTry.answerStatus) {
+                        case STATUS_NOT_PERFORMED:
+                            setSelectedAnswerTry(targetAnswerTry)
+                            setIsConfirmed(true)
+                            break
+                        case STATUS_NOT_ACCEPTED:
+                            setIsConfirmed(false)
+                            break
+                        default:
+                            history.push(`/homeworks/${homeworkId}`)
+                    }
                 }
             })
             .catch(error => addErrorNotification('Не удалось загрузить ответ на задание. \n' + error))
@@ -190,7 +201,7 @@ const TaskAnswerTry = ({ task, homeworkId }) => {
         selectedAnswerTryAnswers.current = questionAnswers
     }
 
-    var isReadOnly = selectedAnswerTry && secondsLeft && !(selectedAnswerTry.answerStatus === STATUS_NOT_PERMITTED && secondsLeft > 0)
+    var isReadOnly = selectedAnswerTry && secondsLeft && !(selectedAnswerTry.answerStatus === STATUS_NOT_PERFORMED && secondsLeft > 0)
     return (
         <>
             <h5 className='mb-1'>Вопросы:</h5>
