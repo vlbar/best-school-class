@@ -12,17 +12,17 @@ import axios from 'axios'
 import './QuestionVariant.less'
 
 //question types
-const TEXT_QUESTION = 'TEXT_QEUSTION'
-const TEST_QUESTION = 'TEST_QUESTION'
-const TEST_MULTI_QUESTION = 'TEST_MULTI_QUESTION'
+export const TEXT_QUESTION = 'TEXT_QEUSTION'
+export const TEST_QUESTION = 'TEST_QUESTION'
+export const TEST_MULTI_QUESTION = 'TEST_MULTI_QUESTION'
 
 const questionTypeNames = {}
 questionTypeNames[TEXT_QUESTION] = 'Текстовый ответ'
 questionTypeNames[TEST_QUESTION] = 'Один из списка'
 questionTypeNames[TEST_MULTI_QUESTION] = 'Несколько из списка'
 
-const SOURCE_TEXT_QUESTION = 'TEXT_QUESTION'
-const SOURCE_TEST_QUESTION = 'TEST_QUESTION'
+export const SOURCE_TEXT_QUESTION = 'TEXT_QUESTION'
+export const SOURCE_TEST_QUESTION = 'TEST_QUESTION'
 const unambiguousQuestionTypeTranslate = {}
 unambiguousQuestionTypeTranslate[SOURCE_TEXT_QUESTION] = TEXT_QUESTION
 
