@@ -182,11 +182,11 @@ const QuestionAnswer = ({ index, taskQuestionAnswer, setQuestionAnswer, progress
             return
         }
 
-        lastSaveAnswer.current = answer
         if (isDetached.current) {
             create(taskQuestionAnswer.taskAnswerId, taskQuestionAnswer.questionVariant.id, answer)
                 .then(res => { 
-                    isDetached.current = false; 
+                    lastSaveAnswer.current = answer
+                    isDetached.current = false
                     setIsSuccessSaved(true) 
                 })
                 .catch(error => {
@@ -196,6 +196,7 @@ const QuestionAnswer = ({ index, taskQuestionAnswer, setQuestionAnswer, progress
         } else {
             update(taskQuestionAnswer.taskAnswerId, taskQuestionAnswer.questionVariant.id, answer)
                 .then(res => { 
+                    lastSaveAnswer.current = answer
                     setIsSuccessSaved(true)
                 })
                 .catch(error => {

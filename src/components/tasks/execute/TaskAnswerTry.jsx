@@ -39,7 +39,6 @@ async function updateAnswer(taskId, taskAnswer) {
 const TaskAnswerTry = ({ task, homeworkId }) => {
     const [isFetching, setIsFetching] = useState(false)
     const [selectedAnswerTry, setSelectedAnswerTry] = useState(undefined)
-    const [isCompleteTaskModalShow, setIsCompleteTaskModalShow] = useState(false)
     const [isConfirmed, setIsConfirmed] = useState(undefined)
 
     const [currentProgress, setCurrentProgress] = useState(undefined)
@@ -49,7 +48,8 @@ const TaskAnswerTry = ({ task, homeworkId }) => {
     const [secondsLeft, setSecondsLeft] = useState(undefined)
 
     // saving
-    const [isTaskAnswerSaved, setisTaskAnswerSaved] = useState(undefined)
+    const [isCompleteTaskModalShow, setIsCompleteTaskModalShow] = useState(false)
+    const [taskSaveModalState, setTaskSaveModalState] = useState(undefined)
     const [updateCycle, questionAnswerSaveRequest] = useContextUpdateCycles()
     const selectedAnswerTryAnswers = useRef(undefined)
 
@@ -112,6 +112,7 @@ const TaskAnswerTry = ({ task, homeworkId }) => {
         if (secondsLeft <= 0) {
             setIsCompleteTaskModalShow(true)
             clearInterval(timeLeftInterval.current)
+            forceQuestionAnswersSave()
         } else if (task.duration > 5 && secondsLeft < WARNING_AFTER_LEFT_MINUTES * 60 && !isWarningShowed.current) {
             isWarningShowed.current = true
             addInfoNotification(`Внимание, до окончания выполнения работы осталось ${WARNING_AFTER_LEFT_MINUTES} минут.`)
@@ -144,7 +145,7 @@ const TaskAnswerTry = ({ task, homeworkId }) => {
 
         updateAnswer(task.id, targetAnswer)
             .then(res => {
-                setisTaskAnswerSaved(true)
+                setTaskSaveModalState(modalStateConst.SAVED)
                 setTimeout(() => {
                     history.push(`/homeworks/${homeworkId}`)
                 }, 5000)
@@ -156,7 +157,11 @@ const TaskAnswerTry = ({ task, homeworkId }) => {
     // save question answers
     const questionAnswersResponsedCount = useRef(0)
     const expectedQuestionAnswerResponsesCount = useRef(0)
+    const isOnSaveErrors = useRef(false)
     const forceQuestionAnswersSave = () => {
+        setTaskSaveModalState(modalStateConst.SAVING)
+
+        isOnSaveErrors.current = false
         questionAnswersResponsedCount.current = 0
         expectedQuestionAnswerResponsesCount.current = selectedAnswerTryAnswers.current ? selectedAnswerTryAnswers.current.length : 0
 
@@ -168,10 +173,16 @@ const TaskAnswerTry = ({ task, homeworkId }) => {
         setSelectedAnswerTry(targetSelectedAnswerTry)
     }
 
+    
     const onTaskAnswerSave = isSuccess => {
         questionAnswersResponsedCount.current++
+        if(!isSuccess) isOnSaveErrors.current = true
         if (questionAnswersResponsedCount.current >= expectedQuestionAnswerResponsesCount.current) {
-            updateStatus()
+            if(!isOnSaveErrors.current) 
+                updateStatus() 
+            else {
+                setTaskSaveModalState(modalStateConst.SAVE_ERROR)
+            }
         }
     }
 
@@ -188,7 +199,10 @@ const TaskAnswerTry = ({ task, homeworkId }) => {
                     <div className='d-flex justify-content-between mb-2'>
                         <div className='my-auto'>Оставшееся время: {isReadOnly ? '-' : toLocaleTimeDurationString(secondsLeft)}</div>
                         <div>
-                            <Button variant='outline-primary' size='sm' onClick={() => setIsCompleteTaskModalShow(true)} disabled={isReadOnly}>
+                            <Button variant='outline-primary' size='sm' onClick={() => {
+                                    setIsCompleteTaskModalShow(true)
+                                    setTaskSaveModalState(modalStateConst.CONFIRM)
+                                }} disabled={isReadOnly}>
                                 Завершить
                             </Button>
                         </div>
@@ -196,10 +210,13 @@ const TaskAnswerTry = ({ task, homeworkId }) => {
                     <ProgressBar max={selectedAnswerTry.questionCount} now={currentProgress} />
                     <CompleteTaskModal
                         isShow={isCompleteTaskModalShow}
-                        onClose={() => setIsCompleteTaskModalShow(false)}
+                        modalState={taskSaveModalState}
+                        onClose={() => {
+                            setIsCompleteTaskModalShow(false)
+                            setTaskSaveModalState(modalStateConst.NONE)
+                        }}
                         onConfirm={forceQuestionAnswersSave}
-                        isTaskEnd={isReadOnly}
-                        isSaved={isTaskAnswerSaved}
+                        onRefresh={forceQuestionAnswersSave}
                     />
                 </>
             )}
@@ -231,54 +248,39 @@ const TaskAnswerTry = ({ task, homeworkId }) => {
     )
 }
 
-const CompleteTaskModal = ({ isShow, isTaskEnd, isSaved, onClose, onConfirm }) => {
-    const TRANSITION_DURATION = 500
-    const [isMakeTransition, setIsMakeTransition] = useState(true)
-    const [isSaving, setIsSaving] = useState(false)
+const modalStateConst = {
+    NONE: 0,
+    CONFIRM: 1,
+    SAVING: 2,
+    SAVED: 3,
+    SAVE_ERROR: 4
+}
 
-    const onConfirmHandle = () => {
-        setIsSaving(true)
-        onConfirm()
-    }
+const MODAL_TRANSITION_DURATION = 500
 
+const CompleteTaskModal = ({ isShow, modalState, onClose, onConfirm, onRefresh }) => {
     const onCloseHandle = () => {
-        if (!(isSaving || isTaskEnd || isSaved)) onClose()
-    }
-
-    useEffect(() => {
-        if (!isSaving && isTaskEnd === true) {
-            setIsMakeTransition(false)
-            onConfirmHandle()
+        if (modalState === modalStateConst.CONFIRM) {
+            onClose()
         }
-    }, [isTaskEnd])
-
-    useEffect(() => {
-        if (isSaved) {
-            setIsSaving(false)
-        } 
-    }, [isSaved])
+    }
 
     return (
         <Modal show={isShow} onHide={onCloseHandle}>
-            <div className={'complete-task-modal' + (isSaving ? ' saving' : '')}>
+            <div className='complete-task-modal'>
                 <Modal.Header closeButton>
                     <Modal.Title>Завершение</Modal.Title>
                 </Modal.Header>
                 <Modal.Body className='overflow-hidden'>
-                    {isSaving && <ProcessBar height='.18Rem' />}
-                    <AnimateHeight duration={isMakeTransition ? TRANSITION_DURATION : 0} height={isSaving && !isSaved ? 'auto' : 0}>
-                        <div className='saving-label'>Сохранение ваших ответов. Пожалуйста подождите...</div>
-                    </AnimateHeight>
-
-                    <AnimateHeight duration={isMakeTransition ? TRANSITION_DURATION : 0} height={isSaved ? 'auto' : 0}>
-                        <div className='saving-label'>Успешно сохранено</div>
-                    </AnimateHeight>
-
-                    <AnimateHeight duration={isMakeTransition ? TRANSITION_DURATION : 0} height={isSaving || isSaved ? 0 : 'auto'}>
+                    {modalState === modalStateConst.SAVING && <ProcessBar height='.18Rem' />}
+                    <AnimateHeight duration={MODAL_TRANSITION_DURATION} height={modalState === modalStateConst.CONFIRM ? 'auto' : 0}>
                         <div className='confirm-panel'>
                             <div className='confirm-label'>
-                                Вы действительно хотите завершить выполнение этого задания и отправить его на проверку? <br />
-                                <i>После подтверждения вы больше не сможете изменить свой ответ.</i>
+                                Вы действительно хотите завершить выполнение этого задания и отправить его на проверку? 
+                                <br />
+                                <i>
+                                    После подтверждения вы больше не сможете изменить свой ответ.
+                                </i>
                             </div>
 
                             <hr />
@@ -286,10 +288,36 @@ const CompleteTaskModal = ({ isShow, isTaskEnd, isSaved, onClose, onConfirm }) =
                                 <Button variant='secondary' onClick={onCloseHandle} className='mr-2'>
                                     Отмена
                                 </Button>
-                                <Button variant='primary' onClick={onConfirmHandle}>
+                                <Button variant='primary' onClick={onConfirm}>
                                     Завершить
                                 </Button>
                             </div>
+                        </div>
+                    </AnimateHeight>
+
+                    <AnimateHeight duration={MODAL_TRANSITION_DURATION} height={modalState === modalStateConst.SAVING ? 'auto' : 0}>
+                        <div className='saving-label'>Сохранение ваших ответов. Пожалуйста подождите...</div>
+                    </AnimateHeight>
+
+                    <AnimateHeight duration={MODAL_TRANSITION_DURATION} height={modalState === modalStateConst.SAVED ? 'auto' : 0}>
+                        <div className='saving-label'>Успешно сохранено</div>
+                    </AnimateHeight>
+
+                    <AnimateHeight duration={MODAL_TRANSITION_DURATION} height={modalState === modalStateConst.SAVE_ERROR ? 'auto' : 0}>
+                        <div className='saving-label'>
+                            <div>
+                                <div>Во время сохранения произошла ошибка, возможно некоторые вопросы не сохранены.</div>
+                                <br />
+                                <div>
+                                    <i>
+                                        Не нужно паниквать, проверьте свое подключение и повторите попытку. Имейте в виду, что при закрытии страницы браузера 
+                                        ваши несохраненные ответы будут утеряны.
+                                    </i>
+                                </div>
+                            </div>
+                            <Button variant='primary' onClick={onRefresh} className='w-100 mt-3'>
+                                Повторить
+                            </Button>
                         </div>
                     </AnimateHeight>
                 </Modal.Body>
