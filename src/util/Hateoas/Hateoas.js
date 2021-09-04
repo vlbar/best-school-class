@@ -3,13 +3,22 @@ import axios from "axios";
 //Class with utility functions
 export default class Hateoas {
   //Fills parameter with replacing list of templated parameters ('{?...}')
-  static fill(href, name, value) {
+  static fill(href, name, value = true) {
     if (href.includes("{")) href = href.slice(0, href.indexOf("{"));
-    if (href.includes(name)) {
-      href = href.replace(new RegExp(`${name}(=[^&]*)?(&)?`), "");
+
+    if (href.includes("?")) {
+      let paramSlice = href.slice(href.indexOf("?"));
+      if (paramSlice.includes(name)) {
+        paramSlice = paramSlice.replace(new RegExp(`${name}(=[^&]*)?(&)?`), "");
+        if (paramSlice.length == 1) paramSlice = "";
+        href = href.slice(0, href.indexOf("?")) + paramSlice;
+      }
     }
+
+    if (value == null || value.length == 0) return href;
+
     href += href.includes("?") ? "&" : "?";
-    return `${href}${name}${value ? "=" + encodeURIComponent(value) : ""}`;
+    return `${href}${name}=${encodeURIComponent(value)}`;
   }
 
   //Fills parameters with replacing list of templated parameters ('{?...}')

@@ -10,8 +10,7 @@ import Hateoas from "./Hateoas";
 export default class Link {
   constructor(href, originHref) {
     this.originHref = originHref ?? href;
-    this.href =
-      href.indexOf("{?") > 0 ? href.slice(0, href.indexOf("{?")) : href;
+    this.href = href.indexOf("{") > 0 ? href.slice(0, href.indexOf("{")) : href;
     this.source = axios.CancelToken.source();
     this.params = this.href
       .slice(this.href.indexOf("?") + 1)
