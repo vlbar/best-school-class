@@ -43,7 +43,7 @@ function App() {
           exact
           path={"/answers"}
           component={Answers}
-          allowedStates={[HELPER, TEACHER]}
+          allowedStates={[ASSISTANT, TEACHER]}
         />
           <PrivateRoute
           exact
@@ -59,7 +59,7 @@ function App() {
           <PrivateRoute
           path={"/courses/:courseId/tasks/:taskId"}
           component={Task}
-          allowedStates={[HELPER, TEACHER]}
+          allowedStates={[ASSISTANT, TEACHER]}
         />
           <PrivateRoute
             path={"/shedule"}
