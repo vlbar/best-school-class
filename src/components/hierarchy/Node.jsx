@@ -8,7 +8,7 @@ import './Node.less'
 const MOVE_UP = 'UP'
 const MOVE_DOWN = 'DOWN'
 
-export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, dragStartHandle, dragEndHandle, moveNodeHandler, updateNodeHandler, deleteNodeHandler, addNodeHandler, setExpandedHandler, fetchSubNodesHandler, canNodeDrag, onNodeClick}) => {
+export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, dragStartHandle, dragEndHandle, moveNodeHandler, updateNodeHandler, deleteNodeHandler, addNodeHandler, setExpandedHandler, fetchSubNodesHandler, canNodeDrag, selectedNode, onNodeClick}) => {
     const [isDragOver, setIsDragOver] = useState(false)
     const [isDrag, setDrag] = useState(false)
     const [isCanDrag, setCanDrag] = useState(false)
@@ -126,7 +126,7 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
                     dropHandle={onDrop}
                 />
             : ''}
-            <div className={'node' + (isOpenDropdown ? ' node-hover':'') + (isDrag ? ' hidden':'')} onDragOver={dragEnter} >
+            <div className={'node' + (isOpenDropdown ? ' node-hover':'') + (isDrag ? ' hidden':'') + (selectedNode ? selectedNode.id == nodeData.id ? ' selected':'':'')} onDragOver={dragEnter} >
                 <div 
                     className={'node-content' + (!nodeData.isExpanded ? ' node-collapse' : '')} 
                     data-id={nodeData.name} 
@@ -192,6 +192,7 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
                                 addNodeHandler={addNodeHandler}
                                 moveNodeHandler={moveNodeHandler}
                                 canNodeDrag={canNodeDrag}
+                                selectedNode={selectedNode}
                                 onNodeClick={onNodeClick}
                             />
                         })}

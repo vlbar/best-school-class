@@ -3,10 +3,23 @@
 //node
 .node {
     height: @node-height;
+
+    &.selected {
+        background-color: #007bff;
+        color: #fff;
+        
+        svg {
+            fill: #fff !important;
+        }
+    }
 }
 
 .node:hover, .node-hover  {
     background-color: rgb(239, 240, 241);
+
+    &.selected { 
+        background-color: #006ee4 !important;
+    }
 }
 
 .disable-hover .node {
