@@ -34,13 +34,13 @@ export const CourseHierarchy = ({onCourseSelect}) => {
         await axios.get(`${baseUrl}?page=${page}&size=${coursePage.size}`)
             .then(res => {
                 let fetchedData = res.data
-                let items = fetchedData.items
+                let items = fetchedData._embedded.courses
                 items = items.map(x => {
                     return mapToNode(x)
                 })
 
                 coursePage.items = items
-                coursePage.total = fetchedData.totalItems
+                coursePage.total = fetchedData.page.totalElements
             })
             .catch(error => {
                 console.log(error)
@@ -68,12 +68,12 @@ export const CourseHierarchy = ({onCourseSelect}) => {
         await axios.get(`${baseUrl}/${node.id}/sub-courses?page=${page}&size=${coursePage.size}`)
             .then(res => {
                 let fetchedData = res.data
-                let items = fetchedData.items
+                let items = fetchedData._embedded.courses
                 items = items.map(x => {
                     return mapToNode(x)
                 })
                 coursePage.items = items
-                coursePage.total = fetchedData.totalItems
+                coursePage.total = fetchedData.page.totalElements
             })
             .catch(error => {
                 console.log(error)
@@ -97,9 +97,7 @@ export const CourseHierarchy = ({onCourseSelect}) => {
             position: position
         }
         axios.put(`${baseUrl}/${courseId}/position`, data)
-            .then(res => {
-                console.log('oh thats good')
-            })
+            .then(res => { })
             .catch(error => {
                 console.log(error)
                 store.addNotification({
