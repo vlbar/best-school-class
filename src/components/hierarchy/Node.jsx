@@ -51,7 +51,7 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
     }
 
     const dragEnter = () => { 
-        if(canNodeDrag)
+        if(canNodeDrag && draggedNodeData != null)
             if(!isDrag) 
                 setIsDragOver(true) 
     }
