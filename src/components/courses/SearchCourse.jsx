@@ -98,7 +98,7 @@ export const SearchCourse = ({onSearching, onCourseSelect, onAddClick, isAddDisa
 
             {isSearching &&
                 <>
-                    <div className="search-course-hierarchy">
+                    <div className='search-course-hierarchy course-panel'>
                         <ProcessBar active={isFetching} height=".18Rem" className='mb-2'/>
                         <TreeHierarchy
                             treeData={courses}
