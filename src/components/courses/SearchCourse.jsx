@@ -1,125 +1,73 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { Button, Form } from 'react-bootstrap'
+import React, { useState, useRef } from 'react'
+import { Button } from 'react-bootstrap'
 import ProcessBar from '../process-bar/ProcessBar'
 import { TreeHierarchy } from '../hierarchy/TreeHierarchy'
 import { LoadingCoursesList } from './LoadingCoursesList'
-import { store } from 'react-notifications-component'
-import axios from 'axios'
-import { errorNotification } from '../notifications/notifications'
+import { createError } from '../notifications/notifications'
 import './SearchCourse.less'
 import LazySearchInput from '../search/LazySearchInput'
+import Resource from '../../util/Hateoas/Resource'
 
 const baseUrl = '/courses'
+const baseLink = Resource.basedOnHref(baseUrl).link().fill('size', 20)
 
 export const SearchCourse = ({onSearching, onCourseSelect, onAddClick, isAddDisabled}) => {
     const [courses, setCourses] = useState(undefined)
+    const [nextPage, setNextPage] = useState(undefined)
     const [isFetching, setIsFetching] = useState(true)
-    const [isShowHierarhy, setIsShowHierarhy] = useState(true)
 
     const [isSearching, setIsSearching] = useState(false)
-    const [courseName, setCourseName] = useState('')
     const [inputError, setInputError] = useState(undefined)
     const searchedCourseName = useRef('')
 
-    useEffect(() => {
-        if(courseName.length == 0) {
-            setIsSearching(false)
-            onSearching(false)
-            setInputError(undefined)
-        }
-
-        if(courseName.length >= 3) {
-            setInputError(undefined)
-        }
-    }, [courseName])
-
-    const mapToNode = (course) => {
-        return {
-            id: course.id,
-            parentId: course.parentCourseId,
-            name: course.name,
-            position: course.position,
-            isExapnded: false,
-            child: []
-        }
-    }
-
-    const onSearch = () => {
-        if(courseName.trim().length > 0) {
-            if(courseName.trim() == searchedCourseName.current) return
-            searchedCourseName.current = courseName.trim()
-        }
-
-        if(courseName.trim().length < 3) {
-            setInputError('Слишком короткое название')
-            if(courseName.trim().length == 0) setTimeout(() => {
-                setInputError(undefined)
-            }, 5000);
-            return
-        }
-
-        onSearching(true)
-        setIsSearching(true) 
-        setIsShowHierarhy(false)   
-        setCourses(undefined)
-
-        //TODO: ну когда нибудь решыть бы это недоразумение :/
-        setTimeout(() => {
-            setIsShowHierarhy(true)
-        }, 500);
-    }
-
-    const fetchCourses = async (parentCourse, page) => {
-        setIsFetching(true)
-
-        let coursePage = {
-            page: page, 
-            size: 20,
-            total: undefined,
-            items: undefined
-        }
-        
-        await axios.get(`${baseUrl}?name=${encodeURIComponent(courseName)}&page=${page}&size=${coursePage.size}`)
+    const fetchCourses = (link) => {
+        link
+            .fill('name', searchedCourseName.current)
+            .fetch(setIsFetching)
             .then(res => {
-                let fetchedData = res.data
-                coursePage.total = fetchedData.page.totalElements
-
-                if(coursePage.total > 0) {
-                    let items = fetchedData._embedded.courses
+                let items = res.list('courses')
+                setNextPage(res.link('next'))
+                
+                if(items) {
                     items = items.map(x => {
                         return mapToNode(x)
                     })
 
-                    coursePage.items = items
+                    if(res.page.number > 1)
+                        setCourses([...courses, ...items])
+                    else
+                        setCourses(items)
                 } else {
-                    coursePage.items = []
+                    setCourses([])
                 }
             })
             .catch(error => {
-                store.addNotification({
-                    ...errorNotification,
-                    message: 'Не удалось загрузить список курсов. \n' + error
-                });
+                createError('Не удалось загрузить список курсов.', error)
             })
-            .finally(() => {
-                setIsFetching(false)
-            })
+    }
 
-        return coursePage
+    const onChange = (courseName) => {
+        if(courseName.trim().length < 3) {
+            setInputError('Слишком короткое название')
+            if(courseName.trim().length == 0) setTimeout(() => {
+                setInputError(undefined)
+            }, 5000)
+        } else {
+            setInputError(undefined)
+
+            onSearching(true)
+            setIsSearching(true)
+        }
+
+        searchedCourseName.current = courseName
+    }
+
+    const onSearch = () => {
+        if(searchedCourseName.current.length > 2) fetchCourses(baseLink) 
     }
 
     const onCourseSelectHandle = (node) => {
         onCourseSelect(mapToCourse(node))
-    }
-
-    const mapToCourse = (node) => {
-        return {
-            id: node.id,
-            parentCourseId: node.parentId,
-            name: node.name,
-            position: node.position,
-            isEmpty: node.isEmpty
-        }
     }
 
     return (
@@ -128,8 +76,7 @@ export const SearchCourse = ({onSearching, onCourseSelect, onAddClick, isAddDisa
                 <div className='input-group'>
                     <LazySearchInput 
                         placeholder='Введите название курса'
-                        value={courseName}
-                        onChange={(e) => onChange(e)}
+                        onChange={(e) => onChange(e.target.value)}
                         onSubmit={onSearch}
                         onEmpty={() => {
                             setIsSearching(false)
@@ -153,13 +100,17 @@ export const SearchCourse = ({onSearching, onCourseSelect, onAddClick, isAddDisa
                 <>
                     <div className="search-course-hierarchy">
                         <ProcessBar active={isFetching} height=".18Rem" className='mb-2'/>
-                        {isShowHierarhy && <TreeHierarchy
+                        <TreeHierarchy
                             treeData={courses}
                             setTreeData={setCourses}
                             canNodeDrag={false}
-                            fetchNodesHandler={fetchCourses}
                             onNodeClick={onCourseSelectHandle}
-                        />}
+                        />
+                        {nextPage &&
+                            <button className='fetch-nodes-btn' onClick={() => fetchCourses(nextPage)} disabled={isFetching}>
+                                Загрузить еще
+                            </button>
+                        }
                         {courses
                             ? courses.length == 0 &&
                                 <div className='no-courses'>
@@ -175,4 +126,15 @@ export const SearchCourse = ({onSearching, onCourseSelect, onAddClick, isAddDisa
             }
         </>
     )
+}
+
+const mapToNode = (course) => {
+    return {
+        id: course.id,
+        parentId: course.parentCourseId,
+        name: course.name,
+        position: course.position,
+        isExapnded: false,
+        child: []
+    }
 }
