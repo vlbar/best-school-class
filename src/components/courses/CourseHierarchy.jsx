@@ -9,10 +9,12 @@ import axios from 'axios'
 import './CourseHierarchy.less'
 import { errorNotification } from '../notifications/notifications'
 import ProcessBar from '../process-bar/ProcessBar'
+import { SearchCourse } from './SearchCourse'
 
 const baseUrl = '/courses'
 
 export const CourseHierarchy = ({onCourseSelect}) => {
+    const [isShowHierarhy, setIsShowHierarhy] = useState(false)
     const [courses, setCourses] = useState(undefined)
 
     const [isAddCourseShow, setIsAddCourseShow] = useState(false)
@@ -261,51 +263,51 @@ export const CourseHierarchy = ({onCourseSelect}) => {
 
     return (
         <>
-            <div className="course-hierarchy" id='viewport-use'>
-                <ProcessBar active={isFetching} height=".18Rem"/>
-                <TreeHierarchy
-                    treeData={courses}
-                    setTreeData={setCourses}
-                    fetchNodesHandler={fetchCourses}
-                    fetchSubNodesHandler={fetchSubCourses}
-                    onNodeAdd={(node) => openAddCourseModal(node)}
-                    onNodeMove={moveCourse}
-                    onNodeUpdate={openUpdateCourseModal}
-                    onNodeDelete={openDeleteModal}
-                    onNodeClick={onCourseSelectHandler}
-                />
-                {courses 
-                    ? courses.length == 0
-                        && <div className='no-courses'>
-                            <h5>Увы, но учебные курсы еще не добавлены.</h5>
-                            <p className='text-muted'>
-                                Чтобы погрузится в мир удобного ведения учебного плана и базы знаний, для начала вы должны <a onClick={() => openAddCourseModal()}>добавить курс</a>.
-                            </p>
-                        </div>
-                    :isFetching
-                    ?<LoadingCoursesList/>
-                    :<div className='no-courses'>
-                        <h5>Произошла ошибка.</h5>
-                        <p className='text-muted'>
-                            Не удалось загрузить список курсов, <a onClick={() => window.location.reload(false)}>перезагрузите страницу</a> или попробуйте позже.
-                        </p>
+            <SearchCourse onSearching={(flag) => setIsShowHierarhy(!flag)} onCourseSelect={onCourseSelect} onAddClick={() => openAddCourseModal()} isAddDisabled={!courses}/>
+
+            {isShowHierarhy && (
+                <>
+                    <div className="course-hierarchy" id='viewport-use'>
+                        <ProcessBar active={isFetching} height=".18Rem"/>
+                        <TreeHierarchy
+                            treeData={courses}
+                            setTreeData={setCourses}
+                            fetchNodesHandler={fetchCourses}
+                            fetchSubNodesHandler={fetchSubCourses}
+                            onNodeAdd={(node) => openAddCourseModal(node)}
+                            onNodeMove={moveCourse}
+                            onNodeUpdate={openUpdateCourseModal}
+                            onNodeDelete={openDeleteModal}
+                            onNodeClick={onCourseSelectHandler}
+                        />
+                        {courses 
+                            ? courses.length == 0
+                                && <div className='no-courses'>
+                                    <h5>Увы, но учебные курсы еще не добавлены.</h5>
+                                    <p className='text-muted'>
+                                        Чтобы погрузится в мир удобного ведения учебного плана и базы знаний, для начала вы должны <a onClick={() => openAddCourseModal()}>добавить курс</a>.
+                                    </p>
+                                </div>
+                            :isFetching
+                            ?<LoadingCoursesList/>
+                            :<div className='no-courses'>
+                                <h5>Произошла ошибка.</h5>
+                                <p className='text-muted'>
+                                    Не удалось загрузить список курсов, <a onClick={() => window.location.reload(false)}>перезагрузите страницу</a> или попробуйте позже.
+                                </p>
+                            </div>
+                        }
                     </div>
-                }
-            </div>
-            <Button 
-                variant='primary' 
-                className={'w-100 mt-2'} 
-                onClick={() => openAddCourseModal()}
-                disabled={!courses}
-            >Добавить курс</Button>
-            <CourseAddUpdateModal 
-                show={isAddCourseShow} 
-                onSubmit={courseAddUpdateSubmit} 
-                onClose={() => setIsAddCourseShow(false)} 
-                parentCourse={parentCourseIdToAdd}
-                updatedCourse={courseToUpdate}
-            />
-            {courseToDelete && <DeleteCourseModal onSubmit={deleteCourse} deletedCourse={courseToDelete} onClose={() => setCourseToDelete(undefined)}/>}
+                    <CourseAddUpdateModal 
+                        show={isAddCourseShow} 
+                        onSubmit={courseAddUpdateSubmit} 
+                        onClose={() => setIsAddCourseShow(false)} 
+                        parentCourse={parentCourseIdToAdd}
+                        updatedCourse={courseToUpdate}
+                    />
+                    {courseToDelete && <DeleteCourseModal onSubmit={deleteCourse} deletedCourse={courseToDelete} onClose={() => setCourseToDelete(undefined)}/>}
+                </>
+            )}
         </>
     )
 }

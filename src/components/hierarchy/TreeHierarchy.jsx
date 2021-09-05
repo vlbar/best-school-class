@@ -38,7 +38,7 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchNodesHandler, fetchSu
     let flatTreeData = treeToFlat(treeData)
 
     useEffect(() => {
-        if(fetchNodesHandler !== undefined) fetchNodes(null, 1)
+        if(fetchNodesHandler !== undefined && !treeData) fetchNodes(null, 1)
     }, [])
 
     useEffect(() => {

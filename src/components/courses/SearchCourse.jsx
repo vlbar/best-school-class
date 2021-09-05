@@ -7,10 +7,11 @@ import { store } from 'react-notifications-component'
 import axios from 'axios'
 import { errorNotification } from '../notifications/notifications'
 import './SearchCourse.less'
+import LazySearchInput from '../search/LazySearchInput'
 
 const baseUrl = '/courses'
 
-export const SearchCourse = ({onSearching, onCourseSelect}) => {
+export const SearchCourse = ({onSearching, onCourseSelect, onAddClick, isAddDisabled}) => {
     const [courses, setCourses] = useState(undefined)
     const [isFetching, setIsFetching] = useState(true)
     const [isShowHierarhy, setIsShowHierarhy] = useState(true)
@@ -81,16 +82,20 @@ export const SearchCourse = ({onSearching, onCourseSelect}) => {
         await axios.get(`${baseUrl}?name=${encodeURIComponent(courseName)}&page=${page}&size=${coursePage.size}`)
             .then(res => {
                 let fetchedData = res.data
-                let items = fetchedData.items
-                items = items.map(x => {
-                    return mapToNode(x)
-                })
+                coursePage.total = fetchedData.page.totalElements
 
-                coursePage.items = items
-                coursePage.total = fetchedData.totalItems
+                if(coursePage.total > 0) {
+                    let items = fetchedData._embedded.courses
+                    items = items.map(x => {
+                        return mapToNode(x)
+                    })
+
+                    coursePage.items = items
+                } else {
+                    coursePage.items = []
+                }
             })
             .catch(error => {
-                console.log(error)
                 store.addNotification({
                     ...errorNotification,
                     message: 'Не удалось загрузить список курсов. \n' + error
@@ -117,30 +122,31 @@ export const SearchCourse = ({onSearching, onCourseSelect}) => {
         }
     }
 
-    const searchKeyPress = (event) => {
-        if(event.key === 'Enter') {
-            onSearch()
-        }
-    }
-
     return (
         <>
-            <div className="input-group my-3">
-                <Form.Control
-                    type="text"
-                    className="form-control"
-                    placeholder="Введите название курса"
-                    aria-label="Введите название курса"
-                    value={courseName}
-                    onChange={(e) => setCourseName(e.target.value)}
-                    onKeyPress={(e) => searchKeyPress(e)}
-                    isInvalid={inputError !== undefined}/>
-                {inputError && <div className="invalid-tooltip">
-                    {inputError}
-                </div>}
-                <div className="input-group-append">
-                    <button className="btn btn-outline-secondary" type="button" onClick={onSearch}><i className="fas fa-search"/></button>
+            <div className='d-flex flex-row my-3'>
+                <div className='input-group'>
+                    <LazySearchInput 
+                        placeholder='Введите название курса'
+                        value={courseName}
+                        onChange={(e) => onChange(e)}
+                        onSubmit={onSearch}
+                        onEmpty={() => {
+                            setIsSearching(false)
+                            onSearching(false)
+                            setInputError(undefined)
+                        }}
+                        isInvalid={inputError !== undefined}
+                    />
+                    {inputError && <div className="invalid-tooltip">
+                        {inputError}
+                    </div>}
                 </div>
+                <Button 
+                    variant='primary'
+                    onClick={onAddClick}
+                    disabled={isAddDisabled}
+                >Добавить</Button>
             </div>
 
             {isSearching &&
