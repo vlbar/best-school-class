@@ -7,11 +7,13 @@ import { DeleteCourseModal } from './DeleteCourseModal'
 import { LoadingCoursesList } from './LoadingCoursesList'
 import axios from 'axios'
 import './CourseHierarchy.less'
-import { errorNotification } from '../notifications/notifications'
+import { createError, errorNotification } from '../notifications/notifications'
 import ProcessBar from '../process-bar/ProcessBar'
 import { SearchCourse } from './SearchCourse'
+import Resource from '../../util/Hateoas/Resource'
 
 const baseUrl = '/courses'
+const subCoursesPartUrl = 'sub-courses'
 
 export const CourseHierarchy = ({onCourseSelect}) => {
     const [isShowHierarhy, setIsShowHierarhy] = useState(false)
@@ -24,8 +26,6 @@ export const CourseHierarchy = ({onCourseSelect}) => {
     const [isFetching, setIsFetching] = useState(true)
 
     const fetchCourses = async (node, page) => {
-        setIsFetching(true)
-
         let coursePage = {
             page: page, 
             size: 20,
@@ -33,60 +33,48 @@ export const CourseHierarchy = ({onCourseSelect}) => {
             items: undefined
         }
         
-        await axios.get(`${baseUrl}?page=${page}&size=${coursePage.size}`)
+        await Resource.basedOnHref(baseUrl)
+            .link()
+            .fill('page', page)
+            .fill('size', coursePage.size)
+            .fetch(setIsFetching)
             .then(res => {
-                let fetchedData = res.data
-                let items = fetchedData._embedded.courses
+                let items = res.list('courses')
                 items = items.map(x => {
                     return mapToNode(x)
                 })
 
                 coursePage.items = items
-                coursePage.total = fetchedData.page.totalElements
+                coursePage.total = res.page.totalElements
             })
-            .catch(error => {
-                console.log(error)
-                store.addNotification({
-                    ...errorNotification,
-                    message: 'Не удалось загрузить список курсов. \n' + error
-                });
-            })
-            .finally(() => {
-                setIsFetching(false)
-            })
+            .catch(error => createError('Не удалось загрузить список курсов.', error))
 
         return coursePage
     }
 
     const fetchSubCourses = async (node, page = 1) => {
-        setIsFetching(true)
-
         let coursePage = {
             page: page, 
             size: 20,
             total: undefined,
             items: undefined
         }
-        await axios.get(`${baseUrl}/${node.id}/sub-courses?page=${page}&size=${coursePage.size}`)
+
+        await Resource.basedOnHref(`${baseUrl}/${node.id}/${subCoursesPartUrl}`)
+            .link()
+            .fill('page', page)
+            .fill('size', coursePage.size)
+            .fetch(setIsFetching)
             .then(res => {
-                let fetchedData = res.data
-                let items = fetchedData._embedded.courses
+                let items = res.list('courses')
                 items = items.map(x => {
                     return mapToNode(x)
                 })
+
                 coursePage.items = items
-                coursePage.total = fetchedData.page.totalElements
+                coursePage.total = res.page.totalElements
             })
-            .catch(error => {
-                console.log(error)
-                store.addNotification({
-                    ...errorNotification,
-                    message: 'Не удалось загрузить список курсов. \n' + error
-                });
-            })
-            .finally(() => {
-                setIsFetching(false)
-            })
+            .catch(error => createError('Не удалось загрузить список подкурсов.', error))
 
         return coursePage
     }
