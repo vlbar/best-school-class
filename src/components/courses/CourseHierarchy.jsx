@@ -229,9 +229,9 @@ export const CourseHierarchy = ({onCourseSelect}) => {
             <SearchCourse onSearching={(flag) => setIsShowHierarhy(!flag)} onCourseSelect={onCourseSelect} onAddClick={() => openAddCourseModal()} isAddDisabled={!courses}/>
 
             {isShowHierarhy && (
-                <>
-                    <div className='course-hierarchy course-panel'>
-                        <ProcessBar active={isFetching} height=".18Rem"/>
+                <div className='course-panel'>
+                    <ProcessBar active={isFetching} height='.18Rem' className='position-absolute'/>
+                    <div className='course-hierarchy'>
                         <TreeHierarchy
                             treeData={courses}
                             setTreeData={setCourses}
@@ -269,7 +269,7 @@ export const CourseHierarchy = ({onCourseSelect}) => {
                         updatedCourse={courseToUpdate}
                     />
                     {courseToDelete && <DeleteCourseModal onSubmit={deleteCourse} deletedCourse={courseToDelete} onClose={() => setCourseToDelete(undefined)}/>}
-                </>
+                </div>
             )}
         </>
     )
