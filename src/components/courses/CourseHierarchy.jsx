@@ -88,13 +88,7 @@ export const CourseHierarchy = ({onCourseSelect}) => {
         }
         axios.put(`${baseUrl}/${courseId}/position`, data)
             .then(res => { })
-            .catch(error => {
-                console.log(error)
-                store.addNotification({
-                    ...errorNotification,
-                    message: 'Не удалось переместить курс, возможно изменения не сохранятся. \n' + error
-                });
-            })
+            .catch(error => createError('Не удалось переместить курс, возможно изменения не сохранятся.', error))
             .finally(() => {
                 setIsFetching(false)
             })
@@ -131,7 +125,8 @@ export const CourseHierarchy = ({onCourseSelect}) => {
                 {
                     let parentCourse = flatTreeData.find(x => x.id == course.parentCourseId)
                     if(!parentCourse.isFetched) {
-                        parentCourse.child = await fetchSubCourses(parentCourse)
+                        let subs = await fetchSubCourses(parentCourse)
+                        parentCourse.child = subs.items
                         parentCourse.isFetched = true
                     } else {
                         let parentChilds = parentCourse.child
@@ -145,13 +140,7 @@ export const CourseHierarchy = ({onCourseSelect}) => {
                     setCourses([...courses, mapToNode(course)])
                 }
             })
-            .catch(error => {
-                console.log(error)
-                store.addNotification({
-                    ...errorNotification,
-                    message: 'Не удалось добавить курс, возможно изменения не сохранятся. ' + error
-                });
-            })
+            .catch(error => createError('Не удалось добавить курс, возможно изменения не сохранятся.', error))
             .finally(() => {
                 setIsFetching(false)
                 course.name = ''
@@ -170,13 +159,7 @@ export const CourseHierarchy = ({onCourseSelect}) => {
                 applyCourseChanges(courseInTree, course)
                 setCourses(flatTreeData.filter(x => x.parentId == null))
             })
-            .catch(error => {
-                console.log(error)
-                store.addNotification({
-                    ...errorNotification,
-                    message: 'Не удалось изменить курс, возможно изменения не сохранятся.\n' + error
-                });
-            })
+            .catch(error => createError('Не удалось изменить курс, возможно изменения не сохранятся.', error))
             .finally(() => {
                 setIsFetching(false)
             })
@@ -187,20 +170,12 @@ export const CourseHierarchy = ({onCourseSelect}) => {
     }
 
     const deleteCourse = (course) => {
-        
-
         setIsFetching(true)
         axios.delete(`${baseUrl}/${course.id}`)
             .then(res => {
                 deleteNode(course, courses, setCourses)
             })
-            .catch(error => {
-                console.log(error)
-                store.addNotification({
-                    ...errorNotification,
-                    message: 'Не удалось удалить курс, возможно изменеия не сохранятся.\n' + error
-                });
-            })
+            .catch(error => createError('Не удалось удалить курс, возможно изменеия не сохранятся.', error))
             .finally(() => {
                 setIsFetching(false)
                 setCourseToDelete(undefined)
