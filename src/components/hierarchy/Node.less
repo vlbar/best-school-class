@@ -53,12 +53,17 @@
     cursor: move;
     opacity: 0;
     height: @node-height;
-    margin-left: 0.5Rem;
+    padding-left: .5Rem;
+    padding-right: .5Rem;
     fill: #212529;
+
+    &:hover {
+        opacity: 1 !important;
+    }
 }
 
 .node:hover .handle {
-    opacity: 1;
+    opacity: 0.5;
 }
 
 .disable-hover .handle {

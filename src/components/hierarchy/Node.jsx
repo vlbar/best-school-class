@@ -145,7 +145,7 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
                             </svg>
                         </div>
                     }
-                    <div className='arrow' onClick={collapseList}>
+                    <div className='arrow pr-1' onClick={collapseList}>
                         {expandShow ? 
                             <svg width='21' viewBox='0 0 24 24'  xmlns='http://www.w3.org/2000/svg'>
                                 <path d='M7 10l5 5 5-5z'/>
