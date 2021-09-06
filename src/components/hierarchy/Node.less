@@ -25,7 +25,7 @@
 .disable-hover .node {
     background-color: white !important;
     color: initial !important;
-    
+
     svg {
         fill: initial !important;
     }
@@ -72,15 +72,14 @@
 }
 
 .arrow svg {
+    transform: rotate(0deg);
     transition: transform 0.2s;
     fill: #212529;
 }
 
 //node collapse
-.node-collapse {
-    .arrow svg {
-        transform: rotate(-90deg);
-    }
+.node-collapse .arrow svg {
+    transform: rotate(-90deg);
 }
 
 .sub-nodes {
