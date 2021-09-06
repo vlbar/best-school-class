@@ -102,6 +102,7 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchNodesHandler, fetchSu
         let newTreeData = treeData
 
         if (dragNode.id == targetParentId) return
+        if (dragNode.parentId == targetParentId && dragNode.position == position) return
 
         if (dragNode.parentId != null) { 
             let dragNodeParent = flatTreeData.find(x => x.id === dragNode.parentId)
