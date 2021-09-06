@@ -3,14 +3,36 @@
 //node
 .node {
     height: @node-height;
+
+    &.selected {
+        background-color: #007bff;
+        color: #fff;
+        
+        svg {
+            fill: #fff !important;
+        }
+
+        .dropdown button {
+            color: #fff;
+        }
+    }
 }
 
 .node:hover, .node-hover  {
     background-color: rgb(239, 240, 241);
+
+    &.selected { 
+        background-color: #006ee4 !important;
+    }
 }
 
 .disable-hover .node {
-    background-color: transparent !important;
+    background-color: white !important;
+    color: initial !important;
+
+    svg {
+        fill: initial !important;
+    }
 }
 
 .hidden {
@@ -31,12 +53,17 @@
     cursor: move;
     opacity: 0;
     height: @node-height;
-    margin-left: 0.5Rem;
+    padding-left: .5Rem;
+    padding-right: .5Rem;
     fill: #212529;
+
+    &:hover {
+        opacity: 1 !important;
+    }
 }
 
 .node:hover .handle {
-    opacity: 1;
+    opacity: 0.5;
 }
 
 .disable-hover .handle {
@@ -54,15 +81,14 @@
 }
 
 .arrow svg {
+    transform: rotate(0deg);
     transition: transform 0.2s;
     fill: #212529;
 }
 
 //node collapse
-.node-collapse {
-    .arrow svg {
-        transform: rotate(-90deg);
-    }
+.node-collapse .arrow svg {
+    transform: rotate(-90deg);
 }
 
 .sub-nodes {
@@ -84,7 +110,7 @@
 }
 
 //cringe with bootstrap dropdowns
-.node .dropdown > * {
+.node .dropdown button {
     background-image: none;
     background-color: transparent;
 }
@@ -99,7 +125,7 @@
     display: none;
 }
 
-.show .dropdown-toggle {
+.node .show .dropdown-toggle {
     color: black;
 }
 

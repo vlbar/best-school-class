@@ -8,7 +8,7 @@ import './Node.less'
 const MOVE_UP = 'UP'
 const MOVE_DOWN = 'DOWN'
 
-export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, dragStartHandle, dragEndHandle, moveNodeHandler, updateNodeHandler, deleteNodeHandler, addNodeHandler, setExpandedHandler, fetchSubNodesHandler, canNodeDrag, onNodeClick}) => {
+export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, dragStartHandle, dragEndHandle, moveNodeHandler, updateNodeHandler, deleteNodeHandler, addNodeHandler, setExpandedHandler, fetchSubNodesHandler, canNodeDrag, selectedNode, onNodeClick}) => {
     const [isDragOver, setIsDragOver] = useState(false)
     const [isDrag, setDrag] = useState(false)
     const [isCanDrag, setCanDrag] = useState(false)
@@ -51,7 +51,7 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
     }
 
     const dragEnter = () => { 
-        if(canNodeDrag)
+        if(canNodeDrag && draggedNodeData != null)
             if(!isDrag) 
                 setIsDragOver(true) 
     }
@@ -126,7 +126,7 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
                     dropHandle={onDrop}
                 />
             : ''}
-            <div className={'node' + (isOpenDropdown ? ' node-hover':'') + (isDrag ? ' hidden':'')} onDragOver={dragEnter} >
+            <div className={'node' + (isOpenDropdown ? ' node-hover':'') + (isDrag ? ' hidden':'') + (selectedNode ? selectedNode.id == nodeData.id ? ' selected':'':'')} onDragOver={dragEnter} >
                 <div 
                     className={'node-content' + (!nodeData.isExpanded ? ' node-collapse' : '')} 
                     data-id={nodeData.name} 
@@ -145,7 +145,7 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
                             </svg>
                         </div>
                     }
-                    <div className='arrow' onClick={collapseList}>
+                    <div className='arrow pr-1' onClick={collapseList}>
                         {expandShow ? 
                             <svg width='21' viewBox='0 0 24 24'  xmlns='http://www.w3.org/2000/svg'>
                                 <path d='M7 10l5 5 5-5z'/>
@@ -192,6 +192,7 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
                                 addNodeHandler={addNodeHandler}
                                 moveNodeHandler={moveNodeHandler}
                                 canNodeDrag={canNodeDrag}
+                                selectedNode={selectedNode}
                                 onNodeClick={onNodeClick}
                             />
                         })}

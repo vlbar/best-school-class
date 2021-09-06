@@ -1,0 +1,42 @@
+.item-select .dropdown-menu {
+    min-width: 250px;
+}
+
+.select-list {
+    padding-left: 0;
+    margin: 0;
+    list-style: none;
+    max-height: 160px;
+    overflow-y: scroll;
+}
+
+.select-list-item {
+    display: flex;
+
+    .item-selector {
+        cursor: pointer;
+        display: block;
+        width: 100%;
+        padding: .25rem 1.5rem;
+        clear: both;
+        font-weight: 400;
+        color: #212529;
+        text-align: inherit;
+        white-space: nowrap;
+        background-color: transparent;
+        border: 0;
+    }
+
+    &.selected
+    {
+        span {
+            color: #fff !important;
+        }
+
+        background-color: #007bff !important;
+    }
+
+    &:focus, &:hover {
+        background-color: #e9ecef;
+    }
+}

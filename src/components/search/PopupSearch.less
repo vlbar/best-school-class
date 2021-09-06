@@ -1,0 +1,26 @@
+.popup {
+  float: right;
+  outline: none;
+  width: 0px;
+  opacity: 0%;
+  border: none;
+  border-bottom: 2px solid black;
+  transition: all 0.3s ease;
+  padding: 2px 0px;
+}
+
+.popup.visible {
+  width: 100%;
+  opacity: 100%;
+}
+
+.popup-button {
+  opacity: 100%;
+  position: absolute;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.popup-button.hidden {
+  opacity: 0%;
+}

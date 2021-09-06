@@ -7,12 +7,16 @@ import { DeleteCourseModal } from './DeleteCourseModal'
 import { LoadingCoursesList } from './LoadingCoursesList'
 import axios from 'axios'
 import './CourseHierarchy.less'
-import { errorNotification } from '../notifications/notifications'
+import { createError, errorNotification } from '../notifications/notifications'
 import ProcessBar from '../process-bar/ProcessBar'
+import { SearchCourse } from './SearchCourse'
+import Resource from '../../util/Hateoas/Resource'
 
 const baseUrl = '/courses'
+const subCoursesPartUrl = 'sub-courses'
 
 export const CourseHierarchy = ({onCourseSelect}) => {
+    const [isShowHierarhy, setIsShowHierarhy] = useState(false)
     const [courses, setCourses] = useState(undefined)
 
     const [isAddCourseShow, setIsAddCourseShow] = useState(false)
@@ -22,8 +26,6 @@ export const CourseHierarchy = ({onCourseSelect}) => {
     const [isFetching, setIsFetching] = useState(true)
 
     const fetchCourses = async (node, page) => {
-        setIsFetching(true)
-
         let coursePage = {
             page: page, 
             size: 20,
@@ -31,60 +33,48 @@ export const CourseHierarchy = ({onCourseSelect}) => {
             items: undefined
         }
         
-        await axios.get(`${baseUrl}?page=${page}&size=${coursePage.size}`)
+        await Resource.basedOnHref(baseUrl)
+            .link()
+            .fill('page', page)
+            .fill('size', coursePage.size)
+            .fetch(setIsFetching)
             .then(res => {
-                let fetchedData = res.data
-                let items = fetchedData.items
+                let items = res.list('courses')
                 items = items.map(x => {
                     return mapToNode(x)
                 })
 
                 coursePage.items = items
-                coursePage.total = fetchedData.totalItems
+                coursePage.total = res.page.totalElements
             })
-            .catch(error => {
-                console.log(error)
-                store.addNotification({
-                    ...errorNotification,
-                    message: 'Не удалось загрузить список курсов. \n' + error
-                });
-            })
-            .finally(() => {
-                setIsFetching(false)
-            })
+            .catch(error => createError('Не удалось загрузить список курсов.', error))
 
         return coursePage
     }
 
     const fetchSubCourses = async (node, page = 1) => {
-        setIsFetching(true)
-
         let coursePage = {
             page: page, 
             size: 20,
             total: undefined,
             items: undefined
         }
-        await axios.get(`${baseUrl}/${node.id}/sub-courses?page=${page}&size=${coursePage.size}`)
+
+        await Resource.basedOnHref(`${baseUrl}/${node.id}/${subCoursesPartUrl}`)
+            .link()
+            .fill('page', page)
+            .fill('size', coursePage.size)
+            .fetch(setIsFetching)
             .then(res => {
-                let fetchedData = res.data
-                let items = fetchedData.items
+                let items = res.list('courses')
                 items = items.map(x => {
                     return mapToNode(x)
                 })
+
                 coursePage.items = items
-                coursePage.total = fetchedData.totalItems
+                coursePage.total = res.page.totalElements
             })
-            .catch(error => {
-                console.log(error)
-                store.addNotification({
-                    ...errorNotification,
-                    message: 'Не удалось загрузить список курсов. \n' + error
-                });
-            })
-            .finally(() => {
-                setIsFetching(false)
-            })
+            .catch(error => createError('Не удалось загрузить список подкурсов.', error))
 
         return coursePage
     }
@@ -97,16 +87,8 @@ export const CourseHierarchy = ({onCourseSelect}) => {
             position: position
         }
         axios.put(`${baseUrl}/${courseId}/position`, data)
-            .then(res => {
-                console.log('oh thats good')
-            })
-            .catch(error => {
-                console.log(error)
-                store.addNotification({
-                    ...errorNotification,
-                    message: 'Не удалось переместить курс, возможно изменения не сохранятся. \n' + error
-                });
-            })
+            .then(res => { })
+            .catch(error => createError('Не удалось переместить курс, возможно изменения не сохранятся.', error))
             .finally(() => {
                 setIsFetching(false)
             })
@@ -143,7 +125,8 @@ export const CourseHierarchy = ({onCourseSelect}) => {
                 {
                     let parentCourse = flatTreeData.find(x => x.id == course.parentCourseId)
                     if(!parentCourse.isFetched) {
-                        parentCourse.child = await fetchSubCourses(parentCourse)
+                        let subs = await fetchSubCourses(parentCourse)
+                        parentCourse.child = subs.items
                         parentCourse.isFetched = true
                     } else {
                         let parentChilds = parentCourse.child
@@ -157,13 +140,7 @@ export const CourseHierarchy = ({onCourseSelect}) => {
                     setCourses([...courses, mapToNode(course)])
                 }
             })
-            .catch(error => {
-                console.log(error)
-                store.addNotification({
-                    ...errorNotification,
-                    message: 'Не удалось добавить курс, возможно изменения не сохранятся. ' + error
-                });
-            })
+            .catch(error => createError('Не удалось добавить курс, возможно изменения не сохранятся.', error))
             .finally(() => {
                 setIsFetching(false)
                 course.name = ''
@@ -182,13 +159,7 @@ export const CourseHierarchy = ({onCourseSelect}) => {
                 applyCourseChanges(courseInTree, course)
                 setCourses(flatTreeData.filter(x => x.parentId == null))
             })
-            .catch(error => {
-                console.log(error)
-                store.addNotification({
-                    ...errorNotification,
-                    message: 'Не удалось изменить курс, возможно изменения не сохранятся.\n' + error
-                });
-            })
+            .catch(error => createError('Не удалось изменить курс, возможно изменения не сохранятся.', error))
             .finally(() => {
                 setIsFetching(false)
             })
@@ -199,20 +170,12 @@ export const CourseHierarchy = ({onCourseSelect}) => {
     }
 
     const deleteCourse = (course) => {
-        
-
         setIsFetching(true)
         axios.delete(`${baseUrl}/${course.id}`)
             .then(res => {
                 deleteNode(course, courses, setCourses)
             })
-            .catch(error => {
-                console.log(error)
-                store.addNotification({
-                    ...errorNotification,
-                    message: 'Не удалось удалить курс, возможно изменеия не сохранятся.\n' + error
-                });
-            })
+            .catch(error => createError('Не удалось удалить курс, возможно изменеия не сохранятся.', error))
             .finally(() => {
                 setIsFetching(false)
                 setCourseToDelete(undefined)
@@ -263,51 +226,51 @@ export const CourseHierarchy = ({onCourseSelect}) => {
 
     return (
         <>
-            <div className="course-hierarchy" id='viewport-use'>
-                <ProcessBar active={isFetching} height=".18Rem"/>
-                <TreeHierarchy
-                    treeData={courses}
-                    setTreeData={setCourses}
-                    fetchNodesHandler={fetchCourses}
-                    fetchSubNodesHandler={fetchSubCourses}
-                    onNodeAdd={(node) => openAddCourseModal(node)}
-                    onNodeMove={moveCourse}
-                    onNodeUpdate={openUpdateCourseModal}
-                    onNodeDelete={openDeleteModal}
-                    onNodeClick={onCourseSelectHandler}
-                />
-                {courses 
-                    ? courses.length == 0
-                        && <div className='no-courses'>
-                            <h5>Увы, но учебные курсы еще не добавлены.</h5>
-                            <p className='text-muted'>
-                                Чтобы погрузится в мир удобного ведения учебного плана и базы знаний, для начала вы должны <a onClick={() => openAddCourseModal()}>добавить курс</a>.
-                            </p>
-                        </div>
-                    :isFetching
-                    ?<LoadingCoursesList/>
-                    :<div className='no-courses'>
-                        <h5>Произошла ошибка.</h5>
-                        <p className='text-muted'>
-                            Не удалось загрузить список курсов, <a onClick={() => window.location.reload(false)}>перезагрузите страницу</a> или попробуйте позже.
-                        </p>
+            <SearchCourse onSearching={(flag) => setIsShowHierarhy(!flag)} onCourseSelect={onCourseSelect} onAddClick={() => openAddCourseModal()} isAddDisabled={!courses}/>
+
+            {isShowHierarhy && (
+                <div className='course-panel'>
+                    <ProcessBar active={isFetching} height='.18Rem' className='position-absolute'/>
+                    <div className='course-hierarchy'>
+                        <TreeHierarchy
+                            treeData={courses}
+                            setTreeData={setCourses}
+                            fetchNodesHandler={fetchCourses}
+                            fetchSubNodesHandler={fetchSubCourses}
+                            onNodeAdd={(node) => openAddCourseModal(node)}
+                            onNodeMove={moveCourse}
+                            onNodeUpdate={openUpdateCourseModal}
+                            onNodeDelete={openDeleteModal}
+                            onNodeClick={onCourseSelectHandler}
+                        />
+                        {courses 
+                            ? courses.length == 0
+                                && <div className='no-courses'>
+                                    <h5>Увы, но учебные курсы еще не добавлены.</h5>
+                                    <p className='text-muted'>
+                                        Чтобы погрузится в мир удобного ведения учебного плана и базы знаний, для начала вы должны <a onClick={() => openAddCourseModal()}>добавить курс</a>.
+                                    </p>
+                                </div>
+                            :isFetching
+                            ?<LoadingCoursesList/>
+                            :<div className='no-courses'>
+                                <h5>Произошла ошибка.</h5>
+                                <p className='text-muted'>
+                                    Не удалось загрузить список курсов, <a onClick={() => window.location.reload(false)}>перезагрузите страницу</a> или попробуйте позже.
+                                </p>
+                            </div>
+                        }
                     </div>
-                }
-            </div>
-            <Button 
-                variant='primary' 
-                className={'w-100 mt-2'} 
-                onClick={() => openAddCourseModal()}
-                disabled={!courses}
-            >Добавить курс</Button>
-            <CourseAddUpdateModal 
-                show={isAddCourseShow} 
-                onSubmit={courseAddUpdateSubmit} 
-                onClose={() => setIsAddCourseShow(false)} 
-                parentCourse={parentCourseIdToAdd}
-                updatedCourse={courseToUpdate}
-            />
-            {courseToDelete && <DeleteCourseModal onSubmit={deleteCourse} deletedCourse={courseToDelete} onClose={() => setCourseToDelete(undefined)}/>}
+                    <CourseAddUpdateModal 
+                        show={isAddCourseShow} 
+                        onSubmit={courseAddUpdateSubmit} 
+                        onClose={() => setIsAddCourseShow(false)} 
+                        parentCourse={parentCourseIdToAdd}
+                        updatedCourse={courseToUpdate}
+                    />
+                    {courseToDelete && <DeleteCourseModal onSubmit={deleteCourse} deletedCourse={courseToDelete} onClose={() => setCourseToDelete(undefined)}/>}
+                </div>
+            )}
         </>
     )
 }

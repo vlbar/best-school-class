@@ -5,7 +5,7 @@ import "./navigation-bar.less";
 import AuthPanel from "../auth/AuthPanel";
 import PrivateContent from "../routing/PrivateContent";
 import StatePicker from "../state/StatePicker";
-import { HELPER, STUDENT, TEACHER } from "../../redux/state/stateActions";
+import { ASSISTANT, STUDENT, TEACHER } from "../../redux/state/stateActions";
 import PublicContent from "../routing/PublicContent";
 
 function NavigationBar() {
@@ -25,17 +25,22 @@ function NavigationBar() {
               Главная
             </Nav.Link>
           </PrivateContent>
-          <PrivateContent allowedStates={[STUDENT, TEACHER]}>
+          <PrivateContent allowedStates={[ASSISTANT, TEACHER]}>
             <Nav.Link as={NavLink} to="/shedule">
               Расписание
             </Nav.Link>
           </PrivateContent>
-          <PrivateContent>
+          <PrivateContent  allowedStates={[ASSISTANT, TEACHER]}>
             <Nav.Link as={NavLink} to="/answers">
               Ответы
             </Nav.Link>
           </PrivateContent>
-          <PrivateContent allowedStates={[HELPER, TEACHER]}>
+          <PrivateContent  allowedStates={[STUDENT]}>
+            <Nav.Link as={NavLink} to="/homeworks">
+              Задания
+            </Nav.Link>
+          </PrivateContent>
+          <PrivateContent allowedStates={[ASSISTANT, TEACHER]}>
             <Nav.Link as={NavLink} to="/courses">
               Курс
             </Nav.Link>
@@ -47,7 +52,9 @@ function NavigationBar() {
           </PrivateContent>
         </Nav>
         <PrivateContent>
-          <StatePicker />
+          <div className="mr-5">
+            <StatePicker />
+          </div>
         </PrivateContent>
         <AuthPanel />
       </Navbar.Collapse>

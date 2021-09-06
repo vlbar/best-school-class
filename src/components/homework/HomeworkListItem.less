@@ -1,0 +1,38 @@
+.homework-list-item-container {
+    border-bottom: 1px solid #dee2e6;
+}
+
+.homework-list-item {
+    display: flex;
+    flex-direction: row;
+    padding: .75rem;
+
+    &:hover {
+        background-color: rgba(0,0,0,.05);
+    }
+}
+
+.fake-homework-list-item {
+    display: flex;
+    flex-direction: row;
+    padding-top: 1.2Rem;
+    padding-bottom: .8Rem;
+    padding-left: .75Rem;
+    padding-right: .75Rem;
+}
+
+.homework-list-item-task {
+    padding: .5rem;
+    padding-left: 3Rem;
+    border-top: 1px solid #dee2e6;
+}
+
+.homework-list-item .arrow svg {
+    transform: rotate(-90deg);
+    transition: transform 0.2s;
+    fill: #212529;
+}
+
+.homework-list-item .arrow.expanded svg {
+    transform: rotate(0deg);
+}

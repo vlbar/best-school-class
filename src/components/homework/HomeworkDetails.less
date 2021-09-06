@@ -1,0 +1,38 @@
+@import './../loading/LoadingList.less';
+
+.just-homework-line {
+    position: absolute;
+    background-color: #007bff;
+    width: 4px;
+    left: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.homework-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: .5Rem;
+    background-color: #f5f7fc;
+    padding-left: 1.25Rem;
+    padding-right: 1.25Rem;
+    padding-top: .5Rem;
+    padding-bottom: .5Rem;
+
+
+}
+
+.loading-homework-card {
+    height: 64px;
+    position: relative;
+    overflow: hidden;
+    border-radius: .5Rem;
+    background-color: rgb(228, 230, 240);
+
+    .keyframes(fade-in;{
+        0% { opacity: 0.5; }
+        100% { opacity: 1; }
+        });
+
+    .animation(fade-in 0.8s linear infinite alternate)
+}
