@@ -2,53 +2,41 @@ import React, { useState, useEffect, useRef, useContext } from 'react'
 import { SearchTask } from './SearchTask'
 import { Button, Table, Badge, Dropdown } from 'react-bootstrap'
 import ProcessBar from '../process-bar/ProcessBar'
-import { addErrorNotification } from '../notifications/notifications'
+import { createError } from '../notifications/notifications'
 import { LoadingList } from '../loading/LoadingList'
 import { TaskAddModal } from './TaskAddModal'
-import { useHistory } from 'react-router-dom'
+import { Link, useHistory } from 'react-router-dom'
 import { useInView } from 'react-intersection-observer'
 import TaskListHeader from './TaskListHeader'
 import { HomeworkContext } from '../homework/HomeworkBuilderContext'
-import axios from 'axios'
 import './TaskList.less'
+import Resource from '../../util/Hateoas/Resource'
 
 const baseUrl = '/tasks'
-
-async function fetch(courseId, page, size, name, taskTypeId, order) {
-    return axios.get(`${baseUrl}?page=${page}&size=${size}${courseId !== undefined ? `&courseId=${courseId}`:''}${name !== undefined ? `&name=${name}`:''}${taskTypeId !== undefined ? `&taskTypeId=${taskTypeId}`:''}${order !== undefined ? `&order=${order}`:''}`)
-}
-
-async function add(task) {
-    return axios.post(`${baseUrl}`, task)
-}
+const baseLink = Resource.basedOnHref(baseUrl).link()
+const pageLink = baseLink.fill('size', 20)
 
 const taskTypesColors = ['#69c44d', '#007bff', '#db4242', '#2cc7b2', '#8000ff', '#e68e29', '#d4d5d9', '#38c7d1']
 
 export const TaskList = ({selectedCourse}) => {
     // fetching
     const [tasks, setTasks] = useState(undefined)
-    const [isFetching, setIsFetching] = useState(false)
+    const [nextPage, setNextPage] = useState(undefined)
+    const [isHasFetchingErrors, setIsHasFetchingErrors] = useState(false)
 
-    const pagination = useRef({
-        page: 1, 
-        size: 20, 
-        total: undefined,
-        name: '',
-        taskTypeId: undefined,
-        courseId: undefined,
-        orderBy: 'name-asc'
-    })
+    const [isFetching, setIsFetching] = useState(false)
+    const emptyResultAfterName = useRef(undefined)
 
     // searching
     const emptyResultAfterTaskName = useRef(undefined)
     const searchParams = useRef({
         name: '',
-        taskTypeId: undefined,
-        orderBy: pagination.current.orderBy
+        taskTypeId: null,
+        orderBy: 'name-asc'
     })
 
     useEffect(() => {
-        if(selectedCourse) fetchTasks(1)
+        if(selectedCourse) fetchFirstTasksPage()
     }, [selectedCourse])
 
     //auto fetch
@@ -57,7 +45,7 @@ export const TaskList = ({selectedCourse}) => {
     })
 
     useEffect(() => {
-        if(inView && !isFetching) fetchTasks(pagination.current.page + 1)
+        if(inView && !isFetching && !isHasFetchingErrors) fetchFirstTasksPage()
     }, [inView])
 
     // select
@@ -72,18 +60,14 @@ export const TaskList = ({selectedCourse}) => {
     }
 
     const onSelectTaskHandler = (task) => {
-        if(selectedTasks.find(x => x.id == task.id) == undefined)
-            selectTask(task)
-        else
-            unselectTask(task)
+        if(selectedTasks.find(x => x.id == task.id) == undefined) selectTask(task)
+        else unselectTask(task)
     }
     
     const onSelectAll = () => {
         if(!tasks) return
-        if(selectedTasks.length == tasks.length)
-            setSelectedTasks([])
-        else
-            setSelectedTasks(tasks)
+        if(selectedTasks.length == tasks.length) setSelectedTasks([])
+        else setSelectedTasks(tasks)
     }
 
     // homework
@@ -91,65 +75,58 @@ export const TaskList = ({selectedCourse}) => {
 
     // modals
     const [isAddTaskModalShow, setIsAddTaskModalShow] = useState(false)
-    const [taskToAdd, setTaskToAdd] = useState(undefined)
     const [isTaskAdding, setIsTaskAdding] = useState(false)
     const history = useHistory()
 
     const setSearchParams = (params) => {
         searchParams.current = {...searchParams.current, ...params}
-        if(searchParams.current.name.trim().length > 0)
-            fetchTasks(1)
-        else 
-            if(selectedCourse) fetchTasks(1)
-            else {
-                setTasks(undefined)
-                setIsFetching(false)
-            }
+        if(searchParams.current.name.trim().length > 0) fetchFirstTasksPage()
+        else if(selectedCourse) fetchFirstTasksPage()
+        else {
+            setTasks(undefined)
+            setIsFetching(false)
+        }
     }
 
-    const fetchTasks = (page) => {
-        setIsFetching(true)
+    const fetchFirstTasksPage = () => {
+        fetchTasks(
+            pageLink
+                .fill('courseId', selectedCourse?.id ?? null)
+                .fill('name', searchParams.current.name)
+                .fill('taskTypeId', searchParams.current.taskTypeId ?? null)
+                .fill('order', searchParams.current.orderBy)
+        )
+    }
 
-        if(page == 1) {
-            setTasks(undefined)
-            setSelectedTasks([])
-            pagination.current.courseId = selectedCourse?.id
-            pagination.current = {...pagination.current, ...searchParams.current}
-        }
+    const fetchTasks = (link) => {
+        link
+            ?.fetch(setIsFetching)
+            .then(data => {
+                let fetchedTasks = data.list('tasks')
+                setNextPage(data.link('next'))
 
-        fetch(pagination.current.courseId, page, pagination.current.size, pagination.current.name, pagination.current.taskTypeId, pagination.current.orderBy)
-            .then(res => {
-                let fetchedData = res.data
-
-                pagination.current.page = page
-                pagination.current.total = fetchedData.totalItems
-
-                if(fetchedData.totalItems === 0) 
-                    emptyResultAfterTaskName.current = pagination.current.name
-  
-                if(page == 1)
-                    setTasks(fetchedData.items)
+                if(data.page.totalElements == 0) emptyResultAfterName.current = link.param('name')
+                if(data.page.number == 1)
+                    setTasks(fetchedTasks)
                 else
-                    setTasks([...tasks, ...fetchedData.items])
+                    setTasks([...tasks, ...fetchedTasks])
+                setIsHasFetchingErrors(false)
             })
-            .catch(error => addErrorNotification('Не удалось загрузить список типов. \n' + error))
-            .finally(() => setIsFetching(false))
+            .catch(error => {
+                createError('Не удалось загрузить список заданий.', error)
+                setIsHasFetchingErrors(true)
+            })
     }
 
     const addTask = (task) => {
         task.courseId = selectedCourse.id
-        task.maxScore = 100
 
-        setIsTaskAdding(true)
-        setTaskToAdd(task)
-
-        add(task)
-            .then(res => {
-                let fetchedData = res.data
-                history.push(`courses/${selectedCourse.id}/tasks/${fetchedData.id}`)
+        baseLink
+            .post(task, setIsTaskAdding)
+            .then(data => {
+                history.push(`courses/${selectedCourse.id}/tasks/${data.id}`)
             })
-            .catch(error => addErrorNotification('Не удалось добавить задание, возможно, изменения не сохранятся. \n' + error))
-            .finally(() => setIsTaskAdding(false))
+            .catch(error => createError('Не удалось добавить задание, возможно, изменения не сохранятся.', error))
     }
 
     // ох уж эти индусы...
@@ -161,8 +138,8 @@ export const TaskList = ({selectedCourse}) => {
                     </>
         else
             if(!isFetching)
-                if(tasks) {
-                    if(tasks.length == 0)
+                if(tasks !== undefined) {
+                    if(tasks === null || tasks.length === 0)
                         if(searchParams.current.name !== '' || searchParams.current.taskTypeId !== undefined)
                             return  <>
                                         <h5>Задания не найдены.</h5>
@@ -170,11 +147,12 @@ export const TaskList = ({selectedCourse}) => {
                                     </>
                         else return <>
                                         <h5>Увы, но задания еще не добавлены.</h5>
-                                        <p className='text-muted'>Чтобы задания были в списке, для начали их нужно добавить.</p>
+                                        <p className='text-muted'>
+                                            Чтобы задания были в списке, для начали их нужно <span className='hover-link' onClick={() => setIsAddTaskModalShow(true)}>добавить.</span>
+                                        </p>
                                     </>
                 }
-                else
-                    return  <>
+                else return <>
                                 <h5>Произошла ошибка</h5>
                                 <p className='text-muted'>Не удалось загрузить список заданий.</p>
                             </>
@@ -191,7 +169,7 @@ export const TaskList = ({selectedCourse}) => {
                     setIsFetching(isFetching)
                     setTasks([])
                 }}
-                emptyAfterTaskName={emptyResultAfterTaskName.current}
+                emptyAfterTaskName={emptyResultAfterName.current}
             />
             <TaskListHeader
                 submitSearchParams={(params) => setSearchParams(params)}
@@ -218,13 +196,7 @@ export const TaskList = ({selectedCourse}) => {
                                         <div className='ml-2' style={{width: '95%'}}>
                                             <div className='d-flex justify-content-between'>
                                                 <div>
-                                                    <span 
-                                                        className='text-semi-bold task-name mr-2' 
-                                                        onClick={() => history.push(`courses/${task.courseId}/tasks/${task.id}`)}
-                                                    >                                           
-                                                        {task.name}
-                                                    </span>
-                                                
+                                                    <Link to={`courses/${task.courseId}/tasks/${task.id}`} className='text-semi-bold task-name mr-2'>{task.name}</Link>
                                                     {task.taskType !== null ?
                                                         <Badge
                                                             variant='secondary' 
@@ -237,7 +209,7 @@ export const TaskList = ({selectedCourse}) => {
                                                 <Dropdown className='dropdown-action-menu'>
                                                     <Dropdown.Toggle size='sm' id='dropdown-basic'>⋮</Dropdown.Toggle>
                                                     <Dropdown.Menu>
-                                                        <Dropdown.Item onClick={() => history.push(`courses/${task.courseId}/tasks/${task.id}`)}>Изменить</Dropdown.Item>
+                                                        <Dropdown.Item as={Link} to={`courses/${task.courseId}/tasks/${task.id}`}>Изменить</Dropdown.Item>
                                                         <Dropdown.Item onClick={() => homework.addTask(task)}>Добавить в домашнее</Dropdown.Item>
                                                         <Dropdown.Item>Переместить</Dropdown.Item>
                                                         <Dropdown.Item className='text-danger'>Удалить</Dropdown.Item>
@@ -256,10 +228,10 @@ export const TaskList = ({selectedCourse}) => {
                             })}
                         </div>
                     }
-                    {(tasks !== undefined && !isFetching && pagination.current.page * pagination.current.size < pagination.current.total) &&
+                    {(nextPage) &&
                         <button 
                             className="fetch-types-btn" 
-                            onClick={() => fetchTasks(pagination.current.page + 1)} 
+                            onClick={() => fetchTasks(nextPage)} 
                             disabled={isFetching}
                             ref={ref}
                         >
@@ -288,8 +260,7 @@ export const TaskList = ({selectedCourse}) => {
             {<TaskAddModal 
                 show={isAddTaskModalShow} 
                 onClose={() => setIsAddTaskModalShow(false)} 
-                isFetching={isTaskAdding} 
-                taskToAdd={taskToAdd}
+                isFetching={isTaskAdding}
                 onSubmit={addTask}
             />}
         </>)
