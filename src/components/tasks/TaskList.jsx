@@ -37,6 +37,7 @@ export const TaskList = ({selectedCourse}) => {
 
     useEffect(() => {
         if(selectedCourse) fetchFirstTasksPage()
+        setSelectedTasks([])
     }, [selectedCourse])
 
     //auto fetch
