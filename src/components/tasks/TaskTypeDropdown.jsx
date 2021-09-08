@@ -37,9 +37,6 @@ const TaskTypeDropdown = ({initialSelectedType, onSelect, placeholder = 'Тип 
     // fetching
     const [isFetching, setIsFetching] = useState(true)
     const pagination = useRef({
-        page: 0, 
-        size: 10, 
-        total: undefined,
         name: ''
     })
 
@@ -147,12 +144,19 @@ const TaskTypeDropdown = ({initialSelectedType, onSelect, placeholder = 'Тип 
                 onDropdownToggle={onDropdownToggle}
                 initialSelectedItem={initialSelectedType}
                 isDisableListClosing={isAddTaskTypeModalShow || isDeleteTaskTypeModalShow}
-                className={'task-types-dropdown dropdown-clean' + ((className) ? ' ' + className:'')}
+                className={'minw-0 task-types-dropdown dropdown-clean' + ((className) ? ' ' + className:'')}
                 toggle={(type) => {
                     return (
-                        <BestSelectToggle className='d-flex align-items-center' >
-                            <div className='type-color-circle' style={{backgroundColor: getTaskTypeColor(type?.id)}}/>
-                            <span>{type ? type.name : placeholder}</span>
+                        <BestSelectToggle className='minw-0 d-flex flex-row align-items-center mw-100'>
+                            <div>
+                                <div className='type-color-circle' style={{backgroundColor: getTaskTypeColor(type?.id)}}/>
+                            </div>
+                            <div className='minw-0 position-relative w-100'>
+                                <div className='text-truncate'>
+                                    <span>{type ? type.name : placeholder}</span>
+                                </div>
+                            </div>
+
                         </BestSelectToggle>
                     )
                 }}
@@ -184,8 +188,8 @@ const TaskTypeDropdown = ({initialSelectedType, onSelect, placeholder = 'Тип 
                     {taskTypes && taskTypes.map(taskType => 
                         <BestSelectItem key={taskType.id} item={taskType}>
                             <BestItemSelector className='d-flex pl-2'>
-                                <div className='type-color-circle' style={{backgroundColor: getTaskTypeColor(taskType.id)}}/>
-                                <span>{taskType.name}</span>
+                                <div><div className='type-color-circle' style={{backgroundColor: getTaskTypeColor(taskType.id)}}/></div>
+                                <span className='text-truncate' title={taskType.name}>{taskType.name}</span>
                             </BestItemSelector>
                             {taskType.creatorId !== null && 
                                 <>

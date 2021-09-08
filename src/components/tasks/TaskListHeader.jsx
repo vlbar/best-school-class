@@ -36,7 +36,7 @@ const TaskListHeader = ({submitSearchParams, selectedTasks, isSelectedAll, onSel
                 onChange={() => onSelectAll()}
             />
 
-            <div className={selectedTasks.length == 0 ? 'd-flex justify-content-end w-100' : 'none-parent'}>
+            <div className={selectedTasks.length == 0 ? 'd-flex justify-content-end' : 'none-parent'} style={{ width: '98%' }}>
                 <TaskTypeDropdown
                     className='btn-clean'
                     onSelect={onSelectType}
