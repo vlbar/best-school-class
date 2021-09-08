@@ -8,7 +8,7 @@ export const SelectContext = React.createContext()
 const ToggleContext = React.createContext()
 
 const BestSelect = ({
-    onSelect,
+    onSelect, onDropdownToggle,
     fieldToDisplay = 'name', initialSelectedItem, placeholder = 'Выбрать', isDisableListClosing = false,
     variant = 'white', disabled = false,
     toggle, children, ...props
@@ -33,11 +33,12 @@ const BestSelect = ({
         if(onSelect) onSelect(targetItem)
     }
 
-    const onDropdownToggle = (show) => {
+    const onDropdownToggleHandler = (show) => {
         if(dropdownLock.current)
             setIsDropdownShow(true)
         else
             setIsDropdownShow(show)
+        onDropdownToggle()
     }
 
     // ну а как иначе 🤷‍♂️
@@ -52,7 +53,7 @@ const BestSelect = ({
     }, [isDisableListClosing])
 
     return (
-        <Dropdown show={isDropdownShow} onToggle={onDropdownToggle} {...props} className={'item-select' + ((props.className) ? ' ' + props.className :'')}>
+        <Dropdown show={isDropdownShow} onToggle={onDropdownToggleHandler} {...props} className={'item-select' + ((props.className) ? ' ' + props.className :'')}>
             <ToggleContext.Provider value={{ selectedItem, fieldToDisplay, disabled, variant, placeholder }}>
                 {toggle ? toggle(selectedItem) : <BestSelectToggle/>}
             </ToggleContext.Provider>
@@ -74,14 +75,14 @@ export const BestSelectToggle = ({children, ...props}) => {
     )
 }
 
-export const BestSelectList = ({isFetching = false, isSearch = false, isCanFetchMore = false, fetchItemsCallback, scrollListRef, notFoundMessage, errorMessage, emptyMessage, disableMessages = false, children, ...props}) => {
+export const BestSelectList = ({isFetching = false, isSearch = false, isCanFetchMore = false, isCanAutoFetch = true, fetchItemsCallback, scrollListRef, notFoundMessage, errorMessage, emptyMessage, disableMessages = false, children, ...props}) => {
     const { ref, inView } = useInView({
-        threshold: 1
+        threshold: 0
     })
 
     //auto fetch
     useEffect(() => {
-        if(inView && !isFetching) fetchItemsCallback()
+        if(inView && !isFetching && isCanAutoFetch) fetchItemsCallback()
     }, [inView])
 
     const getMessage = () => {
