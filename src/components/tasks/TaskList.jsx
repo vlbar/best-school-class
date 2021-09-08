@@ -131,7 +131,7 @@ export const TaskList = ({selectedCourse}) => {
 
     // ох уж эти индусы...
     const getMessage = () => {
-        if(!selectedCourse && !tasks && !isFetching)
+        if(!selectedCourse && !tasks && !isFetching && searchParams.current.name == '')
             return  <>
                         <h5>Не выбран курс</h5>
                         <p className='text-muted'>Выберите курс, чтобы отобразить его задания, либо воспользуйтесь поиском.</p>
@@ -140,7 +140,7 @@ export const TaskList = ({selectedCourse}) => {
             if(!isFetching)
                 if(tasks !== undefined) {
                     if(tasks === null || tasks.length === 0)
-                        if(searchParams.current.name !== '' || searchParams.current.taskTypeId !== undefined)
+                        if(searchParams.current.name !== '' || searchParams.current.taskTypeId !== null)
                             return  <>
                                         <h5>Задания не найдены.</h5>
                                         <p className='text-muted'>Не удалось найти задания, удовлетворяющие условиям поиска.</p>
