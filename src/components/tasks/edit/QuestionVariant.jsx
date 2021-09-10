@@ -131,6 +131,7 @@ const variantValidationSchema = {
     // text variant
     numberOfSymbols: {
         type: 'number',
+        nullable: true,
         min: [1, 'Длина ответа должна быть больше 0'],
         max: [9223372036854775807, 'Слишком большая длина ответа']
     },
@@ -425,7 +426,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
                                 type='number'
                                 min={1}
                                 className='short-input hover-border'
-                                value={variant.numberOfSymbols}
+                                value={variant.numberOfSymbols ?? ''}
                                 name='numberOfSymbols'
                                 isInvalid={variantValidation.errors.numberOfSymbols}
                                 onBlur={variantValidation.blurHandle}
