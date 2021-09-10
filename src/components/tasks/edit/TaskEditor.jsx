@@ -106,7 +106,7 @@ export const TaskEditor = ({taskId}) => {
     const setDuration = (duration) => taskDispatch({ type: TASK_DURATION, payload: duration })
     const setTaskTypeId = (taskTypeId) => taskDispatch({ type: TASK_TYPE, payload: taskTypeId })
 
-    const { statusBySub, setIsChanged } = useTaskSaveManager(saveTaskDetails)
+    const { callbackSubStatus, setIsChanged } = useTaskSaveManager(saveTaskDetails)
     const lastSavedData = useRef({})
 
     const descriptionEditor = useRef(null)
@@ -168,22 +168,22 @@ export const TaskEditor = ({taskId}) => {
 
     function saveTaskDetails() {
         if(isEquivalent(taskDetails, lastSavedData.current)) { 
-            statusBySub(SAVED_STATUS)
+            callbackSubStatus(SAVED_STATUS)
             return
         }
 
         if(!taskValidation.validate(taskDetails)) {
-            statusBySub(VALIDATE_ERROR_STATUS)
+            callbackSubStatus(VALIDATE_ERROR_STATUS)
             return
         }
 
         updateTaskDetails(taskId, taskDetails)
             .then(res => { 
-                statusBySub(SAVED_STATUS)
+                callbackSubStatus(SAVED_STATUS)
                 lastSavedData.current = taskDetails
             })
             .catch(error => {
-                statusBySub(ERROR_STATUS)
+                callbackSubStatus(ERROR_STATUS)
                 addErrorNotification('Не удалось загрузить информацию о задании. \n' + (error?.response?.data?.message ? error.response.data.message : error))
             })
     }

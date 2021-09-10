@@ -67,7 +67,7 @@ export const TaskQuestion = ({index, question}) => {
     const [selectedVariant, setSelectedVariant] = useState(0)
     const [questionVariants, setQuestionVariants] = useState(undefined)
 
-    const { statusBySub, setIsChanged } = useTaskSaveManager(updateQuestion)
+    const { callbackSubStatus, setIsChanged } = useTaskSaveManager(updateQuestion)
     const lastSavedData = useRef(question)
 
     const [taskQuestion, dispatchQuestion] = useReducer(questionReducer, question)
@@ -114,12 +114,12 @@ export const TaskQuestion = ({index, question}) => {
 
     function updateQuestion() {
         if(!questionValidation.validate(taskQuestion)) {
-            statusBySub(VALIDATE_ERROR_STATUS)
+            callbackSubStatus(VALIDATE_ERROR_STATUS)
             return
         }
 
         if(!isDeleted && isEquivalent(question, lastSavedData.current)) { 
-            statusBySub(SAVED_STATUS)
+            callbackSubStatus(SAVED_STATUS)
             return
         }
 
@@ -135,11 +135,11 @@ export const TaskQuestion = ({index, question}) => {
                     question.id = fetchedData.id
 
                     lastSavedData.current = {...question}
-                    statusBySub(SAVED_STATUS)
+                    callbackSubStatus(SAVED_STATUS)
                 })
                 .catch(error => {
                     addErrorNotification('Не удалось сохранить задание. \n' + error)
-                    statusBySub(ERROR_STATUS)
+                    callbackSubStatus(ERROR_STATUS)
                     question.id = Math.random()
                 })
         } else {
@@ -147,22 +147,22 @@ export const TaskQuestion = ({index, question}) => {
                 update(question, taskId)
                     .then(res => {
                         lastSavedData.current = {...question}
-                        statusBySub(SAVED_STATUS)
+                        callbackSubStatus(SAVED_STATUS)
                     })
                     .catch(error => {
                         addErrorNotification('Не удалось сохранить задание. \n' + error)
-                        statusBySub(ERROR_STATUS)
+                        callbackSubStatus(ERROR_STATUS)
                         question.id = Math.random()
                     })
             } else {
                 remove(question, taskId)
                     .then(res => {
                         deleteQuestion(question)
-                        statusBySub(SAVED_STATUS)
+                        callbackSubStatus(SAVED_STATUS)
                     })
                     .catch(error => {
                         addErrorNotification('Не удалось удалить задание. \n' + error)
-                        statusBySub(ERROR_STATUS)
+                        callbackSubStatus(ERROR_STATUS)
                     })
             }
         }

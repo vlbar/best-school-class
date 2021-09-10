@@ -19,8 +19,9 @@ export const TaskSaveManager = ({children, autoSaveDelay = 30000}) => {
 
     const [updateCycle, setUpdateCycle] = useState(0)
     const subscribers = useRef([])
-    const checkedSubs = useRef(0)
+    const checkedSubs = useRef([])
     const changedSubs = useRef([])
+    const expectedSubResponses = useRef([])
 
     const autoSaveTimer = useRef(undefined)
     const [isAutoSaveEnabled, setIsAutoSaveEnabled] = useState(true)
@@ -31,24 +32,21 @@ export const TaskSaveManager = ({children, autoSaveDelay = 30000}) => {
     }
 
     const removeSubscriber = (id) => {
-        let removedSubIndex = subscribers.current.indexOf(id)
-        subscribers.current.splice(removedSubIndex, 1)
+        subscribers.current = subscribers.current.filter(x => x !== id)
     }
 
     // save
     let generalSaveStatus = SAVING_STATUS
     const canSave = useRef(true)
-    const isFakeSaving = useRef(false)
-    const expectedSubResponses = useRef(undefined)
-    const onSaveClick = () => {
+    const isFakeSaving = useRef(false)  
+    const startSave = () => {
         if(canSave.current) {
             canSave.current = false
             autoSaveTimer.current = undefined
-            expectedSubResponses.current = subscribers.current.length
-
+            expectedSubResponses.current = subscribers.current
             changedSubs.current = []
-            setIsHasChanges(false)
 
+            setIsHasChanges(false)
             setUpdateCycle(updateCycle + 1)
         } else {
             if(saveStatus !== SAVING_STATUS) isFakeSaving.current = true
@@ -61,12 +59,11 @@ export const TaskSaveManager = ({children, autoSaveDelay = 30000}) => {
     // changes
     const setIsSubHaveChanges = (id, isChanged) => {
         let changedSubList = changedSubs.current
-        let index = changedSubList.indexOf(id)
+        let isInclude = changedSubList.includes(id)
 
-        if(isChanged) {
-            if(index < 0) changedSubList.push(id)
-        } else
-            if(index >= 0) changedSubList.splice(index, 1)
+        if (isChanged) {
+            if (isInclude) changedSubList.push(id)
+        } else if (!isInclude) changedSubList.filter(x => x !== id)
 
         changedSubs.current = changedSubList
         setIsHasChanges(changedSubList.length !== 0)
@@ -82,28 +79,31 @@ export const TaskSaveManager = ({children, autoSaveDelay = 30000}) => {
             if(isAutoSaveEnabled) {
                 autoSaveTimer.current = setTimeout(() => {
                     canSave.current = true
-                    onSaveClick()
+                    startSave()
                 }, autoSaveDelay)
             }
         } else {
             window.onbeforeunload = undefined
         }
     }, [isHasChanges])
+
+   
     
     // status chages
-    const statusBySub = (status) => {
+    const statusBySub = (uid, status) => {
+        if(!expectedSubResponses.current.includes(uid) || checkedSubs.includes(uid)) return
         if(status === VALIDATE_ERROR_STATUS && generalSaveStatus === SAVING_STATUS) {
             generalSaveStatus = VALIDATE_ERROR_STATUS
         } else if(status === ERROR_STATUS) {
             generalSaveStatus = ERROR_STATUS
         }
 
-        checkedSubs.current++
-        if(checkedSubs.current == expectedSubResponses.current) {
+        checkedSubs.current.push(uid)
+        if(checkedSubs.current.length == expectedSubResponses.current.length) {
             if(generalSaveStatus === SAVING_STATUS) generalSaveStatus = SAVED_STATUS
             setSaveStatus(generalSaveStatus)
 
-            checkedSubs.current = 0
+            checkedSubs.current = []
             manualSaveCooldown()
         }
     }
@@ -113,9 +113,9 @@ export const TaskSaveManager = ({children, autoSaveDelay = 30000}) => {
             canSave.current = true
             if(isFakeSaving.current) {
                 isFakeSaving.current = false
-                onSaveClick()
+                startSave()
             }
-        }, 10000)
+        }, 5000)
     }
 
     //bar show
@@ -182,7 +182,7 @@ export const TaskSaveManager = ({children, autoSaveDelay = 30000}) => {
                         <Col md={4} className='d-flex justify-content-between mt-2'>
                             <div className='save-status'>{displayStatus}</div>
                             <Dropdown as={ButtonGroup}>
-                                <Button variant='outline-primary' onClick={() => onSaveClick()}>Сохранить</Button>
+                                <Button variant='outline-primary' onClick={() => startSave()}>Сохранить</Button>
                                 <Dropdown.Toggle split variant='outline-primary' />
 
                                 <Dropdown.Menu>
@@ -194,7 +194,7 @@ export const TaskSaveManager = ({children, autoSaveDelay = 30000}) => {
                     </Row>
                 </Container>
             </div>
-            <TaskSaveContext.Provider value={{addSubscriber, removeSubscriber, updateCycle, onSaveClick, statusBySub, setIsSubHaveChanges, displayStatus, 
+            <TaskSaveContext.Provider value={{addSubscriber, removeSubscriber, updateCycle, onSaveClick: startSave, statusBySub, setIsSubHaveChanges, displayStatus, 
                 taskDisplay: { taskName, setTaskName },
                 autoSave:    { isEnabled: isAutoSaveEnabled, setIsAutoSaveEnabled }
             }}>
@@ -227,7 +227,11 @@ export function useTaskSaveManager(onSave) {
         setIsSubHaveChanges(uid.current, flag)
     }
 
-    return { statusBySub, setIsChanged }
+    function callbackSubStatus(status) {
+        statusBySub(uid.current, status)
+    }
+
+    return { callbackSubStatus, setIsChanged }
 }
 
 export function isEquivalent(a, b) {

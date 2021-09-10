@@ -200,7 +200,7 @@ async function deleteVariant(variant, questionId) {
 export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
     const [questionType, setQuestionType] = useState(TEXT_QUESTION)
     const [variant, dispatchVariant] = useReducer(variantReducer, questionVariant)
-    const { statusBySub, setIsChanged } = useTaskSaveManager(saveVariant)
+    const { callbackSubStatus, setIsChanged } = useTaskSaveManager(saveVariant)
     const lastSavedData = useRef({...questionVariant})
     const awaitQuestionSave = useRef(false)
 
@@ -331,7 +331,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
 
     async function saveVariant() {
         if(!variantValidation.validate(variant) | (variant.type === SOURCE_TEST_QUESTION && !answerVariantsValdiation.validate([...variant.testAnswerVariants]))) {
-            statusBySub(VALIDATE_ERROR_STATUS)
+            callbackSubStatus(VALIDATE_ERROR_STATUS)
             return
         }
 
@@ -341,7 +341,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
         }
 
         if(!isDeleted.current && isEquivalent(variant, lastSavedData.current)) { 
-            statusBySub(SAVED_STATUS)
+            callbackSubStatus(SAVED_STATUS)
             return
         }
 
@@ -360,7 +360,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
                     .then(res => {
                         addVariant(variant, question.id)
                         .then(res => { 
-                            statusBySub(SAVED_STATUS)
+                            callbackSubStatus(SAVED_STATUS)
                             setLastSavedData(variant)
                         })
                         .catch(error => catchSaveError(error))
@@ -374,7 +374,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
             else
                 deleteVariant(variant, question.id)
                     .then(res => { 
-                        statusBySub(SAVED_STATUS)
+                        callbackSubStatus(SAVED_STATUS)
                         deleteQuestionVariant(index)
                     })
                     .catch(error => catchSaveError(error))
@@ -382,12 +382,12 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
     }
 
     const successfulSaved = () => {
-        statusBySub(SAVED_STATUS)
+        callbackSubStatus(SAVED_STATUS)
         setLastSavedData(variant)
     }
 
     const catchSaveError = (error) => {
-        statusBySub(ERROR_STATUS)
+        callbackSubStatus(ERROR_STATUS)
         addErrorNotification('Не удалось сохранить информацию о задании. \n' + (error?.response?.data?.message ? error.response.data.message : error))
     }
 
