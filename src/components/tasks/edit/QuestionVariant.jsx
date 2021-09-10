@@ -250,7 +250,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
             awaitQuestionSave.current = false
             saveVariant()
         }
-    }, [question.id])
+    }, [question])
 
     // -Anti select varinat focus. 
     // -Ford?

@@ -16,11 +16,17 @@ import FeedbackMessage from '../../feedback/FeedbackMessage'
 
 //reducer
 const MAX_SCORE = 'MAX_SCORE'
+const IS_DETACHED = 'IS_DETACHED'
+const ID = 'ID'
 
 const questionReducer = (state, action) => {
     switch (action.type) {
         case MAX_SCORE:
             return { ...state, maxScore: action.payload }
+        case IS_DETACHED:
+            return { ...state, detached: action.payload }
+        case ID:
+            return { ...state, id: action.payload }
         default:
             return state
     }
@@ -68,9 +74,11 @@ export const TaskQuestion = ({index, question}) => {
     const [questionVariants, setQuestionVariants] = useState(undefined)
 
     const { callbackSubStatus, setIsChanged } = useTaskSaveManager(updateQuestion)
-    const lastSavedData = useRef(question)
+    const lastSavedData = useRef(undefined)
 
     const [taskQuestion, dispatchQuestion] = useReducer(questionReducer, question)
+    const setId = (id) => dispatchQuestion({ type: ID, payload: id })
+    const setIsDetached = (isDetached) => dispatchQuestion({ type: IS_DETACHED, payload: isDetached })
     const setMaxScore = (maxScore) => dispatchQuestion({ type: MAX_SCORE, payload: maxScore })
 
     const questionValidation = useBestValidation(questionValidationSchema)
@@ -86,7 +94,6 @@ export const TaskQuestion = ({index, question}) => {
 
     useEffect(() => {  
         setQuestion(taskQuestion, index)
-        question = taskQuestion
 
         setIsChanged(!isEquivalent(taskQuestion, lastSavedData.current))
     }, [taskQuestion])
@@ -131,16 +138,16 @@ export const TaskQuestion = ({index, question}) => {
             add(addableQuestion, taskId)
                 .then(res => {
                     let fetchedData = res.data
-                    question.detached = false
-                    question.id = fetchedData.id
+                    setId(fetchedData.id)
+                    setIsDetached(false)
 
-                    lastSavedData.current = {...question}
+                    lastSavedData.current = taskQuestion
                     callbackSubStatus(SAVED_STATUS)
+                    
                 })
                 .catch(error => {
                     addErrorNotification('Не удалось сохранить задание. \n' + error)
                     callbackSubStatus(ERROR_STATUS)
-                    question.id = Math.random()
                 })
         } else {
             if(!isDeleted) {
@@ -152,7 +159,6 @@ export const TaskQuestion = ({index, question}) => {
                     .catch(error => {
                         addErrorNotification('Не удалось сохранить задание. \n' + error)
                         callbackSubStatus(ERROR_STATUS)
-                        question.id = Math.random()
                     })
             } else {
                 remove(question, taskId)
