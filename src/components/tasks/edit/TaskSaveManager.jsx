@@ -10,7 +10,7 @@ export const VALIDATE_ERROR_STATUS = 'Исправьте ошибки!'
 
 export const TaskSaveContext = React.createContext()
 
-export const TaskSaveManager = ({children, autoSaveDelay = 30000}) => {
+export const TaskSaveManager = ({children, autoSaveDelay = 20000}) => {
     const [isBarShow, setIsBarShow] = useState(false)
     const [isHasChanges, setIsHasChanges] = useState(false)
     const [saveStatus, setSaveStatus] = useState(SAVED_STATUS)
@@ -26,12 +26,22 @@ export const TaskSaveManager = ({children, autoSaveDelay = 30000}) => {
     const autoSaveTimer = useRef(undefined)
     const [isAutoSaveEnabled, setIsAutoSaveEnabled] = useState(true)
 
+    useEffect(() => {
+        return () => {
+            StopAutopSaveTimer()
+        }
+    }, [])
+
     // subscribers
     const addSubscriber = (id) => {
+        setIsSubHaveChanges(id, true)
         subscribers.current.push(id)
     }
 
     const removeSubscriber = (id) => {
+        setIsSubHaveChanges(id, false)
+        checkedSubs.current = checkedSubs.current.filter(x => x.id !== id)
+        expectedSubResponses.current = subscribers.current.filter(x => x.id !== id)
         subscribers.current = subscribers.current.filter(x => x !== id)
     }
 
@@ -42,11 +52,10 @@ export const TaskSaveManager = ({children, autoSaveDelay = 30000}) => {
     const startSave = () => {
         if(canSave.current) {
             canSave.current = false
-            autoSaveTimer.current = undefined
             expectedSubResponses.current = subscribers.current
             changedSubs.current = []
 
-            setIsHasChanges(false)
+            setIsSubsNeedSave(false)
             setUpdateCycle(updateCycle + 1)
         } else {
             if(saveStatus !== SAVING_STATUS) isFakeSaving.current = true
@@ -54,6 +63,20 @@ export const TaskSaveManager = ({children, autoSaveDelay = 30000}) => {
 
         setSaveStatus(SAVING_STATUS)
         generalSaveStatus = SAVING_STATUS
+    }
+
+    const StartAutoSaveTimer = () => {
+        if (isAutoSaveEnabled) {
+            clearTimeout(autoSaveTimer.current)
+            autoSaveTimer.current = setTimeout(() => {
+                canSave.current = true
+                startSave()
+            }, autoSaveDelay)
+        }
+    }
+
+    const StopAutopSaveTimer = () => {
+        clearTimeout(autoSaveTimer.current)
     }
 
     // changes
@@ -66,32 +89,27 @@ export const TaskSaveManager = ({children, autoSaveDelay = 30000}) => {
         } else if (!isInclude) changedSubList.filter(x => x !== id)
 
         changedSubs.current = changedSubList
-        setIsHasChanges(changedSubList.length !== 0)
+        setIsSubsNeedSave(changedSubList.length !== 0)
     }
 
-    useEffect(() => {
-        if(isHasChanges) {
+   const setIsSubsNeedSave = (isNeed) => {
+        setIsHasChanges(isNeed)
+       
+        if (isNeed) {
             window.onbeforeunload = (ev) => {
                 ev.preventDefault()
                 return ev.returnValue = 'Есть несохраненные изменения, вы уверены, что хотите закрыть редактор задания?';
             }
 
-            if(isAutoSaveEnabled) {
-                autoSaveTimer.current = setTimeout(() => {
-                    canSave.current = true
-                    startSave()
-                }, autoSaveDelay)
-            }
+            StartAutoSaveTimer()
         } else {
             window.onbeforeunload = undefined
         }
-    }, [isHasChanges])
-
-   
+   }
     
     // status chages
     const statusBySub = (uid, status) => {
-        if(!expectedSubResponses.current.includes(uid) || checkedSubs.includes(uid)) return
+        if(!expectedSubResponses.current.includes(uid) || checkedSubs.current.includes(uid)) return
         if(status === VALIDATE_ERROR_STATUS && generalSaveStatus === SAVING_STATUS) {
             generalSaveStatus = VALIDATE_ERROR_STATUS
         } else if(status === ERROR_STATUS) {
@@ -103,8 +121,10 @@ export const TaskSaveManager = ({children, autoSaveDelay = 30000}) => {
             if(generalSaveStatus === SAVING_STATUS) generalSaveStatus = SAVED_STATUS
             setSaveStatus(generalSaveStatus)
 
+            expectedSubResponses.current = []
             checkedSubs.current = []
             manualSaveCooldown()
+            StartAutoSaveTimer()
         }
     }
 
@@ -155,8 +175,9 @@ export const TaskSaveManager = ({children, autoSaveDelay = 30000}) => {
     useEffect(() => {
         if(isAutoSaveEnabled) {
             setIsAutoSaveEnabled(true)
+            StartAutoSaveTimer()
         } else {
-            autoSaveTimer.current = undefined
+            StopAutopSaveTimer()
             setIsAutoSaveEnabled(false)
         }
     }, [isAutoSaveEnabled])
