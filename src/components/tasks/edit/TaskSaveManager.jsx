@@ -41,8 +41,9 @@ export const TaskSaveManager = ({children, autoSaveDelay = 20000}) => {
     const removeSubscriber = (id) => {
         setIsSubHaveChanges(id, false)
         checkedSubs.current = checkedSubs.current.filter(x => x.id !== id)
-        expectedSubResponses.current = subscribers.current.filter(x => x.id !== id)
+        expectedSubResponses.current = expectedSubResponses.current.filter(x => x.id !== id)
         subscribers.current = subscribers.current.filter(x => x !== id)
+        CheckIsAllSubsResponse()
     }
 
     // save
@@ -117,6 +118,10 @@ export const TaskSaveManager = ({children, autoSaveDelay = 20000}) => {
         }
 
         checkedSubs.current.push(uid)
+        CheckIsAllSubsResponse()
+    }
+
+    const CheckIsAllSubsResponse = () => {
         if(checkedSubs.current.length == expectedSubResponses.current.length) {
             if(generalSaveStatus === SAVING_STATUS) generalSaveStatus = SAVED_STATUS
             setSaveStatus(generalSaveStatus)
