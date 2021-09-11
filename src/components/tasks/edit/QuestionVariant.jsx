@@ -235,7 +235,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
 
     const isMount = useRef(false)
     useEffect(() => {
-        if(isMount.current) isVariantValid()
+        if(isMount.current) isVariantInvalid()
         isMount.current = true
     }, [questionToChange])
 
@@ -346,7 +346,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
             return
         }
 
-        if(!isVariantValid()) {
+        if(isVariantInvalid()) {
             callbackSubStatus(VALIDATE_ERROR_STATUS)
             return
         }
@@ -397,7 +397,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
         }
     }
 
-    const isVariantValid = () => {
+    const isVariantInvalid = () => {
         return !variantValidation.validate(variant) | (variant.type === SOURCE_TEST_QUESTION && !answerVariantsValdiation.validate([...variant.testAnswerVariants]))
     }
 
