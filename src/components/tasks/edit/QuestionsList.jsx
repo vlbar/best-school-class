@@ -94,11 +94,12 @@ export const QuestionsList = ({taskId}) => {
         }
 
         let targetIndex = targetQuestions.findIndex(x => x.position >= position)
-        if(targetIndex < 1)
+        if(targetIndex < 0)
             targetQuestions.push(newQuestion)
         else
             targetQuestions.splice(targetIndex, 0, newQuestion)
 
+        setQuestionToChange(targetIndex >= 0 ? targetIndex : targetQuestions.length)
         setQuestions([...targetQuestions])
     }
 

@@ -3,7 +3,7 @@ import { Row, Col, Button, Form, Dropdown } from 'react-bootstrap'
 import { addErrorNotification } from '../../notifications/notifications'
 import { sortableContainer, sortableElement, sortableHandle, arrayMove } from 'react-sortable-hoc'
 import { useTaskSaveManager, isEquivalent, SAVED_STATUS, ERROR_STATUS, VALIDATE_ERROR_STATUS } from './TaskSaveManager'
-import { questionPartUrl } from './QuestionsList'
+import { questionPartUrl, QuestionsContext } from './QuestionsList'
 import { TaskQuestionContext } from './TaskQuestion'
 import useBestValidation from './useBestValidation'
 import FeedbackMessage from '../../feedback/FeedbackMessage'
@@ -229,6 +229,15 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
     const answerVariantsValdiation = useAnswerVariantsValidationHook(answerVariantsValidarionSсhema)
 
     const formulationEditor = useRef(null)
+    const isFormulationTouched = useRef(false)
+
+    const { questionToChange } = useContext(QuestionsContext)
+
+    const isMount = useRef(false)
+    useEffect(() => {
+        if(isMount.current) isVariantValid()
+        isMount.current = true
+    }, [questionToChange])
 
     useEffect(() => {
         let targetVariant = variant
@@ -331,7 +340,13 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
     }
 
     function saveVariant() {
-        if(!variantValidation.validate(variant) | (variant.type === SOURCE_TEST_QUESTION && !answerVariantsValdiation.validate([...variant.testAnswerVariants]))) {
+        // send saved without validation if varinat now editing and formulation not touched
+        if(show && !isFormulationTouched.current) { 
+            callbackSubStatus(SAVED_STATUS)
+            return
+        }
+
+        if(!isVariantValid()) {
             callbackSubStatus(VALIDATE_ERROR_STATUS)
             return
         }
@@ -380,6 +395,10 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
                     })
                     .catch(error => catchSaveError(error))
         }
+    }
+
+    const isVariantValid = () => {
+        return !variantValidation.validate(variant) | (variant.type === SOURCE_TEST_QUESTION && !answerVariantsValdiation.validate([...variant.testAnswerVariants]))
     }
 
     const successfulSaved = () => {
@@ -488,6 +507,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
                     onBlur={newContent => {
                         setFormulation(newContent)
                         variantValidation.blurHandle({target: {name: 'formulation', value: newContent?.replace(/<[^>]*>?/gm, '')}})
+                        isFormulationTouched.current = true
                     }}
                 />
                 <div className='variant-actions'>
