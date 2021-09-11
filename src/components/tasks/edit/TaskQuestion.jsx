@@ -282,7 +282,7 @@ export const TaskQuestion = ({index, question}) => {
         if(targetVariants) {
             let isHasInvalid = false // осуждаю
             targetVariants.forEach(variant => {
-                if(variant.isValid !== undefined && !variant.isValid)
+                if(variant.isValid !== undefined && !variant.isValid && !variant.markForDelete)
                     isHasInvalid = true
             })
             return isHasInvalid
