@@ -172,13 +172,13 @@ export const TaskList = ({selectedCourse}) => {
                 }}
                 emptyAfterTaskName={emptyResultAfterName.current}
             />
-            <TaskListHeader
-                submitSearchParams={(params) => setSearchParams(params)}
-                selectedTasks={selectedTasks}
-                isSelectedAll={selectedTasks.length == tasks?.length && tasks != undefined && tasks.length !== 0}
-                onSelectAll={onSelectAll}
-            />
             <div className='task-list course-panel'>
+                <TaskListHeader
+                    submitSearchParams={(params) => setSearchParams(params)}
+                    selectedTasks={selectedTasks}
+                    isSelectedAll={selectedTasks.length == tasks?.length && tasks != undefined && tasks.length !== 0}
+                    onSelectAll={onSelectAll}
+                />
                 {isFetching && <ProcessBar className='position-absolute' height='.18Rem'/>}
                 <div className='scroll-container'>
                     {tasks && tasks.length !== 0 && 

@@ -231,7 +231,7 @@ export const CourseHierarchy = ({onCourseSelect}) => {
             {isShowHierarhy && (
                 <div className='course-panel'>
                     <ProcessBar active={isFetching} height='.18Rem' className='position-absolute'/>
-                    <div className='course-hierarchy'>
+                    <div className='scroll-container pt-2'>
                         <TreeHierarchy
                             treeData={courses}
                             setTreeData={setCourses}
