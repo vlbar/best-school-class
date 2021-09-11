@@ -193,10 +193,10 @@ export const TaskQuestion = ({index, question}) => {
 
     const markForDeletion = () => {
         setIsDeleted(true)
+        setIsChanged(true)
         if(question.detached) deleteQuestion(question)
     }
 
-    
     const selectVartiant = async (index) => {
         if(isEmpty(questionVariants[index]))
             await fetchOtherVarinats()
