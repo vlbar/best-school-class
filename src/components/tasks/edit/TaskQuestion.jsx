@@ -92,9 +92,8 @@ export const TaskQuestion = ({index, question}) => {
         return !(!questionValidation.isValid || isVariantsHasInvalid(targetVariants))
     }
 
-    useEffect(() => {  
+    useEffect(() => {
         setQuestion(taskQuestion, index)
-
         setIsChanged(!isEquivalent(taskQuestion, lastSavedData.current))
     }, [taskQuestion])
 
@@ -125,7 +124,7 @@ export const TaskQuestion = ({index, question}) => {
             return
         }
 
-        if(!isDeleted && isEquivalent(question, lastSavedData.current)) { 
+        if(!isDeleted && !question.detached && isEquivalent(question, lastSavedData.current)) { 
             callbackSubStatus(SAVED_STATUS)
             return
         }
@@ -143,7 +142,6 @@ export const TaskQuestion = ({index, question}) => {
 
                     lastSavedData.current = taskQuestion
                     callbackSubStatus(SAVED_STATUS)
-                    
                 })
                 .catch(error => {
                     addErrorNotification('Не удалось сохранить задание. \n' + error)
