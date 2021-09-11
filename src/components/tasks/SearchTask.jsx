@@ -28,7 +28,7 @@ export const SearchTask = ({onSubmit, setIsFetching, emptyAfterTaskName}) => {
 
     let nameValdiationErros = searchValidation.errors.name
     return (<>
-        <div className='d-flex flex-row my-3'>        
+        <div className='d-flex flex-row w-100'>        
             <LazySearchInput
                 name='name'
                 placeholder='Введите название задания'

@@ -103,7 +103,7 @@ export const TaskList = ({selectedCourse}) => {
         link
             ?.fetch(setIsFetching)
             .then(data => {
-                let fetchedTasks = data.list('tasks')
+                let fetchedTasks = data.list('tasks') ?? []
                 setNextPage(data.link('next'))
 
                 if(data.page.totalElements == 0) emptyResultAfterName.current = link.param('name')
@@ -164,14 +164,23 @@ export const TaskList = ({selectedCourse}) => {
     let message = getMessage()
     return (
         <>
-            <SearchTask 
-                onSubmit={(params) => setSearchParams(params)}
-                setIsFetching={(isFetching) => {
-                    setIsFetching(isFetching)
-                    setTasks([])
-                }}
-                emptyAfterTaskName={emptyResultAfterName.current}
-            />
+            <div className='d-flex flex-row my-3'>
+                <SearchTask
+                    onSubmit={(params) => setSearchParams(params)}
+                    setIsFetching={(isFetching) => {
+                        setIsFetching(isFetching)
+                        setTasks([])
+                    }}
+                    emptyAfterTaskName={emptyResultAfterName.current}
+                />
+                <Button 
+                    variant='primary'
+                    disabled={!selectedCourse || !tasks}
+                    onClick={() => setIsAddTaskModalShow(true)}
+                >
+                    Добавить
+                </Button>
+            </div>
             <div className='task-list course-panel'>
                 <TaskListHeader
                     submitSearchParams={(params) => setSearchParams(params)}
@@ -249,14 +258,6 @@ export const TaskList = ({selectedCourse}) => {
                         </Table>}
                 </div>
             </div>
-            <Button 
-                variant='primary' 
-                className={'w-100 mt-2'}
-                disabled={!selectedCourse || !tasks}
-                onClick={() => setIsAddTaskModalShow(true)}
-            >
-                Добавить задание
-            </Button>
             {<TaskAddModal 
                 show={isAddTaskModalShow} 
                 onClose={() => setIsAddTaskModalShow(false)} 
