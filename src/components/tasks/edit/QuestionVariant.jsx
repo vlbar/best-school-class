@@ -40,6 +40,7 @@ const SortableItem = sortableElement(({index_, answerVariant}) => (
 
 //flux
 const SET = 'SET'
+const ID = 'ID'
 const FORMULATION = 'FORMULATION'
 const QUESTION_TYPE = 'QUESTION_TYPE'
 
@@ -62,6 +63,8 @@ const variantReducer = (state, action) => {
         case SET:
             state = action.payload
             return { ...state }
+        case ID:
+            return { ...state, id: action.payload}
         case FORMULATION:
             return { ...state, formulation: action.payload }
         case QUESTION_TYPE:
@@ -208,6 +211,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
     const { question, setQuestionVariant, pasteVariantAfter, variantCount, markForDeleteVariant, deleteQuestionVariant } = useContext(TaskQuestionContext)
     const isDeleted = useRef(false)
 
+    const setId = (id) => dispatchVariant({ type: ID, payload: id })
     const setVariant = (variant) => dispatchVariant({ type: SET, payload: variant })
     const setFormulation = (formulation) => dispatchVariant({ type: FORMULATION, payload: formulation })
     const setVariantType = (questionType) => dispatchVariant({ type: QUESTION_TYPE, payload: questionType })
@@ -367,7 +371,10 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
             }
 
             addVariant(variant, question.id)
-                .then(res => successfulSaved())
+                .then(res => {
+                    setId(res.data.id)
+                    successfulSaved()
+                })
                 .catch(error => catchSaveError(error))
         } else {
             if(!isDeleted.current)
