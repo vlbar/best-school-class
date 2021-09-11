@@ -232,9 +232,9 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
 
     useEffect(() => {
         let targetVariant = variant
-        targetVariant.isValid = variantValidation.isValid
+        targetVariant.isValid = variantValidation.isValid && answerVariantsValdiation.isValid
         setQuestionVariant(targetVariant, index)
-    }, [variantValidation.isValid])
+    }, [variantValidation.isValid, answerVariantsValdiation.isValid])
 
     useEffect(() => {
         getQuestionParams()
@@ -330,7 +330,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
         answerVariantsValdiation.changeHandle(NO_IS_RIGHT_VALIDATION, testAnswerVariants)
     }
 
-    async function saveVariant() {
+    function saveVariant() {
         if(!variantValidation.validate(variant) | (variant.type === SOURCE_TEST_QUESTION && !answerVariantsValdiation.validate([...variant.testAnswerVariants]))) {
             callbackSubStatus(VALIDATE_ERROR_STATUS)
             return
@@ -586,6 +586,7 @@ const NO_IS_RIGHT_VALIDATION = 'noIsRight'
 
 function useAnswerVariantsValidationHook(validationSchema) {
     const [errors, setErrors] = useState({})
+    const [isValid, setIsValid] = useState(true)
 
     function changeHandle(fieldName, variants) {
         let targetErrors = errors
@@ -602,15 +603,12 @@ function useAnswerVariantsValidationHook(validationSchema) {
                 })
 
                 if(!hasCheked)
-                    addError(NO_IS_RIGHT_VALIDATION, validationSchema[NO_IS_RIGHT_VALIDATION])
+                    targetErrors[NO_IS_RIGHT_VALIDATION] = validationSchema[NO_IS_RIGHT_VALIDATION]
                 break
         }
-    }
 
-    function addError(fieldName, error) {
-        let targetErrors = errors
-        targetErrors[fieldName] = error
         setErrors(targetErrors)
+        setIsValid(isEmpty(errors))
     }
 
     function validate(variants) {
@@ -621,12 +619,14 @@ function useAnswerVariantsValidationHook(validationSchema) {
             changeHandle(x, variants)
         })
 
+        setIsValid(isEmpty(errors))
         return isEmpty(errors)
     }
 
     return {
         changeHandle,
         validate,
+        isValid,
         errors
     }
 }
