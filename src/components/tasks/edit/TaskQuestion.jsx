@@ -74,7 +74,7 @@ export const TaskQuestion = ({index, question}) => {
     const [questionVariants, setQuestionVariants] = useState(undefined)
 
     const { callbackSubStatus, setIsChanged } = useTaskSaveManager(updateQuestion)
-    const lastSavedData = useRef(undefined)
+    const lastSavedData = useRef(question)
 
     const [taskQuestion, dispatchQuestion] = useReducer(questionReducer, question)
     const setId = (id) => dispatchQuestion({ type: ID, payload: id })

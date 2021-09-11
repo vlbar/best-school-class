@@ -34,7 +34,6 @@ export const TaskSaveManager = ({children, autoSaveDelay = 20000}) => {
 
     // subscribers
     const addSubscriber = (id) => {
-        setIsSubHaveChanges(id, true)
         subscribers.current.push(id)
     }
 
@@ -86,8 +85,8 @@ export const TaskSaveManager = ({children, autoSaveDelay = 20000}) => {
         let isInclude = changedSubList.includes(id)
 
         if (isChanged) {
-            if (isInclude) changedSubList.push(id)
-        } else if (!isInclude) changedSubList.filter(x => x !== id)
+            if (!isInclude) changedSubList.push(id)
+        } else if (isInclude) changedSubList = changedSubList.filter(x => x !== id)
 
         changedSubs.current = changedSubList
         setIsSubsNeedSave(changedSubList.length !== 0)
