@@ -9,8 +9,8 @@ import { Link, useHistory } from 'react-router-dom'
 import { useInView } from 'react-intersection-observer'
 import TaskListHeader from './TaskListHeader'
 import { HomeworkContext } from '../homework/HomeworkBuilderContext'
-import './TaskList.less'
 import Resource from '../../util/Hateoas/Resource'
+import './TaskList.less'
 
 const baseUrl = '/tasks'
 const baseLink = Resource.basedOnHref(baseUrl).link()
@@ -46,7 +46,7 @@ export const TaskList = ({selectedCourse}) => {
     })
 
     useEffect(() => {
-        if(inView && !isFetching && !isHasFetchingErrors) fetchFirstTasksPage()
+        if(inView && !isFetching && !isHasFetchingErrors) fetchTasks(nextPage)
     }, [inView])
 
     // select
@@ -229,11 +229,10 @@ export const TaskList = ({selectedCourse}) => {
                             })}
                         </div>
                     }
-                    {(nextPage) &&
+                    {(!isFetching && nextPage) &&
                         <button 
                             className="fetch-types-btn" 
-                            onClick={() => fetchTasks(nextPage)} 
-                            disabled={isFetching}
+                            onClick={() => fetchTasks(nextPage)}
                             ref={ref}
                         >
                             Загрузить еще
