@@ -233,7 +233,6 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
     const answerVariantsValdiation = useAnswerVariantsValidationHook(answerVariantsValidarionSсhema)
 
     const formulationEditor = useRef(null)
-    const isFormulationTouched = useRef(false)
 
     const { questionToChange } = useContext(QuestionsContext)
 
@@ -345,7 +344,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
 
     function saveVariant() {
         // send saved without validation if varinat now editing and formulation not touched
-        if(show && !isFormulationTouched.current) { 
+        if(show && variant.formulation.length == 0) { 
             callbackSubStatus(SAVED_STATUS)
             return
         }
@@ -360,6 +359,8 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
             return
         }
 
+        console.log({...variant})
+        console.log({...lastSavedData.current})
         if(!isDeleted.current && isEquivalent(variant, lastSavedData.current)) { 
             callbackSubStatus(SAVED_STATUS)
             return
@@ -514,7 +515,6 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
                     onBlur={newContent => {
                         setFormulation(newContent)
                         variantValidation.blurHandle({target: {name: 'formulation', value: newContent?.replace(/<[^>]*>?/gm, '')}})
-                        isFormulationTouched.current = true
                     }}
                 />
                 <div className='variant-actions'>
