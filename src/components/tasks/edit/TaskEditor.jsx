@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useReducer, useRef, useContext } from 'react'
+import React, { useState, useEffect, useLayoutEffect, useReducer, useRef, useContext } from 'react'
 import { Container, Row, Col, Form, Button, Dropdown, ButtonGroup } from 'react-bootstrap'
 import { addErrorNotification } from '../../notifications/notifications'
 import { TaskSaveContext, useTaskSaveManager, isEquivalent, SAVED_STATUS, ERROR_STATUS, VALIDATE_ERROR_STATUS } from './TaskSaveManager'
@@ -39,6 +39,7 @@ const TASK_DESC = 'DESCRIPTION'
 const TASK_MAX_SCORE = 'MAX_SCORE'
 const TASK_DURATION = 'DURATION'
 const TASK_TYPE = 'TASK_TYPE'
+const IS_COMPLETED = 'IS_COMPLETED'
 
 const taskReducer = (state, action) => {
     switch (action.type) {
@@ -54,6 +55,8 @@ const taskReducer = (state, action) => {
             return { ...state, duration: action.payload }
         case TASK_TYPE:
             return { ...state, taskTypeId: action.payload }
+        case IS_COMPLETED:
+            return { ...state, isCompleted: action.payload }
         default:
             return state
     }
@@ -92,7 +95,7 @@ async function updateTaskDetails(taskId, task) {
 }
 
 export const TaskEditor = ({taskId}) => {
-    const { taskDisplay, autoSave, displayStatus, onSaveClick } = useContext(TaskSaveContext)
+    const { autoSave, displayStatus, onSaveClick } = useContext(TaskSaveContext)
     const [isTaskFetching, setIsTaskFetching] = useState(true)
     const [isInputBlock, setIsInputBlock] = useState(true)
 
@@ -105,9 +108,11 @@ export const TaskEditor = ({taskId}) => {
     const setMaxScore = (maxScore) => taskDispatch({ type: TASK_MAX_SCORE, payload: maxScore })
     const setDuration = (duration) => taskDispatch({ type: TASK_DURATION, payload: duration })
     const setTaskTypeId = (taskTypeId) => taskDispatch({ type: TASK_TYPE, payload: taskTypeId })
+    const setIsComplited = (isCompleted) => taskDispatch({ type: IS_COMPLETED, payload: isCompleted })
 
     const { callbackSubStatus, setIsChanged } = useTaskSaveManager(saveTaskDetails)
     const lastSavedData = useRef({})
+    const [isBarShow, setIsBarShow] = useState(false)
 
     const descriptionEditor = useRef(null)
     
@@ -153,7 +158,6 @@ export const TaskEditor = ({taskId}) => {
                 let fetchedData = res.data
                 setTask(fetchedData)
                 lastSavedData.current = fetchedData
-                taskDisplay.setTaskName(fetchedData.name)
 
                 setIsTaskFetching(false)
                 setIsInputBlock(false)
@@ -167,6 +171,8 @@ export const TaskEditor = ({taskId}) => {
     }
 
     function saveTaskDetails() {
+        console.log({...taskDetails})
+        console.log({...lastSavedData.current})
         if(isEquivalent(taskDetails, lastSavedData.current)) { 
             callbackSubStatus(SAVED_STATUS)
             return
@@ -188,8 +194,47 @@ export const TaskEditor = ({taskId}) => {
             })
     }
 
+    //bar show
+    const listener = (e) => {
+        setIsBarShow(window.scrollY >= 100)
+    }
+
+    useLayoutEffect(() => {
+        window.addEventListener('scroll', listener)
+        return () => {
+            window.removeEventListener('scroll', listener)
+        }
+    }, [])
+
     return (
         <>
+            <div className={'task-save-panel' + (isBarShow ? ' show':'')}>
+                <Container>
+                    <Row>
+                        <Col md={8} className='d-flex mt-2'>
+                            <h4>Задание</h4>
+                            <span className='label-center text-ellipsis ml-2'>
+                                {taskDetails?.name}
+                                <button className='icon-btn ml-1' onClick={() => window.scrollTo(0, 0)}>
+                                    <i className='fas fa-pen fa-xs'></i>
+                                </button>
+                            </span>
+                        </Col>
+                        <Col md={4} className='d-flex justify-content-between mt-2'>
+                            <div className='save-status'>{displayStatus}</div>
+                            <Dropdown as={ButtonGroup}>
+                                <Button variant='outline-primary' onClick={() => onSaveClick()}>Сохранить</Button>
+                                <Dropdown.Toggle split variant='outline-primary' />
+
+                                <Dropdown.Menu>
+                                    <Dropdown.Item onClick={() => setIsComplited(!taskDetails.isCompleted)}>{(taskDetails?.isCompleted) && <i className='fas fa-check'></i>} Завершить</Dropdown.Item>
+                                    <Dropdown.Item onClick={() => autoSave.setIsAutoSaveEnabled(!autoSave.isEnabled)}>{(autoSave.isEnabled) && <i className='fas fa-check'></i>} Автосохранение</Dropdown.Item>
+                                </Dropdown.Menu>
+                            </Dropdown>
+                        </Col>
+                    </Row>
+                </Container>
+            </div>
             <Container>
                 <div className='d-flex justify-content-between'>
                     <h4 className='mt-2'>Задание</h4>
@@ -200,7 +245,7 @@ export const TaskEditor = ({taskId}) => {
                             <Dropdown.Toggle split variant='outline-primary' />
 
                             <Dropdown.Menu>
-                                <Dropdown.Item>Завершить</Dropdown.Item>
+                                <Dropdown.Item onClick={() => setIsComplited(!taskDetails.isCompleted)}>{(taskDetails?.isCompleted) && <i className='fas fa-check'></i>} Завершить</Dropdown.Item>
                                 <Dropdown.Item onClick={() => autoSave.setIsAutoSaveEnabled(!autoSave.isEnabled)}>{(autoSave.isEnabled) && <i className='fas fa-check'></i>} Автосохранение</Dropdown.Item>
                             </Dropdown.Menu>
                         </Dropdown>
@@ -223,7 +268,6 @@ export const TaskEditor = ({taskId}) => {
                             onBlur={taskValidation.blurHandle}
                             onChange={(e) => {
                                 setName(e.target.value)
-                                taskDisplay.setTaskName(e.target.value)
                                 taskValidation.changeHandle(e)
                             }}
                         />

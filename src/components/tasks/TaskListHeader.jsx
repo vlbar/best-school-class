@@ -8,9 +8,9 @@ import './TaskListHeader.less'
 
 const orderBy = {
     'name-asc': 'По названию',
-    'createDate-desc': 'Сначала новые',
-    'createDate-asc': 'Сначала старые',
-    'complete-asc': 'По завершенности'
+    'createdAt-desc': 'Сначала новые',
+    'createdAt-asc': 'Сначала старые',
+    'isCompleted-desc': 'По завершенности'
 }
 
 const TaskListHeader = ({submitSearchParams, selectedTasks, isSelectedAll, onSelectAll}) => {

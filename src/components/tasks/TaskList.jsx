@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useContext } from 'react'
 import { SearchTask } from './SearchTask'
-import { Button, Table, Badge, Dropdown } from 'react-bootstrap'
+import { Button, Table, Badge, Dropdown, OverlayTrigger, Tooltip } from 'react-bootstrap'
 import ProcessBar from '../process-bar/ProcessBar'
 import { createError } from '../notifications/notifications'
 import { LoadingList } from '../loading/LoadingList'
@@ -206,14 +206,22 @@ export const TaskList = ({selectedCourse}) => {
                                         <div className='ml-2' style={{width: '95%'}}>
                                             <div className='d-flex justify-content-between'>
                                                 <div>
-                                                    <Link to={`courses/${task.courseId}/tasks/${task.id}`} className='text-semi-bold task-name mr-2'>{task.name}</Link>
-                                                    {task.taskType !== null ?
+                                                    <Link to={`courses/${task.courseId}/tasks/${task.id}`} className='text-semi-bold task-name mr-2'>{task.name}</Link>                                                   
+                                                    {task.taskType !== null && (
                                                         <Badge
-                                                            variant='secondary' 
-                                                            style={{backgroundColor: taskTypesColors[task.taskType.id % taskTypesColors.length]}}
-                                                        >
+                                                            variant='secondary'
+                                                            className='mr-2'
+                                                            style={{backgroundColor: taskTypesColors[task.taskType.id % taskTypesColors.length]}}>
                                                             {task.taskType.name}
-                                                        </Badge>:''}
+                                                        </Badge>
+                                                    )}
+                                                    {!task.isCompleted && (
+                                                        <OverlayTrigger
+                                                            placement={'top'}
+                                                            overlay={<Tooltip id={`tooltip-top`}>Задание не завершено</Tooltip>}>
+                                                            <i className='fas fa-pen fa-xs text-secondary' />
+                                                        </OverlayTrigger>
+                                                    )}
                                                 </div>
                                                 
                                                 <Dropdown className='dropdown-action-menu'>

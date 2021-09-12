@@ -1,5 +1,4 @@
-import React, { useState, useLayoutEffect, useRef, useEffect, useContext } from 'react'
-import { Button, Container, Row, Col, Dropdown, ButtonGroup } from 'react-bootstrap'
+import React, { useState, useRef, useEffect, useContext } from 'react'
 import { Prompt } from 'react-router'
 import './TaskEditor.less'
 
@@ -11,11 +10,9 @@ export const VALIDATE_ERROR_STATUS = 'Исправьте ошибки!'
 export const TaskSaveContext = React.createContext()
 
 export const TaskSaveManager = ({children, autoSaveDelay = 20000}) => {
-    const [isBarShow, setIsBarShow] = useState(false)
     const [isHasChanges, setIsHasChanges] = useState(false)
     const [saveStatus, setSaveStatus] = useState(SAVED_STATUS)
     const [displayStatus, setDisplayStatus] = useState('')
-    const [taskName, setTaskName] = useState('')
 
     const [updateCycle, setUpdateCycle] = useState(0)
     const subscribers = useRef([])
@@ -142,18 +139,6 @@ export const TaskSaveManager = ({children, autoSaveDelay = 20000}) => {
         }, 5000)
     }
 
-    //bar show
-    const listener = (e) => {
-        setIsBarShow(window.scrollY >= 100)
-    }
-
-    useLayoutEffect(() => {
-        window.addEventListener('scroll', listener)
-        return () => {
-            window.removeEventListener('scroll', listener)
-        }
-    }, [])
-
     const savedTimer = useRef(null)
     useEffect(() => {
         let additionalClassName = ''
@@ -188,39 +173,11 @@ export const TaskSaveManager = ({children, autoSaveDelay = 20000}) => {
 
     return (
         <>
-            <div className={'task-save-panel' + (isBarShow ? ' show':'')}>
-                <Prompt
-                    when={isHasChanges}
-                    message='Есть несохраненные изменения, вы уверены, что хотите закрыть редактор задания?'
-                />
-                <Container>
-                    <Row>
-                        <Col md={8} className='d-flex mt-2'>
-                            <h4>Задание</h4>
-                            <span className='label-center text-ellipsis ml-2'>
-                                {taskName}
-                                <button className='icon-btn ml-1' onClick={() => window.scrollTo(0, 0)}>
-                                    <i className='fas fa-pen fa-xs'></i>
-                                </button>
-                            </span>
-                        </Col>
-                        <Col md={4} className='d-flex justify-content-between mt-2'>
-                            <div className='save-status'>{displayStatus}</div>
-                            <Dropdown as={ButtonGroup}>
-                                <Button variant='outline-primary' onClick={() => startSave()}>Сохранить</Button>
-                                <Dropdown.Toggle split variant='outline-primary' />
-
-                                <Dropdown.Menu>
-                                    <Dropdown.Item>Завершить</Dropdown.Item>
-                                    <Dropdown.Item onClick={() => setIsAutoSaveEnabled(!isAutoSaveEnabled)}>{(isAutoSaveEnabled) && <i className='fas fa-check'></i>} Автосохранение</Dropdown.Item>
-                                </Dropdown.Menu>
-                            </Dropdown>
-                        </Col>
-                    </Row>
-                </Container>
-            </div>
-            <TaskSaveContext.Provider value={{addSubscriber, removeSubscriber, updateCycle, onSaveClick: startSave, statusBySub, setIsSubHaveChanges, displayStatus, 
-                taskDisplay: { taskName, setTaskName },
+            <Prompt
+                when={isHasChanges}
+                message='Есть несохраненные изменения, вы уверены, что хотите закрыть редактор задания?'
+            />
+            <TaskSaveContext.Provider value={{addSubscriber, removeSubscriber, updateCycle, onSaveClick: startSave, statusBySub, setIsSubHaveChanges, displayStatus,
                 autoSave:    { isEnabled: isAutoSaveEnabled, setIsAutoSaveEnabled }
             }}>
                 {children}
