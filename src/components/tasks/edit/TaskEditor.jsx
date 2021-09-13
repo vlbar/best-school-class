@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect, useReducer, useRef, useContext } from 'react'
 import { Container, Row, Col, Form, Button, Dropdown, ButtonGroup } from 'react-bootstrap'
-import { addErrorNotification } from '../../notifications/notifications'
+import { createError } from '../../notifications/notifications'
 import { TaskSaveContext, useTaskSaveManager, isEquivalent, SAVED_STATUS, ERROR_STATUS, VALIDATE_ERROR_STATUS } from './TaskSaveManager'
 import { QuestionsList } from './QuestionsList'
 import TaskTypeDropdown from '../TaskTypeDropdown'
@@ -10,6 +10,7 @@ import useBestValidation, { STRING_TYPE, NUMBER_TYPE } from './useBestValidation
 import JoditEditor from 'jodit-react'
 import axios from 'axios'
 import './TaskEditor.less'
+import Resource from '../../../util/Hateoas/Resource'
 
 //time
 const MINUTES = 'MINUTES'
@@ -86,6 +87,9 @@ const taskValidationSchema = {
 
 //requests
 export const tasksBaseUrl = '/tasks'
+const baseLink = Resource.basedOnHref(tasksBaseUrl).link()
+const taskLink = (id) => { return Resource.basedOnHref(`${tasksBaseUrl}/${id}`).link() }
+
 async function fetchTaskDetails(taskId) {
     return axios.get(`${tasksBaseUrl}/${taskId}`)
 }
@@ -98,6 +102,7 @@ export const TaskEditor = ({taskId}) => {
     const { autoSave, displayStatus, onSaveClick } = useContext(TaskSaveContext)
     const [isTaskFetching, setIsTaskFetching] = useState(true)
     const [isInputBlock, setIsInputBlock] = useState(true)
+    const [questionsLink, setQuestionsLink] = useState(undefined)
 
     const taskValidation = useBestValidation(taskValidationSchema)
 
@@ -151,28 +156,25 @@ export const TaskEditor = ({taskId}) => {
     }, [])
 
     const fetchTask = () => {
-        setIsTaskFetching(true)
         setIsInputBlock(true)
         fetchTaskDetails(taskId)
-            .then(res => {
-                let fetchedData = res.data
-                setTask(fetchedData)
-                lastSavedData.current = fetchedData
+        taskLink(taskId)
+            .fetch(setIsTaskFetching)
+            .then(data => {
+                setQuestionsLink(data.link('questions'))
+                setTask(data)
+                lastSavedData.current = data
 
                 setIsTaskFetching(false)
                 setIsInputBlock(false)
             })
-            .catch(error => 
-                addErrorNotification('Не удалось загрузить информацию о задании. \n' + (error?.response?.data ? error.response.data.message : error))
-            )
-            .finally(() => {
-                setIsTaskFetching(false)
+            .catch(error => {
+                callbackSubStatus(ERROR_STATUS)
+                createError('Не удалось загрузить информацию о задании.', error)
             })
     }
 
     function saveTaskDetails() {
-        console.log({...taskDetails})
-        console.log({...lastSavedData.current})
         if(isEquivalent(taskDetails, lastSavedData.current)) { 
             callbackSubStatus(SAVED_STATUS)
             return
@@ -183,14 +185,15 @@ export const TaskEditor = ({taskId}) => {
             return
         }
 
-        updateTaskDetails(taskId, taskDetails)
-            .then(res => { 
+        taskLink(taskId)
+            .put(taskDetails)
+            .then(data => { 
                 callbackSubStatus(SAVED_STATUS)
                 lastSavedData.current = taskDetails
             })
             .catch(error => {
                 callbackSubStatus(ERROR_STATUS)
-                addErrorNotification('Не удалось загрузить информацию о задании. \n' + (error?.response?.data?.message ? error.response.data.message : error))
+                createError('Не удалось сохранить информацию о задании.', error)
             })
     }
 
