@@ -1,63 +1,59 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button } from 'react-bootstrap'
 import { sortableContainer, sortableElement, arrayMove } from 'react-sortable-hoc'
+import { useInView } from 'react-intersection-observer'
+
+import { createError } from '../../notifications/notifications'
 import { TaskQuestion } from './TaskQuestion'
-import { tasksBaseUrl } from './TaskEditor'
 import { LoadingList } from '../../loading/LoadingList'
 import ProcessBar from '../../process-bar/ProcessBar'
-import axios from 'axios'
 import './TaskEditor.less'
 
 export const QuestionsContext = React.createContext()
 
 // sortable hoc
 const SortableContainer = sortableContainer(({children}) => <div>{children}</div>)
-const SortableItem = sortableElement(({index_, question}) => (
-    <TaskQuestion index={index_} question={question} />
+const SortableItem = sortableElement(({index_, question, questionsLink}) => (
+    <TaskQuestion index={index_} question={question} questionsLink={questionsLink} />
 ))
 
-//requests
-export const questionPartUrl = 'questions'
-async function fetchQuestions(taskId, page, size) {
-    return axios.get(`${tasksBaseUrl}/${taskId}/${questionPartUrl}?page=${page}&size=${size}`)
-}
-
-export const QuestionsList = ({taskId}) => {
-    const [isQuestionsFetching, setIsQuestionsFetching] = useState(false)
+export const QuestionsList = ({ questionsLink }) => {  
     const [questions, setQuestions] = useState(undefined)
     const [questionToChange, setQuestionToChange] = useState(null)
 
-    const pagination = useRef({
-        page: 1, 
-        size: 10, 
-        total: undefined
+    const [isFetching, setIsFetching] = useState(false)
+    const [nextPage, setNextPage] = useState(undefined)
+    const [isHasFetchingErrors, setIsHasFetchingErrors] = useState(false)
+
+    const { ref, inView } = useInView({
+        threshold: 0
     })
 
     useEffect(() => {
-        fetchTaskQuestions(1)
-        return () => { }
+        if(inView && !isFetching && !isHasFetchingErrors) fetchTaskQuestions(nextPage)
+    }, [inView])
+
+    useEffect(() => {
+        fetchTaskQuestions(questionsLink)
     }, [])
 
-    const fetchTaskQuestions = (page) => {
-        setIsQuestionsFetching(true)
-        fetchQuestions(taskId, page, pagination.current.size)
-            .then(res => {
-                let fetchedData = res.data
-                let items = fetchedData.items
+    const fetchTaskQuestions = (link) => {
+        link
+            ?.fill('size', 20)
+            .fetch(setIsFetching)
+            .then(data => {
+                let fetchedQuestions = data.list('questions') ?? []
+                setNextPage(data.link('next'))
 
-                pagination.current.page = page
-                pagination.current.total = fetchedData.totalItems
-
-                if(page == 1)
-                    setQuestions(items)
+                if(data.page.number == 1)
+                    setQuestions(fetchedQuestions)
                 else
-                    setQuestions([...questions, ...items])
+                    setQuestions([...questions, ...fetchedQuestions])
+                setIsHasFetchingErrors(false)
             })
-            .catch(error => 
-                addErrorNotification('Не удалось загрузить информацию о задании. \n' + (error?.response?.data ? error.response.data.message : error))
-            )
-            .finally(() => {
-                setIsQuestionsFetching(false)
+            .catch(error => {
+                setIsHasFetchingErrors(true)
+                createError('Не удалось загрузить список заданий.', error)
             })
     }
 
@@ -117,7 +113,7 @@ export const QuestionsList = ({taskId}) => {
                             <p className='text-muted'>Чтобы вопросы были в списке, для начали их нужно добавить.</p>
                         </>
         } else
-            if(!isQuestionsFetching)
+            if(!isFetching)
             return  <>
                         <h5>Произошла ошибка</h5>
                         <p className='text-muted'>Не удалось загрузить список вопросов задания.</p>
@@ -130,34 +126,34 @@ export const QuestionsList = ({taskId}) => {
     return (
         <>
             {(questions !== undefined) &&
-                <QuestionsContext.Provider value={{taskId, questionToChange, setQuestionToChange, setQuestion, addQuestionAfter, moveQuestion, deleteQuestion}}>
+                <QuestionsContext.Provider value={{ questionToChange, setQuestionToChange, setQuestion, addQuestionAfter, moveQuestion, deleteQuestion }}>
                     <SortableContainer onSortEnd={moveQuestion} useDragHandle>
                         {questions.map((question, index) => (
-                            <SortableItem key={question.key ?? question.id} index={index} index_={index + 1} question={question}/>
+                            <SortableItem key={question.key ?? question.id} index={index} index_={index + 1} question={question} questionsLink={questionsLink} />
                         ))}
                     </SortableContainer>
                 </QuestionsContext.Provider>}
-            {(questions !== undefined && !isQuestionsFetching && pagination.current.page * pagination.current.size < pagination.current.total) &&
+            {(nextPage && !isFetching) &&
                 <button 
                     className="fetch-types-btn mb-2" 
-                    onClick={() => fetchTaskQuestions(pagination.current.page + 1)} 
-                    disabled={isQuestionsFetching}
+                    onClick={() => fetchTaskQuestions(nextPage)}
+                    ref={ref}
                 >
                     Загрузить еще
                 </button>
             }
-            {(isQuestionsFetching) &&
-                <ProcessBar height='.18Rem' className='mb-2'/>
-            }
-            {(isQuestionsFetching) &&
-                <LoadingList widths={[100, 100]} itemHeight='240px' itemMarginLeft='0'/>    
+            {(isFetching) &&
+                <>
+                    <ProcessBar height='.18Rem' className='mb-2'/>
+                    <LoadingList widths={[100, 100]} itemHeight='240px' itemMarginLeft='0'/>    
+                </>
             }
             {message && <div className='task-message-container'>{message}</div>}
             <Button 
                 variant='outline-primary mb-4' 
                 className='w-100'
                 onClick={() => addQuestionAfter(questions[questions.length - 1]?.position + 1 || 1)}
-                disabled={isQuestionsFetching}
+                disabled={isFetching || !questions}
             >
                 Добавить
             </Button>
