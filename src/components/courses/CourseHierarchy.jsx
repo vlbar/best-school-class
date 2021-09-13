@@ -39,7 +39,7 @@ export const CourseHierarchy = ({onCourseSelect}) => {
             .fill('size', coursePage.size)
             .fetch(setIsFetching)
             .then(res => {
-                let items = res.list('courses')
+                let items = res.list('courses') ?? []
                 items = items.map(x => {
                     return mapToNode(x)
                 })
