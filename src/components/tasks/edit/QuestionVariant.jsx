@@ -1,15 +1,16 @@
 import React, { useState, useRef, useContext, useEffect, useReducer } from 'react'
-import { Row, Col, Button, Form, Dropdown } from 'react-bootstrap'
-import { addErrorNotification } from '../../notifications/notifications'
+import { Row, Col, Form, Dropdown } from 'react-bootstrap'
 import { sortableContainer, sortableElement, sortableHandle, arrayMove } from 'react-sortable-hoc'
+
+import { createError } from '../../notifications/notifications'
 import { useTaskSaveManager, isEquivalent, SAVED_STATUS, ERROR_STATUS, VALIDATE_ERROR_STATUS } from './TaskSaveManager'
-import { questionPartUrl, QuestionsContext } from './QuestionsList'
+import { QuestionsContext } from './QuestionsList'
 import { TaskQuestionContext } from './TaskQuestion'
 import useBestValidation from './useBestValidation'
 import FeedbackMessage from '../../feedback/FeedbackMessage'
 import JoditEditor from 'jodit-react'
-import axios from 'axios'
 import './QuestionVariant.less'
+import Resource from '../../../util/Hateoas/Resource'
 
 //question types
 const TEXT_QUESTION = 'TEXT_QEUSTION'
@@ -186,27 +187,13 @@ const formulationEditorConfig = {
 //context for question answer variants
 const QuestionAnswerContext = React.createContext();
 
-//requests
-export const variantsPartUrl = 'variants'
-
-async function addVariant(variant, questionId) {
-    return axios.post(`${questionPartUrl}/${questionId}/${variantsPartUrl}`, variant)
-}
-
-async function updateVariant(variant, questionId) {
-    return axios.put(`${questionPartUrl}/${questionId}/${variantsPartUrl}/${variant.id}`, variant)
-}
-
-async function deleteVariant(variant, questionId) {
-    return axios.delete(`${questionPartUrl}/${questionId}/${variantsPartUrl}/${variant.id}`)
-}
-
-export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
+export const QuestionVariant = ({ show, index, questionVariant, isEditing, variantsLink }) => {
     const [questionType, setQuestionType] = useState(TEXT_QUESTION)
     const [variant, dispatchVariant] = useReducer(variantReducer, questionVariant)
     const { callbackSubStatus, setIsChanged } = useTaskSaveManager(saveVariant)
     const lastSavedData = useRef({...questionVariant})
     const awaitQuestionSave = useRef(false)
+    const [selfLink, setSelfLink] = useState(questionVariant._links && Resource.wrap(questionVariant).link())
 
     const { question, setQuestionVariant, pasteVariantAfter, variantCount, markForDeleteVariant, deleteQuestionVariant } = useContext(TaskQuestionContext)
     const isDeleted = useRef(false)
@@ -305,6 +292,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
         }
     }
 
+    // TEST QUESTIONS
     const uncheckMultiVarinats = () => {
         let testAnswerVariants = variant.testAnswerVariants
         if(testAnswerVariants !== undefined) {
@@ -342,6 +330,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
         answerVariantsValdiation.changeHandle(NO_IS_RIGHT_VALIDATION, testAnswerVariants)
     }
 
+    // SAVING
     function saveVariant() {
         // send saved without validation if varinat now editing and formulation not touched
         if(show && variant.formulation.length == 0) { 
@@ -359,8 +348,6 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
             return
         }
 
-        console.log({...variant})
-        console.log({...lastSavedData.current})
         if(!isDeleted.current && isEquivalent(variant, lastSavedData.current)) { 
             callbackSubStatus(SAVED_STATUS)
             return
@@ -371,37 +358,46 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
                 setIsMultipleAnswer(questionType == TEST_MULTI_QUESTION)
             }
 
-            addVariant(variant, question.id)
-                .then(res => {
-                    setId(res.data.id)
+            variantsLink
+                .post(variant)
+                .then(data => {
+                    setId(data.id)
+                    setSelfLink(data.link())
                     successfulSaved()
                 })
                 .catch(error => catchSaveError(error))
         } else {
             if(!isDeleted.current)
                 if(lastSavedData.current.type !== variant.type) {
-                    deleteVariant(variant, question.id)
-                    .then(res => {
-                        addVariant(variant, question.id)
-                        .then(res => { 
-                            callbackSubStatus(SAVED_STATUS)
-                            setLastSavedData(variant)
+                    selfLink
+                        .remove()
+                        .then(data => {
+                            variantsLink
+                                .post(variant)
+                                .then(data => {
+                                    setId(data.id)
+                                    setSelfLink(data.link())
+                                    callbackSubStatus(SAVED_STATUS)
+                                    setLastSavedData(variant)
+                                })
+                                .catch(error => catchSaveError(error))
                         })
                         .catch(error => catchSaveError(error))
-                    })
-                    .catch(error => catchSaveError(error))
                 } else {
-                    updateVariant(variant, question.id)
-                    .then(res => successfulSaved())
-                    .catch(error => catchSaveError(error))
+                    selfLink
+                        .put(variant)
+                        .then(data => successfulSaved())
+                        .catch(error => catchSaveError(error))
                 }
             else
-                deleteVariant(variant, question.id)
-                    .then(res => { 
+                selfLink
+                    .remove()
+                    .then(data => { 
                         callbackSubStatus(SAVED_STATUS)
                         deleteQuestionVariant(index)
                     })
                     .catch(error => catchSaveError(error))
+                
         }
     }
 
@@ -410,13 +406,14 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
     }
 
     const successfulSaved = () => {
+        setIsChanged(!isEquivalent(variant, lastSavedData.current))
         callbackSubStatus(SAVED_STATUS)
         setLastSavedData(variant)
     }
 
     const catchSaveError = (error) => {
         callbackSubStatus(ERROR_STATUS)
-        addErrorNotification('Не удалось сохранить информацию о задании. \n' + (error?.response?.data?.message ? error.response.data.message : error))
+        createError('Не удалось сохранить информацию о задании.', error)
     }
 
     const setLastSavedData = (questionVariant) => {
@@ -427,6 +424,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
         }
     }
 
+    // COPING QUESTIONS
     const saveVariantToStorage = () => {
         localStorage.copiedVariant = JSON.stringify(variant)
     }
