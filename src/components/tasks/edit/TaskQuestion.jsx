@@ -79,10 +79,8 @@ export const TaskQuestion = ({ index, question, questionsLink }) => {
     }, [taskQuestion])
 
     useEffect(() => {
-        if(question.questionVariantsCount > 0) {
-            let unloadedQuestions = new Array(question.questionVariantsCount).fill({})
-            unloadedQuestions[0] = question.questionVariants[0]
-            setQuestionVariants([...unloadedQuestions])
+        if(question.questionVariants.length > 0) {
+            setQuestionVariants([...question.questionVariants])
         } else {
             setQuestionVariants([
                 {
@@ -110,7 +108,6 @@ export const TaskQuestion = ({ index, question, questionsLink }) => {
             return
         }
 
-        question.questionVariantsCount = questionVariants.length
         question.questionVariants = questionVariants
 
         if(question.detached) {
@@ -183,26 +180,7 @@ export const TaskQuestion = ({ index, question, questionsLink }) => {
     }
 
     const selectVartiant = async (index) => {
-        if(isEmpty(questionVariants[index]))
-            await fetchOtherVarinats()
-        if(!isEmpty(questionVariants[index])) setSelectedVariant(index)
-    }
-
-    const fetchOtherVarinats = async () => {
-        await question.link('variants')
-            .fetch(setIsFetching)
-            .then(data => {
-                let allQuestionVariants = questionVariants
-                let j = 1;
-                for(let i = 0; i < allQuestionVariants.length; i++)
-                    if(isEmpty(allQuestionVariants[i]))
-                        allQuestionVariants[i] = data[j++]
-
-                setQuestionVariants(allQuestionVariants)
-            })
-            .catch(error => {
-                createError('Не удалось загрузить варианты задания.', error)
-            })
+        setSelectedVariant(index)
     }
 
     const markForDeleteVariant = (index) => {
