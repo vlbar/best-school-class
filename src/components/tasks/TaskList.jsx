@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useRef, useContext } from 'react'
-import { SearchTask } from './SearchTask'
 import { Button, Table, Badge, Dropdown, OverlayTrigger, Tooltip } from 'react-bootstrap'
+import { SearchTask } from './SearchTask'
+
 import ProcessBar from '../process-bar/ProcessBar'
+import Resource from '../../util/Hateoas/Resource'
+import TaskDeleteModal from './TaskDeleteModal'
+import TaskListHeader from './TaskListHeader'
 import { createError } from '../notifications/notifications'
+import { HomeworkContext } from '../homework/HomeworkBuilderContext'
+import { Link, useHistory } from 'react-router-dom'
 import { LoadingList } from '../loading/LoadingList'
 import { TaskAddModal } from './TaskAddModal'
-import { Link, useHistory } from 'react-router-dom'
 import { useInView } from 'react-intersection-observer'
-import TaskListHeader from './TaskListHeader'
-import { HomeworkContext } from '../homework/HomeworkBuilderContext'
-import Resource from '../../util/Hateoas/Resource'
 import './TaskList.less'
 
 const baseUrl = '/tasks'
@@ -35,15 +37,27 @@ export const TaskList = ({selectedCourse}) => {
         orderBy: 'name-asc'
     })
 
+    //auto fetch
+    const { ref, inView } = useInView({
+        threshold: 0
+    })
+
+    // homework
+    const { homework } = useContext(HomeworkContext)
+
+    // modals
+    const [isAddTaskModalShow, setIsAddTaskModalShow] = useState(false)   
+    const [isTaskAdding, setIsTaskAdding] = useState(false)
+    
+    const [isDeleteTaskModalShow, setIsDeleteTaskModalShow] = useState(false)
+    const [taskToDelete, setTaskToDelete] = useState(undefined)
+    const [isTaskDeleting, setIsTaskDeleting] = useState(false)
+    const history = useHistory()
+
     useEffect(() => {
         if(selectedCourse) fetchFirstTasksPage()
         setSelectedTasks([])
     }, [selectedCourse])
-
-    //auto fetch
-    const { ref, inView } = useInView({
-        threshold: 1
-    })
 
     useEffect(() => {
         if(inView && !isFetching && !isHasFetchingErrors) fetchTasks(nextPage)
@@ -70,14 +84,6 @@ export const TaskList = ({selectedCourse}) => {
         if(selectedTasks.length == tasks.length) setSelectedTasks([])
         else setSelectedTasks(tasks)
     }
-
-    // homework
-    const { homework } = useContext(HomeworkContext)
-
-    // modals
-    const [isAddTaskModalShow, setIsAddTaskModalShow] = useState(false)
-    const [isTaskAdding, setIsTaskAdding] = useState(false)
-    const history = useHistory()
 
     const setSearchParams = (params) => {
         searchParams.current = {...searchParams.current, ...params}
@@ -128,6 +134,21 @@ export const TaskList = ({selectedCourse}) => {
                 history.push(`courses/${selectedCourse.id}/tasks/${data.id}`)
             })
             .catch(error => createError('Не удалось добавить задание, возможно, изменения не сохранятся.', error))
+    }
+
+    const removeTask = (task) => {
+        task.link()
+            .remove(setIsTaskDeleting)
+            .then(data => {
+                fetchFirstTasksPage()
+                setIsDeleteTaskModalShow(false)
+            })
+            .catch(error => createError('Не удалось добавить задание, возможно, изменения не сохранятся.', error))
+    }
+
+    const openRemoveTaskModal = (task) => {
+        setIsDeleteTaskModalShow(true)
+        setTaskToDelete(task)
     }
 
     // ох уж эти индусы...
@@ -230,7 +251,7 @@ export const TaskList = ({selectedCourse}) => {
                                                         <Dropdown.Item as={Link} to={`courses/${task.courseId}/tasks/${task.id}`}>Изменить</Dropdown.Item>
                                                         <Dropdown.Item onClick={() => homework.addTask(task)}>Добавить в домашнее</Dropdown.Item>
                                                         <Dropdown.Item>Переместить</Dropdown.Item>
-                                                        <Dropdown.Item className='text-danger'>Удалить</Dropdown.Item>
+                                                        <Dropdown.Item className='text-danger' onClick={() => openRemoveTaskModal(task)}>Удалить</Dropdown.Item>
                                                     </Dropdown.Menu>
                                                 </Dropdown>
                                             </div>
@@ -266,11 +287,17 @@ export const TaskList = ({selectedCourse}) => {
                         </Table>}
                 </div>
             </div>
-            {<TaskAddModal 
+            <TaskAddModal 
                 show={isAddTaskModalShow} 
                 onClose={() => setIsAddTaskModalShow(false)} 
                 isFetching={isTaskAdding}
                 onSubmit={addTask}
+            />
+            {isDeleteTaskModalShow && <TaskDeleteModal
+                taskToDelete={taskToDelete}
+                onClose={() => setIsDeleteTaskModalShow(false)}
+                isFetching={isTaskDeleting}
+                onSubmit={removeTask}
             />}
         </>)
 }
