@@ -58,13 +58,15 @@ export const QuestionsList = ({ questionsLink }) => {
     }
 
     const moveQuestion = ({oldIndex, newIndex}) => {
-        if(newIndex < 0 || newIndex > questions.length - 1 ||
-           oldIndex < 0 || oldIndex > questions.length - 1) return
         let toPosition = questions[newIndex].position
         let movedQuestion = questions[oldIndex]
 
         let movedQuestions = questions
-        movedQuestions.filter(x => x.position >= toPosition).forEach(x => x.position++)
+        if(newIndex > oldIndex)
+            for(let i = oldIndex + 1; i <= newIndex; i++) movedQuestions[i].position--
+        else
+            for(let i = newIndex; i < oldIndex; i++) movedQuestions[i].position++
+
         movedQuestions = arrayMove(movedQuestions, oldIndex, newIndex)
         movedQuestion.position = toPosition
         setQuestions([...movedQuestions])

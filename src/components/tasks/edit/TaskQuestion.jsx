@@ -79,7 +79,7 @@ export const TaskQuestion = ({ index, question, questionsLink }) => {
     }, [taskQuestion])
 
     useEffect(() => {
-        if(question.questionVariants.length > 0) {
+        if(question.questionVariants?.length > 0) {
             setQuestionVariants([...question.questionVariants])
         } else {
             setQuestionVariants([
