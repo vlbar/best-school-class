@@ -221,14 +221,6 @@ export const QuestionVariant = ({ show, index, questionVariant, isEditing, varia
 
     const formulationEditor = useRef(null)
 
-    const { questionToChange } = useContext(QuestionsContext)
-
-    const isMount = useRef(false)
-    useEffect(() => {
-        if(isMount.current) isVariantInvalid()
-        isMount.current = true
-    }, [questionToChange])
-
     useEffect(() => {
         let targetVariant = variant
         targetVariant.isValid = variantValidation.isValid && answerVariantsValdiation.isValid
