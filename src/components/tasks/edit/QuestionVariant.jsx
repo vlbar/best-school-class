@@ -2,15 +2,14 @@ import React, { useState, useRef, useContext, useEffect, useReducer } from 'reac
 import { Row, Col, Form, Dropdown } from 'react-bootstrap'
 import { sortableContainer, sortableElement, sortableHandle, arrayMove } from 'react-sortable-hoc'
 
-import { createError } from '../../notifications/notifications'
-import { useTaskSaveManager, isEquivalent, SAVED_STATUS, ERROR_STATUS, VALIDATE_ERROR_STATUS } from './TaskSaveManager'
-import { QuestionsContext } from './QuestionsList'
-import { TaskQuestionContext } from './TaskQuestion'
-import useBestValidation from './useBestValidation'
 import FeedbackMessage from '../../feedback/FeedbackMessage'
 import JoditEditor from 'jodit-react'
-import './QuestionVariant.less'
 import Resource from '../../../util/Hateoas/Resource'
+import useBestValidation from './useBestValidation'
+import { TaskQuestionContext } from './TaskQuestion'
+import { createError } from '../../notifications/notifications'
+import { useTaskSaveManager, isEquivalent, SAVED_STATUS, ERROR_STATUS, VALIDATE_ERROR_STATUS } from './TaskSaveManager'
+import './QuestionVariant.less'
 
 //question types
 const TEXT_QUESTION = 'TEXT_QEUSTION'
@@ -345,6 +344,7 @@ export const QuestionVariant = ({ show, index, questionVariant, isEditing, varia
             return
         }
 
+        let reqestedVariant = variant
         if(!variant.id) {
             if(variant.type == SOURCE_TEST_QUESTION) {
                 setIsMultipleAnswer(questionType == TEST_MULTI_QUESTION)
@@ -353,6 +353,8 @@ export const QuestionVariant = ({ show, index, questionVariant, isEditing, varia
             variantsLink
                 .post(variant)
                 .then(data => {
+                    lastSavedData.current = { ...reqestedVariant, id: data.id }
+
                     setId(data.id)
                     setSelfLink(data.link())
                     successfulSaved()
@@ -367,6 +369,8 @@ export const QuestionVariant = ({ show, index, questionVariant, isEditing, varia
                             variantsLink
                                 .post(variant)
                                 .then(data => {
+                                    lastSavedData.current = { ...reqestedVariant, id: data.id }
+
                                     setId(data.id)
                                     setSelfLink(data.link())
                                     callbackSubStatus(SAVED_STATUS)
@@ -378,7 +382,10 @@ export const QuestionVariant = ({ show, index, questionVariant, isEditing, varia
                 } else {
                     selfLink
                         .put(variant)
-                        .then(data => successfulSaved())
+                        .then(data => {
+                            lastSavedData.current = reqestedVariant
+                            successfulSaved()
+                        })
                         .catch(error => catchSaveError(error))
                 }
             else
@@ -398,7 +405,6 @@ export const QuestionVariant = ({ show, index, questionVariant, isEditing, varia
     }
 
     const successfulSaved = () => {
-        setIsChanged(!isEquivalent(variant, lastSavedData.current))
         callbackSubStatus(SAVED_STATUS)
         setLastSavedData(variant)
     }

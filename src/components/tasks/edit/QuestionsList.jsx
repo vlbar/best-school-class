@@ -155,7 +155,7 @@ export const QuestionsList = ({ questionsLink }) => {
                 variant='outline-primary mb-4' 
                 className='w-100'
                 onClick={() => addQuestionAfter(questions[questions.length - 1]?.position + 1 || 1)}
-                disabled={isFetching || !questions}
+                disabled={isFetching || !questions || nextPage}
             >
                 Добавить
             </Button>
