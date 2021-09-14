@@ -90,14 +90,6 @@ export const tasksBaseUrl = '/tasks'
 const baseLink = Resource.basedOnHref(tasksBaseUrl).link()
 const taskLink = (id) => { return Resource.basedOnHref(`${tasksBaseUrl}/${id}`).link() }
 
-async function fetchTaskDetails(taskId) {
-    return axios.get(`${tasksBaseUrl}/${taskId}`)
-}
-
-async function updateTaskDetails(taskId, task) {
-    return axios.put(`${tasksBaseUrl}/${taskId}`, task)
-}
-
 export const TaskEditor = ({taskId}) => {
     const { autoSave, displayStatus, onSaveClick } = useContext(TaskSaveContext)
     const [isTaskFetching, setIsTaskFetching] = useState(true)
@@ -157,7 +149,6 @@ export const TaskEditor = ({taskId}) => {
 
     const fetchTask = () => {
         setIsInputBlock(true)
-        fetchTaskDetails(taskId)
         taskLink(taskId)
             .fetch(setIsTaskFetching)
             .then(data => {
@@ -363,11 +354,13 @@ export const TaskEditor = ({taskId}) => {
                     </Col>
                 </Form.Group>
                 <hr/>
-                {(taskDetails?.name === undefined && !isTaskFetching) ? <div className='task-message-container'>
-                    <h5>Произошла ошибка</h5>
-                    <p className='text-muted'>Не удалось загрузить данные задания.</p>
-                </div>
-                : <QuestionsList taskId={taskId}/>}
+                {(taskDetails?.name === undefined && !isTaskFetching) && (
+                     <div className='task-message-container'>
+                        <h5>Произошла ошибка</h5>
+                        <p className='text-muted'>Не удалось загрузить данные задания.</p>
+                    </div>
+                )}
+                {taskDetails?.name && <QuestionsList questionsLink={questionsLink} />}
             </Container>
         </>
     )
