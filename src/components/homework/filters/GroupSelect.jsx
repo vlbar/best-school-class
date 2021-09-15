@@ -1,60 +1,58 @@
 import React, { useState, useRef } from 'react'
+
 import BestSelect, { BestItemSelector, BestSelectItem, BestSelectList, BestSelectToggle } from '../../select/BestSelect'
-import { addErrorNotification } from '../../notifications/notifications'
-import axios from 'axios'
-import ProcessBar from '../../process-bar/ProcessBar'
 import LazySearchInput from '../../search/LazySearchInput'
+import ProcessBar from '../../process-bar/ProcessBar'
+import Resource from '../../../util/Hateoas/Resource'
+import { createError } from '../../notifications/notifications'
 import './GroupSelect.less'
 
 const baseUrl = '/groups'
-
-async function fetch(page, size, name) {
-    return axios.get(`${baseUrl}?page=${page}&size=${size}${name.length > 0 ? `&name=${name}`:''}`)
-}
+const baseLink = Resource.basedOnHref(baseUrl).link()
+const pageLink = baseLink.fill('size', 20)
 
 const GroupSelect = ({onSelect, initialSelectedGroup, placeholder, ...props}) => {
     const [isFetching, setIsFetching] = useState(true)
     const [groups, setGroups] = useState(undefined)
+    const [nextPage, setNextPage] = useState(undefined)
 
     const emptyResultAfterName = useRef(undefined)
     const scrollListRef = useRef()
 
     const pagination = useRef({
-        page: 0, 
-        size: 10, 
-        total: undefined,
         name: ''
     })
 
-    const fetchGroup = () => {
-        setIsFetching(true)
-        pagination.current.page++
+    const fetchGroup = (link) => {
+        link
+            ?.fetch(setIsFetching)
+            .then(data => {
+                let fetchedGroups = data.list('groups') ?? []
+                setNextPage(data.link('next'))      
+                if(data.page.totalElements == 0) emptyResultAfterName.current = data.param?.('name')
 
-        fetch(pagination.current.page, pagination.current.size, encodeURIComponent(pagination.current.name.trim()))
-            .then(res => {
-                let fetchedData = res.data
-
-                pagination.current.total = fetchedData.totalItems             
-                if(pagination.current.total == 0) emptyResultAfterName.current = pagination.current.name
-
-                if(pagination.current.page == 1)
-                    setGroups(fetchedData.items)
+                if(data.page.number == 1)
+                    setGroups(fetchedGroups)
                 else
-                    setGroups([...groups, ...fetchedData.items])
+                    setGroups([...groups, ...fetchedGroups])
             })
-            .catch(error => addErrorNotification('Не удалось загрузить список типов. \n' + error))
-            .finally(() => setIsFetching(false))
+            .catch(error => createError('Не удалось загрузить список типов.', error))
+    }
+
+    const onDropdownToggleHandler = () => {
+        if(groups == undefined) fetchGroup(pageLink)
     }
 
     const searchGroup = (name) => {
-        pagination.current.page = 0
+        setGroups(undefined)
         pagination.current.name = name ?? ''
-        fetchGroup()
+        fetchGroup(pageLink.fill('name', name))
     }
 
     return (
         <BestSelect
             onSelect={onSelect}
+            onDropdownToggle={onDropdownToggleHandler}
             {...props}
             initialSelectedItem={initialSelectedGroup}
             className={(props.className ? props.className : 'dropdown-clean')}
@@ -85,7 +83,7 @@ const GroupSelect = ({onSelect, initialSelectedGroup, placeholder, ...props}) =>
             <BestSelectList 
                 isFetching={isFetching}
                 isSearch={pagination.current.name.length > 0}
-                isCanFetchMore={pagination.current.page * pagination.current.size < pagination.current.total}
+                isCanFetchMore={nextPage}
                 fetchItemsCallback={() => fetchGroup()}
                 scrollListRef={scrollListRef}
             >
