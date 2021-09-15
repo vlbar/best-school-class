@@ -352,7 +352,7 @@ export const TaskEditor = ({taskId}) => {
                         Тип задания
                     </Form.Label>
                     <Col sm={10}>
-                        <TaskTypeDropdown initialSelectedType={taskDetails.taskType} onSelect={(t) => setTaskType(t)} placeholder='Выберите тип...' disabled={isInputBlock}/>
+                        <TaskTypeDropdown initialSelectedType={taskDetails.taskType} onSelect={(t) => setTaskType(t)} placeholder='Выберите тип...' disabled={isInputBlock} className='bordered' />
                     </Col>
                 </Form.Group>
                 <hr/>
