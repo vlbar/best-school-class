@@ -8,7 +8,6 @@ import ProcessBar from '../../process-bar/ProcessBar'
 import usePageTitle from '../../feedback/usePageTitle'
 import useBestValidation, { STRING_TYPE, NUMBER_TYPE } from './useBestValidation'
 import JoditEditor from 'jodit-react'
-import axios from 'axios'
 import './TaskEditor.less'
 import Resource from '../../../util/Hateoas/Resource'
 
@@ -55,7 +54,7 @@ const taskReducer = (state, action) => {
         case TASK_DURATION:
             return { ...state, duration: action.payload }
         case TASK_TYPE:
-            return { ...state, taskTypeId: action.payload }
+            return { ...state, taskType: action.payload }
         case IS_COMPLETED:
             return { ...state, isCompleted: action.payload }
         default:
@@ -104,7 +103,7 @@ export const TaskEditor = ({taskId}) => {
     const setDescription = (description) => taskDispatch({ type: TASK_DESC, payload: description })
     const setMaxScore = (maxScore) => taskDispatch({ type: TASK_MAX_SCORE, payload: maxScore })
     const setDuration = (duration) => taskDispatch({ type: TASK_DURATION, payload: duration })
-    const setTaskTypeId = (taskTypeId) => taskDispatch({ type: TASK_TYPE, payload: taskTypeId })
+    const setTaskType = (taskType) => taskDispatch({ type: TASK_TYPE, payload: taskType })
     const setIsComplited = (isCompleted) => taskDispatch({ type: IS_COMPLETED, payload: isCompleted })
 
     const { callbackSubStatus, setIsChanged } = useTaskSaveManager(saveTaskDetails)
@@ -176,11 +175,14 @@ export const TaskEditor = ({taskId}) => {
             return
         }
 
+        let taskToUpdate = taskDetails
+        taskToUpdate.taskTypeId = taskDetails?.taskType.id
+
         taskLink(taskId)
-            .put(taskDetails)
+            .put(taskToUpdate)
             .then(data => { 
                 callbackSubStatus(SAVED_STATUS)
-                lastSavedData.current = taskDetails
+                lastSavedData.current = taskToUpdate
             })
             .catch(error => {
                 callbackSubStatus(ERROR_STATUS)
@@ -350,7 +352,7 @@ export const TaskEditor = ({taskId}) => {
                         Тип задания
                     </Form.Label>
                     <Col sm={10}>
-                        <TaskTypeDropdown initialSelectedType={taskDetails.taskType} onSelect={(t) => setTaskTypeId(t ? t.id : null)} placeholder='Выберите тип...' disabled={isInputBlock}/>
+                        <TaskTypeDropdown initialSelectedType={taskDetails.taskType} onSelect={(t) => setTaskType(t)} placeholder='Выберите тип...' disabled={isInputBlock}/>
                     </Col>
                 </Form.Group>
                 <hr/>
