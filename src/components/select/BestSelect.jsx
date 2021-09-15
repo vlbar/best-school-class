@@ -57,7 +57,7 @@ const BestSelect = ({
             <ToggleContext.Provider value={{ selectedItem, fieldToDisplay, disabled, variant, placeholder }}>
                 {toggle ? toggle(selectedItem) : <BestSelectToggle/>}
             </ToggleContext.Provider>
-            <Dropdown.Menu>
+            <Dropdown.Menu style={{maxWidth: '90vh'}}>
                 <SelectContext.Provider value={{ selectedItem, onSelectItem, fieldToDisplay }}>
                     {children}
                 </SelectContext.Provider>

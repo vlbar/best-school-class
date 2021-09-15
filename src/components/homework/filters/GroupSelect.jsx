@@ -90,7 +90,9 @@ const GroupSelect = ({onSelect, initialSelectedGroup, placeholder, ...props}) =>
                 {groups && groups.map(group => 
                     <BestSelectItem key={group.id} item={group}>
                         <BestItemSelector className='d-flex pl-2'>
-                            <div className='select-group-circle' style={{backgroundColor: group.color ?? '#343a40'}}/>
+                            <div>
+                                <div className='select-group-circle' style={{backgroundColor: group.color ?? '#343a40'}}/>
+                            </div>
                             <span>{group.name}</span>
                         </BestItemSelector>
                     </BestSelectItem>
