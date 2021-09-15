@@ -231,9 +231,15 @@ export function isEquivalent(a, b) {
             if(a[propName].length !== b[propName].length)
                 return false
             
-            for(let j = 0; j < a[propName].length; j++) 
-                if(!isEquivalent(a[propName][j], b[propName][j]))
-                    return false
+            for(let j = 0; j < a[propName].length; j++) {              
+                if(a[propName][j] instanceof Object) {
+                    if(!isEquivalent(a[propName][j], b[propName][j]))
+                        return false
+                } else {
+                    if(a[propName][j] !== b[propName][j])
+                        return false
+                }
+            }
         } else {
             if (a[propName] !== b[propName])
                 return false  
