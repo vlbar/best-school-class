@@ -58,9 +58,9 @@ const GroupSelect = ({onSelect, initialSelectedGroup, placeholder, ...props}) =>
             className={(props.className ? props.className : 'dropdown-clean')}
             toggle={(group) => {
                 return (
-                    <BestSelectToggle className='d-flex align-items-center' size={props.size} variant={props.variant ? props.variant : 'white'}>
-                        {(group) && <div className='select-group-circle' style={{backgroundColor: group.color ?? '#343a40'}}/>}
-                        <span>{group ? group.name : 'Класс'}</span>
+                    <BestSelectToggle className='d-flex align-items-center mw-100' size={props.size} variant={props.variant ? props.variant : 'white'}>
+                        {(group) && <div><div className='select-group-circle' style={{backgroundColor: group.color ?? '#343a40'}}/></div>}
+                        <span className='text-truncate'>{group ? group.name : 'Класс'}</span>
                     </BestSelectToggle>
                 )
             }}
