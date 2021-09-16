@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect, useContext } from 'react'
 import { Dropdown } from 'react-bootstrap'
 import { LoadingList } from '../loading/LoadingList'
 import { useInView } from 'react-intersection-observer'
+import { useSelector } from 'react-redux'
+import { selectState } from '../../redux/state/stateSelector'
 import './BestSelect.less'
 
 export const SelectContext = React.createContext()
@@ -9,12 +11,13 @@ const ToggleContext = React.createContext()
 
 const BestSelect = ({
     onSelect, onDropdownToggle,
-    fieldToDisplay = 'name', initialSelectedItem, placeholder = 'Выбрать', isDisableListClosing = false,
+    fieldToDisplay = 'name', initialSelectedItem, placeholder = 'Выбрать', isDisableListClosing = false, isResetOnStateChange = false,
     variant = 'white', disabled = false,
     toggle, children, ...props
 }) => {
     const [selectedItem, setSelectedItem] = useState(initialSelectedItem)
     const [isDropdownShow, setIsDropdownShow] = useState(false)
+    const { state } = useSelector(selectState)
 
     // lazy initial selected item
     useEffect(() => {
@@ -22,6 +25,14 @@ const BestSelect = ({
             setSelectedItem(initialSelectedItem)
         }
     }, [initialSelectedItem])
+
+    // on change user state reload
+    useEffect(() => {
+        if(isResetOnStateChange || isResetOnStateChange === undefined) {
+            setSelectedItem(undefined)
+            onSelect(undefined)
+        }
+    }, [state])
     
     const onSelectItem = (item) => {
         let targetItem = undefined
