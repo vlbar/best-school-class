@@ -1,10 +1,12 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 
 import BestSelect, { BestItemSelector, BestSelectItem, BestSelectList, BestSelectToggle } from '../../select/BestSelect'
 import LazySearchInput from '../../search/LazySearchInput'
 import ProcessBar from '../../process-bar/ProcessBar'
 import Resource from '../../../util/Hateoas/Resource'
 import { createError } from '../../notifications/notifications'
+import { selectState } from '../../../redux/state/stateSelector'
+import { useSelector } from 'react-redux'
 import './GroupSelect.less'
 
 const baseUrl = '/groups'
@@ -16,12 +18,17 @@ const GroupSelect = ({onSelect, initialSelectedGroup, placeholder, ...props}) =>
     const [groups, setGroups] = useState(undefined)
     const [nextPage, setNextPage] = useState(undefined)
 
+    const { state } = useSelector(selectState)
     const emptyResultAfterName = useRef(undefined)
     const scrollListRef = useRef()
 
     const pagination = useRef({
         name: ''
     })
+
+    useEffect(() => {
+        setGroups(undefined)
+    }, [state])
 
     const fetchGroup = (link) => {
         link
@@ -40,7 +47,7 @@ const GroupSelect = ({onSelect, initialSelectedGroup, placeholder, ...props}) =>
     }
 
     const onDropdownToggleHandler = () => {
-        if(groups == undefined) fetchGroup(pageLink)
+        if(groups == undefined) fetchGroup(pageLink.fill('roles', state))
     }
 
     const searchGroup = (name) => {
@@ -52,6 +59,7 @@ const GroupSelect = ({onSelect, initialSelectedGroup, placeholder, ...props}) =>
     return (
         <BestSelect
             onSelect={onSelect}
+            isResetOnStateChange
             onDropdownToggle={onDropdownToggleHandler}
             {...props}
             initialSelectedItem={initialSelectedGroup}
