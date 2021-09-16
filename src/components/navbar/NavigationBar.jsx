@@ -25,17 +25,12 @@ function NavigationBar() {
               Главная
             </Nav.Link>
           </PrivateContent>
-          <PrivateContent allowedStates={[ASSISTANT, TEACHER]}>
+          <PrivateContent allowedStates={[STUDENT, TEACHER]}>
             <Nav.Link as={NavLink} to="/shedule">
               Расписание
             </Nav.Link>
           </PrivateContent>
-          <PrivateContent  allowedStates={[ASSISTANT, TEACHER]}>
-            <Nav.Link as={NavLink} to="/answers">
-              Ответы
-            </Nav.Link>
-          </PrivateContent>
-          <PrivateContent  allowedStates={[STUDENT]}>
+          <PrivateContent>
             <Nav.Link as={NavLink} to="/homeworks">
               Задания
             </Nav.Link>

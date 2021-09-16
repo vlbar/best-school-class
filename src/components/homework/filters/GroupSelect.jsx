@@ -5,16 +5,20 @@ import axios from 'axios'
 import ProcessBar from '../../process-bar/ProcessBar'
 import LazySearchInput from '../../search/LazySearchInput'
 import './GroupSelect.less'
+import { TEACHER } from '../../../redux/state/stateActions'
+import { useSelector } from 'react-redux'
+import { selectState } from '../../../redux/state/stateSelector'
 
 const baseUrl = '/groups'
 
-async function fetch(page, size, name) {
-    return axios.get(`${baseUrl}?page=${page}&size=${size}${name.length > 0 ? `&name=${name}`:''}`)
+async function fetch(page, size, name, roles) {
+    return axios.get(`${baseUrl}?page=${page}&size=${size}${name.length > 0 ? `&name=${name}`:''}&roles=${roles}`)
 }
 
 const GroupSelect = ({onSelect, initialSelectedGroup, placeholder, ...props}) => {
     const [isFetching, setIsFetching] = useState(true)
     const [groups, setGroups] = useState(undefined)
+    const state = useSelector(selectState);
 
     const emptyResultAfterName = useRef(undefined)
     const scrollListRef = useRef()
@@ -30,17 +34,17 @@ const GroupSelect = ({onSelect, initialSelectedGroup, placeholder, ...props}) =>
         setIsFetching(true)
         pagination.current.page++
 
-        fetch(pagination.current.page, pagination.current.size, encodeURIComponent(pagination.current.name.trim()))
+        fetch(pagination.current.page, pagination.current.size, encodeURIComponent(pagination.current.name.trim()), state.state)
             .then(res => {
                 let fetchedData = res.data
 
-                pagination.current.total = fetchedData.totalItems             
+                pagination.current.total = fetchedData.page.totalElements             
                 if(pagination.current.total == 0) emptyResultAfterName.current = pagination.current.name
 
                 if(pagination.current.page == 1)
-                    setGroups(fetchedData.items)
+                    setGroups(fetchedData.list("groups"))
                 else
-                    setGroups([...groups, ...fetchedData.items])
+                    setGroups([...groups, ...fetchedData.list("groups")])
             })
             .catch(error => addErrorNotification('Не удалось загрузить список типов. \n' + error))
             .finally(() => setIsFetching(false))

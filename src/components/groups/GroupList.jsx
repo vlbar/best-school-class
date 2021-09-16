@@ -10,11 +10,13 @@ import {
   Tooltip,
 } from "react-bootstrap";
 import Moment from "react-moment";
-import { Link } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 import getContrastColor from "../../util/ContrastColor";
 import "./GroupList.less";
 
 function GroupList({ groups, user, ...props }) {
+  const history = useHistory();
+
   return (
     <Row {...props}>
       {groups.map((group, index) => {
@@ -66,7 +68,11 @@ function GroupList({ groups, user, ...props }) {
                   </Moment>
                 </Form.Text>
                 <ButtonGroup>
-                  <Button variant="outline-dark" size="sm">
+                  <Button
+                    variant="outline-dark"
+                    size="sm"
+                    onClick={() => history.push(`/groups/${group.id}/tasks`)}
+                  >
                     <i className="fas fa-tasks"></i>
                   </Button>
                   <Button variant="outline-dark" size="sm">
