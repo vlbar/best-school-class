@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect, useContext } from 'react'
 import { Dropdown } from 'react-bootstrap'
-import { LoadingList } from '../loading/LoadingList'
-import { useInView } from 'react-intersection-observer'
 import { useSelector } from 'react-redux'
+import { useInView } from 'react-intersection-observer'
+
+import useSkipMountEffect from '../common/useSkipMountEffect'
+import { LoadingList } from '../loading/LoadingList'
 import { selectState } from '../../redux/state/stateSelector'
 import './BestSelect.less'
 
@@ -27,7 +29,7 @@ const BestSelect = ({
     }, [initialSelectedItem])
 
     // on change user state reload
-    useEffect(() => {
+    useSkipMountEffect(() => {
         if(isResetOnStateChange || isResetOnStateChange === undefined) {
             setSelectedItem(undefined)
             onSelect(undefined)
