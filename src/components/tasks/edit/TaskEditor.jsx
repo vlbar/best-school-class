@@ -176,7 +176,7 @@ export const TaskEditor = ({taskId}) => {
         }
 
         let taskToUpdate = taskDetails
-        taskToUpdate.taskTypeId = taskDetails?.taskType.id
+        taskToUpdate.taskTypeId = taskDetails.taskType?.id
 
         taskLink(taskId)
             .put(taskToUpdate)
