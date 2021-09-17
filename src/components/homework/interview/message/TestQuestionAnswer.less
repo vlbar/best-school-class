@@ -1,0 +1,31 @@
+.right.custom-checkbox
+  .custom-control-input:disabled:checked
+  ~ .custom-control-label::before {
+  border-color: #28a745 !important;
+  background-color: #28a745 !important;
+}
+
+.not-right > .custom-control-label,
+.right > .custom-control-label {
+  color: black !important;
+
+  &::before {
+    background-color: white !important;
+  }
+}
+
+.not-right > .custom-control-label::before {
+  border-color: #dc3545 !important;
+}
+
+.not-right.custom-checkbox
+  .custom-control-input:disabled:checked
+  ~ .custom-control-label::before {
+  background-color: #dc3545 !important;
+}
+
+.disabled-but-not-muted.custom-checkbox
+  .custom-control-input:disabled:checked
+  ~ .custom-control-label::before {
+  background-color: #007bff !important;
+}

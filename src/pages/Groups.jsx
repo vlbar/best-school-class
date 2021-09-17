@@ -65,12 +65,8 @@ function Groups() {
   }
 
   useEffect(() => {
-    loadGroups(firstPage.link());
-  }, []);
-
-  useEffect(() => {
     //died from cringe
-    if (didMountRef.current > 2) {
+    if (didMountRef.current > 0) {
       if (groups.length === 0) {
         setNext(null);
         loadGroups(firstPage.link().fill("name", search).fill("roles", state));

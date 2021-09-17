@@ -36,45 +36,45 @@ function App() {
         <ReactNotification />
         <NavigationBar />
         <Switch>
-          <Route path={"/"} exact component={Index}/>
-          <PublicRoute path={"/login"} component={Login}/>
+          <Route path={"/"} exact component={Index} />
+          <PublicRoute path={"/login"} component={Login} />
           <PublicRoute path={"/register"} component={Register} />
           <PrivateRoute path={"/home"} component={Workspace} />
           <PrivateRoute
-          exact
-          path={"/answers"}
-          component={Answers}
-          allowedStates={[ASSISTANT, TEACHER]}
-        />
-        <PrivateRoute
-          exact
-          path={"/homeworks/"}
-          component={Homeworks}
-          allowedStates={[STUDENT]}
-        />
-        <PrivateRoute
-          exact
-          path={"/homeworks/:homeworkId"}
-          component={Homeworks}
-          allowedStates={[STUDENT]}
-        />
+            exact
+            path={"/answers"}
+            component={Answers}
+            allowedStates={[ASSISTANT, TEACHER]}
+          />
+          <PrivateRoute
+            exact
+            path={"/homeworks/"}
+            component={Homeworks}
+            allowedStates={[STUDENT]}
+          />
+          <PrivateRoute
+            exact
+            path={"/homeworks/:homeworkId"}
+            component={Homeworks}
+            allowedStates={[STUDENT]}
+          />
 
-        <PrivateRoute
-          path={"/homeworks/:homeworkId/tasks/:taskId"}
-          component={TaskAnswer}
-          allowedStates={[STUDENT]}
-        />
-        <PrivateRoute
-          exact
-          path={"/courses"}
-          component={Courses}
-          allowedStates={[ASSISTANT, TEACHER]}
-        />
-        <PrivateRoute
-          path={"/courses/:courseId/tasks/:taskId"}
-          component={Task}
-          allowedStates={[ASSISTANT, TEACHER]}
-        />
+          <PrivateRoute
+            path={"/homeworks/:homeworkId/tasks/:taskId"}
+            component={TaskAnswer}
+            allowedStates={[STUDENT]}
+          />
+          <PrivateRoute
+            exact
+            path={"/courses"}
+            component={Courses}
+            allowedStates={[ASSISTANT, TEACHER]}
+          />
+          <PrivateRoute
+            path={"/courses/:courseId/tasks/:taskId"}
+            component={Task}
+            allowedStates={[ASSISTANT, TEACHER]}
+          />
           <PrivateRoute
             path={"/shedule"}
             component={Shedule}
