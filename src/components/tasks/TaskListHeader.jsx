@@ -8,9 +8,9 @@ import './TaskListHeader.less'
 
 const orderBy = {
     'name-asc': 'По названию',
-    'createDate-desc': 'Сначала новые',
-    'createDate-asc': 'Сначала старые',
-    'complete-asc': 'По завершенности'
+    'createdAt-desc': 'Сначала новые',
+    'createdAt-asc': 'Сначала старые',
+    'isCompleted-desc': 'По завершенности'
 }
 
 const TaskListHeader = ({submitSearchParams, selectedTasks, isSelectedAll, onSelectAll}) => {
@@ -36,7 +36,7 @@ const TaskListHeader = ({submitSearchParams, selectedTasks, isSelectedAll, onSel
                 onChange={() => onSelectAll()}
             />
 
-            <div className={selectedTasks.length == 0 ? 'd-flex justify-content-end w-100' : 'none-parent'}>
+            <div className={selectedTasks.length == 0 ? 'd-flex justify-content-end' : 'none-parent'} style={{ width: '98%' }}>
                 <TaskTypeDropdown
                     className='btn-clean'
                     onSelect={onSelectType}

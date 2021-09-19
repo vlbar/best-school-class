@@ -21,16 +21,24 @@
     background-color: #f8f9fa;
     border-bottom: 0;
     z-index: 1000;
-    transition: top 0.5s;
+    transition: top 1s;
     padding-bottom: 0.5Rem;
 
     &.show {
         border-bottom: 1px solid #dee2e6!important;
         top: 0px;
+
+        .dropdown-menu.show {
+            display: block !important;
+        }
     }
 
     h4 {
         margin-top: .1Rem;
+    }
+
+    .dropdown-menu {
+        display: none;
     }
 }
 

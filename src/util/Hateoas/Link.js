@@ -73,4 +73,8 @@ export default class Link {
   remove(callback) {
     return Hateoas.remove(this.href, callback, this.source.token);
   }
+
+  delete(callback) {
+    return Hateoas.remove(this.href, callback, this.source.token);
+  }
 }

@@ -1,26 +1,29 @@
 import React, { useContext, useState, useEffect, useRef, useReducer } from 'react'
 import { Button, Form, Col, Row } from 'react-bootstrap'
 import { sortableHandle } from 'react-sortable-hoc'
-import { addErrorNotification } from '../../notifications/notifications'
-import ProcessBar from '../../process-bar/ProcessBar'
-import { useTaskSaveManager, isEquivalent, SAVED_STATUS, ERROR_STATUS, VALIDATE_ERROR_STATUS } from './TaskSaveManager'
-import { QuestionsContext } from './QuestionsList'
-import { QuestionVariant } from './QuestionVariant'
-import { tasksBaseUrl } from './TaskEditor'
-import { questionPartUrl } from './QuestionsList'
-import { variantsPartUrl } from './QuestionVariant'
-import useBestValidation from './useBestValidation'
-import axios from 'axios'
-import './TaskQuestion.less'
+
 import FeedbackMessage from '../../feedback/FeedbackMessage'
+import ProcessBar from '../../process-bar/ProcessBar'
+import useBestValidation from './useBestValidation'
+import { QuestionVariant } from './QuestionVariant'
+import { QuestionsContext } from './QuestionsList'
+import { createError } from '../../notifications/notifications'
+import { useTaskSaveManager, isEquivalent, SAVED_STATUS, ERROR_STATUS, VALIDATE_ERROR_STATUS } from './TaskSaveManager'
+import './TaskQuestion.less'
 
 //reducer
 const MAX_SCORE = 'MAX_SCORE'
+const IS_DETACHED = 'IS_DETACHED'
+const ID = 'ID'
 
 const questionReducer = (state, action) => {
     switch (action.type) {
         case MAX_SCORE:
             return { ...state, maxScore: action.payload }
+        case IS_DETACHED:
+            return { ...state, detached: action.payload }
+        case ID:
+            return { ...state, id: action.payload }
         default:
             return state
     }
@@ -35,42 +38,28 @@ const questionValidationSchema = {
     }
 }
 
-//questions task requests
-async function add(question, taskId) {
-    return axios.post(`${tasksBaseUrl}/${taskId}/${questionPartUrl}`, question)
-}
-
-async function update(question, taskId) {
-    return axios.put(`${tasksBaseUrl}/${taskId}/${questionPartUrl}/${question.id}`, question)
-}
-
-async function remove(question, taskId) {
-    return axios.delete(`${tasksBaseUrl}/${taskId}/${questionPartUrl}/${question.id}`)
-}
-
-//question variant request
-async function fetchQuestionVariants(question) {
-    return axios.get(`/${questionPartUrl}/${question.id}/${variantsPartUrl}`)
-}
-
 //react-sortable-hoc
 const DragHandle = sortableHandle(() => <button className='icon-btn' title='Переместить'><i className='fas fa-grip-lines fa-lg'></i></button>)
 
 export const TaskQuestionContext = React.createContext()
 
-export const TaskQuestion = ({index, question}) => {
+export const TaskQuestion = ({ index, question, questionsLink }) => {
     let arrayIndex = index - 1
-    const { taskId, questionToChange, setQuestionToChange, setQuestion, addQuestionAfter, moveQuestion, deleteQuestion } = useContext(QuestionsContext)
+    const { questionToChange, setQuestionToChange, setQuestion, addQuestionAfter, moveQuestion, deleteQuestion } = useContext(QuestionsContext)
     const [isFetching, setIsFetching] = useState(false)
     const [isHover, setIsHover] = useState(false)
     const [isDeleted, setIsDeleted] = useState(false)
     const [selectedVariant, setSelectedVariant] = useState(0)
     const [questionVariants, setQuestionVariants] = useState(undefined)
+    const [variantsLink, setVariantsLink] = useState(question.link?.('variants'))
+    const [selfLink, setSelfLink] = useState(question.link?.())
 
-    const { statusBySub, setIsChanged } = useTaskSaveManager(updateQuestion)
+    const { callbackSubStatus, setIsChanged } = useTaskSaveManager(updateQuestion)
     const lastSavedData = useRef(question)
 
     const [taskQuestion, dispatchQuestion] = useReducer(questionReducer, question)
+    const setId = (id) => dispatchQuestion({ type: ID, payload: id })
+    const setIsDetached = (isDetached) => dispatchQuestion({ type: IS_DETACHED, payload: isDetached })
     const setMaxScore = (maxScore) => dispatchQuestion({ type: MAX_SCORE, payload: maxScore })
 
     const questionValidation = useBestValidation(questionValidationSchema)
@@ -84,18 +73,14 @@ export const TaskQuestion = ({index, question}) => {
         return !(!questionValidation.isValid || isVariantsHasInvalid(targetVariants))
     }
 
-    useEffect(() => {  
+    useEffect(() => {
         setQuestion(taskQuestion, index)
-        question = taskQuestion
-
         setIsChanged(!isEquivalent(taskQuestion, lastSavedData.current))
     }, [taskQuestion])
 
     useEffect(() => {
-        if(question.questionVariantsCount > 0) {
-            let unloadedQuestions = new Array(question.questionVariantsCount).fill({})
-            unloadedQuestions[0] = question.questionVariants[0]
-            setQuestionVariants([...unloadedQuestions])
+        if(question.questionVariants?.length > 0) {
+            setQuestionVariants([...question.questionVariants])
         } else {
             setQuestionVariants([
                 {
@@ -114,55 +99,56 @@ export const TaskQuestion = ({index, question}) => {
 
     function updateQuestion() {
         if(!questionValidation.validate(taskQuestion)) {
-            statusBySub(VALIDATE_ERROR_STATUS)
+            callbackSubStatus(VALIDATE_ERROR_STATUS)
             return
         }
 
-        if(!isDeleted && isEquivalent(question, lastSavedData.current)) { 
-            statusBySub(SAVED_STATUS)
+        if(!isDeleted && !question.detached && isEquivalent(question, lastSavedData.current)) { 
+            callbackSubStatus(SAVED_STATUS)
             return
         }
 
-        question.questionVariantsCount = questionVariants.length
         question.questionVariants = questionVariants
 
         if(question.detached) {
             let addableQuestion = {...question, id: null}
-            add(addableQuestion, taskId)
-                .then(res => {
-                    let fetchedData = res.data
-                    question.detached = false
-                    question.id = fetchedData.id
+            questionsLink
+                .post(addableQuestion)
+                .then(data => {
+                    setId(data.id)
+                    setIsDetached(false)
+                    setVariantsLink(data.link('variants'))
+                    setSelfLink(data.link())
 
-                    lastSavedData.current = {...question}
-                    statusBySub(SAVED_STATUS)
+                    lastSavedData.current = taskQuestion
+                    callbackSubStatus(SAVED_STATUS)
                 })
                 .catch(error => {
-                    addErrorNotification('Не удалось сохранить задание. \n' + error)
-                    statusBySub(ERROR_STATUS)
-                    question.id = Math.random()
+                    createError('Не удалось сохранить задание.', error)
+                    callbackSubStatus(ERROR_STATUS)
                 })
         } else {
             if(!isDeleted) {
-                update(question, taskId)
-                    .then(res => {
+                selfLink
+                    .put(question)
+                    .then(data => {
                         lastSavedData.current = {...question}
-                        statusBySub(SAVED_STATUS)
+                        callbackSubStatus(SAVED_STATUS)
                     })
                     .catch(error => {
-                        addErrorNotification('Не удалось сохранить задание. \n' + error)
-                        statusBySub(ERROR_STATUS)
-                        question.id = Math.random()
+                        createError('Не удалось сохранить задание.', error)
+                        callbackSubStatus(ERROR_STATUS)
                     })
             } else {
-                remove(question, taskId)
-                    .then(res => {
+                selfLink
+                    .remove()
+                    .then(data => {
                         deleteQuestion(question)
-                        statusBySub(SAVED_STATUS)
+                        callbackSubStatus(SAVED_STATUS)
                     })
                     .catch(error => {
-                        addErrorNotification('Не удалось удалить задание. \n' + error)
-                        statusBySub(ERROR_STATUS)
+                        createError('Не удалось удалить задание.', error)
+                        callbackSubStatus(ERROR_STATUS)
                     })
             }
         }
@@ -173,7 +159,7 @@ export const TaskQuestion = ({index, question}) => {
         questionVariantsVar.push({
             id: undefined,
             formulation: '',
-            position: questionVariants[questionVariantsVar.length - 1].position + 1,
+            position: questionVariantsVar.length,
             questionId: question.id,
             numberOfSymbols: '',
             type: 'TEXT_QUESTION'
@@ -189,36 +175,12 @@ export const TaskQuestion = ({index, question}) => {
 
     const markForDeletion = () => {
         setIsDeleted(true)
+        setIsChanged(true)
         if(question.detached) deleteQuestion(question)
     }
 
-    
     const selectVartiant = async (index) => {
-        if(isEmpty(questionVariants[index]))
-            await fetchOtherVarinats()
         setSelectedVariant(index)
-    }
-
-    const fetchOtherVarinats = async () => {
-        setIsFetching(true)
-        await fetchQuestionVariants(question)
-            .then(res => {
-                let fetchedData = res.data 
-
-                let allQuestionVariants = questionVariants
-                let j = 1;
-                for(let i = 0; i < allQuestionVariants.length; i++)
-                    if(isEmpty(allQuestionVariants[i]))
-                        allQuestionVariants[i] = fetchedData[j++]
-
-                setQuestionVariants(allQuestionVariants)
-            })
-            .catch(error => {
-                addErrorNotification('Не удалось загрузить варианты задания. \n' + error)
-            })
-            .finally(() => {
-                setIsFetching(false)
-            })
     }
 
     const markForDeleteVariant = (index) => {
@@ -276,7 +238,7 @@ export const TaskQuestion = ({index, question}) => {
         if(targetVariants) {
             let isHasInvalid = false // осуждаю
             targetVariants.forEach(variant => {
-                if(variant.isValid !== undefined && !variant.isValid)
+                if(variant.isValid !== undefined && !variant.isValid && !variant.markForDelete)
                     isHasInvalid = true
             })
             return isHasInvalid
@@ -325,7 +287,7 @@ export const TaskQuestion = ({index, question}) => {
                         <TaskQuestionContext.Provider value={{ question, setQuestionVariant, pasteVariantAfter, variantCount, markForDeleteVariant, deleteQuestionVariant }}>
                             {(questionVariants) && questionVariants.map((variant, index) => {
                                 if(!isEmpty(variant)) return (
-                                    <QuestionVariant key={index} show={selectedVariant == index} index={index} questionVariant={variant} isEditing={isEditing}/>
+                                    <QuestionVariant key={index} show={selectedVariant == index} index={index} questionVariant={variant} isEditing={isEditing} variantsLink={variantsLink} />
                                 )
                             })}
                         </TaskQuestionContext.Provider>

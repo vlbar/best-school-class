@@ -1,63 +1,66 @@
 import React, { useState, useEffect, useRef, useContext } from 'react'
+import { Button, Table, Badge, Dropdown, OverlayTrigger, Tooltip } from 'react-bootstrap'
 import { SearchTask } from './SearchTask'
-import { Button, Table, Badge, Dropdown } from 'react-bootstrap'
+
 import ProcessBar from '../process-bar/ProcessBar'
-import { addErrorNotification } from '../notifications/notifications'
+import Resource from '../../util/Hateoas/Resource'
+import TaskDeleteModal from './TaskDeleteModal'
+import TaskListHeader from './TaskListHeader'
+import { createError } from '../notifications/notifications'
+import { HomeworkContext } from '../homework/HomeworkBuilderContext'
+import { Link, useHistory } from 'react-router-dom'
 import { LoadingList } from '../loading/LoadingList'
 import { TaskAddModal } from './TaskAddModal'
-import { useHistory } from 'react-router-dom'
 import { useInView } from 'react-intersection-observer'
-import TaskListHeader from './TaskListHeader'
-import { HomeworkContext } from '../homework/HomeworkBuilderContext'
-import axios from 'axios'
 import './TaskList.less'
 
 const baseUrl = '/tasks'
-
-async function fetch(courseId, page, size, name, taskTypeId, order) {
-    return axios.get(`${baseUrl}?page=${page}&size=${size}${courseId !== undefined ? `&courseId=${courseId}`:''}${name !== undefined ? `&name=${name}`:''}${taskTypeId !== undefined ? `&taskTypeId=${taskTypeId}`:''}${order !== undefined ? `&order=${order}`:''}`)
-}
-
-async function add(task) {
-    return axios.post(`${baseUrl}`, task)
-}
+const baseLink = Resource.basedOnHref(baseUrl).link()
+const pageLink = baseLink.fill('size', 20)
 
 const taskTypesColors = ['#69c44d', '#007bff', '#db4242', '#2cc7b2', '#8000ff', '#e68e29', '#d4d5d9', '#38c7d1']
 
 export const TaskList = ({selectedCourse}) => {
     // fetching
     const [tasks, setTasks] = useState(undefined)
-    const [isFetching, setIsFetching] = useState(false)
+    const [nextPage, setNextPage] = useState(undefined)
+    const [isHasFetchingErrors, setIsHasFetchingErrors] = useState(false)
 
-    const pagination = useRef({
-        page: 1, 
-        size: 20, 
-        total: undefined,
-        name: '',
-        taskTypeId: undefined,
-        courseId: undefined,
-        orderBy: 'name-asc'
-    })
+    const [isFetching, setIsFetching] = useState(false)
+    const emptyResultAfterName = useRef(undefined)
 
     // searching
     const emptyResultAfterTaskName = useRef(undefined)
     const searchParams = useRef({
         name: '',
-        taskTypeId: undefined,
-        orderBy: pagination.current.orderBy
+        taskTypeId: null,
+        orderBy: 'name-asc'
     })
-
-    useEffect(() => {
-        if(selectedCourse) fetchTasks(1)
-    }, [selectedCourse])
 
     //auto fetch
     const { ref, inView } = useInView({
-        threshold: 1
+        threshold: 0
     })
 
+    // homework
+    const { homework } = useContext(HomeworkContext)
+
+    // modals
+    const [isAddTaskModalShow, setIsAddTaskModalShow] = useState(false)   
+    const [isTaskAdding, setIsTaskAdding] = useState(false)
+    
+    const [isDeleteTaskModalShow, setIsDeleteTaskModalShow] = useState(false)
+    const [taskToDelete, setTaskToDelete] = useState(undefined)
+    const [isTaskDeleting, setIsTaskDeleting] = useState(false)
+    const history = useHistory()
+
     useEffect(() => {
-        if(inView && !isFetching) fetchTasks(pagination.current.page + 1)
+        if(selectedCourse) fetchFirstTasksPage()
+        setSelectedTasks([])
+    }, [selectedCourse])
+
+    useEffect(() => {
+        if(inView && !isFetching && !isHasFetchingErrors) fetchTasks(nextPage)
     }, [inView])
 
     // select
@@ -72,109 +75,106 @@ export const TaskList = ({selectedCourse}) => {
     }
 
     const onSelectTaskHandler = (task) => {
-        if(selectedTasks.find(x => x.id == task.id) == undefined)
-            selectTask(task)
-        else
-            unselectTask(task)
+        if(selectedTasks.find(x => x.id == task.id) == undefined) selectTask(task)
+        else unselectTask(task)
     }
     
     const onSelectAll = () => {
         if(!tasks) return
-        if(selectedTasks.length == tasks.length)
-            setSelectedTasks([])
-        else
-            setSelectedTasks(tasks)
+        if(selectedTasks.length == tasks.length) setSelectedTasks([])
+        else setSelectedTasks(tasks)
     }
-
-    // homework
-    const { homework } = useContext(HomeworkContext)
-
-    // modals
-    const [isAddTaskModalShow, setIsAddTaskModalShow] = useState(false)
-    const [taskToAdd, setTaskToAdd] = useState(undefined)
-    const [isTaskAdding, setIsTaskAdding] = useState(false)
-    const history = useHistory()
 
     const setSearchParams = (params) => {
         searchParams.current = {...searchParams.current, ...params}
-        if(searchParams.current.name.trim().length > 0)
-            fetchTasks(1)
-        else 
-            if(selectedCourse) fetchTasks(1)
-            else {
-                setTasks(undefined)
-                setIsFetching(false)
-            }
+        if(searchParams.current.name.trim().length > 0) fetchFirstTasksPage()
+        else if(selectedCourse) fetchFirstTasksPage()
+        else {
+            setTasks(undefined)
+            setIsFetching(false)
+        }
     }
 
-    const fetchTasks = (page) => {
-        setIsFetching(true)
+    const fetchFirstTasksPage = () => {
+        fetchTasks(
+            pageLink
+                .fill('courseId', selectedCourse?.id ?? null)
+                .fill('name', searchParams.current.name)
+                .fill('taskTypeId', searchParams.current.taskTypeId ?? null)
+                .fill('order', searchParams.current.orderBy)
+        )
+    }
 
-        if(page == 1) {
-            setTasks(undefined)
-            setSelectedTasks([])
-            pagination.current.courseId = selectedCourse?.id
-            pagination.current = {...pagination.current, ...searchParams.current}
-        }
+    const fetchTasks = (link) => {
+        link
+            ?.fetch(setIsFetching)
+            .then(data => {
+                let fetchedTasks = data.list('tasks') ?? []
+                setNextPage(data.link('next'))
 
-        fetch(pagination.current.courseId, page, pagination.current.size, pagination.current.name, pagination.current.taskTypeId, pagination.current.orderBy)
-            .then(res => {
-                let fetchedData = res.data
-
-                pagination.current.page = page
-                pagination.current.total = fetchedData.totalItems
-
-                if(fetchedData.totalItems === 0) 
-                    emptyResultAfterTaskName.current = pagination.current.name
-  
-                if(page == 1)
-                    setTasks(fetchedData.items)
+                if(data.page.totalElements == 0) emptyResultAfterName.current = link.param('name')
+                if(data.page.number == 1)
+                    setTasks(fetchedTasks)
                 else
-                    setTasks([...tasks, ...fetchedData.items])
+                    setTasks([...tasks, ...fetchedTasks])
+                setIsHasFetchingErrors(false)
             })
-            .catch(error => addErrorNotification('Не удалось загрузить список типов. \n' + error))
-            .finally(() => setIsFetching(false))
+            .catch(error => {
+                createError('Не удалось загрузить список заданий.', error)
+                setIsHasFetchingErrors(true)
+            })
     }
 
     const addTask = (task) => {
         task.courseId = selectedCourse.id
-        task.maxScore = 100
 
-        setIsTaskAdding(true)
-        setTaskToAdd(task)
-
-        add(task)
-            .then(res => {
-                let fetchedData = res.data
-                history.push(`courses/${selectedCourse.id}/tasks/${fetchedData.id}`)
+        baseLink
+            .post(task, setIsTaskAdding)
+            .then(data => {
+                history.push(`courses/${selectedCourse.id}/tasks/${data.id}`)
             })
-            .catch(error => addErrorNotification('Не удалось добавить задание, возможно, изменения не сохранятся. \n' + error))
-            .finally(() => setIsTaskAdding(false))
+            .catch(error => createError('Не удалось добавить задание, возможно, изменения не сохранятся.', error))
+    }
+
+    const removeTask = (task) => {
+        task.link()
+            .remove(setIsTaskDeleting)
+            .then(data => {
+                fetchFirstTasksPage()
+                setIsDeleteTaskModalShow(false)
+            })
+            .catch(error => createError('Не удалось добавить задание, возможно, изменения не сохранятся.', error))
+    }
+
+    const openRemoveTaskModal = (task) => {
+        setIsDeleteTaskModalShow(true)
+        setTaskToDelete(task)
     }
 
     // ох уж эти индусы...
     const getMessage = () => {
-        if(!selectedCourse && !tasks && !isFetching)
+        if(!selectedCourse && !tasks && !isFetching && searchParams.current.name == '')
             return  <>
                         <h5>Не выбран курс</h5>
                         <p className='text-muted'>Выберите курс, чтобы отобразить его задания, либо воспользуйтесь поиском.</p>
                     </>
         else
             if(!isFetching)
-                if(tasks) {
-                    if(tasks.length == 0)
-                        if(searchParams.current.name !== '' || searchParams.current.taskTypeId !== undefined)
+                if(tasks !== undefined) {
+                    if(tasks === null || tasks.length === 0)
+                        if(searchParams.current.name !== '' || searchParams.current.taskTypeId !== null)
                             return  <>
                                         <h5>Задания не найдены.</h5>
                                         <p className='text-muted'>Не удалось найти задания, удовлетворяющие условиям поиска.</p>
                                     </>
                         else return <>
                                         <h5>Увы, но задания еще не добавлены.</h5>
-                                        <p className='text-muted'>Чтобы задания были в списке, для начали их нужно добавить.</p>
+                                        <p className='text-muted'>
+                                            Чтобы задания были в списке, для начали их нужно <span className='hover-link' onClick={() => setIsAddTaskModalShow(true)}>добавить.</span>
+                                        </p>
                                     </>
                 }
-                else
-                    return  <>
+                else return <>
                                 <h5>Произошла ошибка</h5>
                                 <p className='text-muted'>Не удалось загрузить список заданий.</p>
                             </>
@@ -185,21 +185,30 @@ export const TaskList = ({selectedCourse}) => {
     let message = getMessage()
     return (
         <>
-            <SearchTask 
-                onSubmit={(params) => setSearchParams(params)}
-                setIsFetching={(isFetching) => {
-                    setIsFetching(isFetching)
-                    setTasks([])
-                }}
-                emptyAfterTaskName={emptyResultAfterTaskName.current}
-            />
-            <TaskListHeader
-                submitSearchParams={(params) => setSearchParams(params)}
-                selectedTasks={selectedTasks}
-                isSelectedAll={selectedTasks.length == tasks?.length && tasks != undefined && tasks.length !== 0}
-                onSelectAll={onSelectAll}
-            />
+            <div className='d-flex flex-row my-3'>
+                <SearchTask
+                    onSubmit={(params) => setSearchParams(params)}
+                    setIsFetching={(isFetching) => {
+                        setIsFetching(isFetching)
+                        setTasks([])
+                    }}
+                    emptyAfterTaskName={emptyResultAfterName.current}
+                />
+                <Button 
+                    variant='primary'
+                    disabled={!selectedCourse || !tasks}
+                    onClick={() => setIsAddTaskModalShow(true)}
+                >
+                    Добавить
+                </Button>
+            </div>
             <div className='task-list course-panel'>
+                <TaskListHeader
+                    submitSearchParams={(params) => setSearchParams(params)}
+                    selectedTasks={selectedTasks}
+                    isSelectedAll={selectedTasks.length == tasks?.length && tasks != undefined && tasks.length !== 0}
+                    onSelectAll={onSelectAll}
+                />
                 {isFetching && <ProcessBar className='position-absolute' height='.18Rem'/>}
                 <div className='scroll-container'>
                     {tasks && tasks.length !== 0 && 
@@ -218,29 +227,31 @@ export const TaskList = ({selectedCourse}) => {
                                         <div className='ml-2' style={{width: '95%'}}>
                                             <div className='d-flex justify-content-between'>
                                                 <div>
-                                                    <span 
-                                                        className='text-semi-bold task-name mr-2' 
-                                                        onClick={() => history.push(`courses/${task.courseId}/tasks/${task.id}`)}
-                                                    >                                           
-                                                        {task.name}
-                                                    </span>
-                                                
-                                                    {task.taskType !== null ?
+                                                    <Link to={`courses/${task.courseId}/tasks/${task.id}`} className='text-semi-bold task-name mr-2'>{task.name}</Link>                                                   
+                                                    {task.taskType !== null && (
                                                         <Badge
-                                                            variant='secondary' 
-                                                            style={{backgroundColor: taskTypesColors[task.taskType.id % taskTypesColors.length]}}
-                                                        >
+                                                            variant='secondary'
+                                                            className='mr-2'
+                                                            style={{backgroundColor: taskTypesColors[task.taskType.id % taskTypesColors.length]}}>
                                                             {task.taskType.name}
-                                                        </Badge>:''}
+                                                        </Badge>
+                                                    )}
+                                                    {!task.isCompleted && (
+                                                        <OverlayTrigger
+                                                            placement={'top'}
+                                                            overlay={<Tooltip id={`tooltip-top`}>Задание не завершено</Tooltip>}>
+                                                            <i className='fas fa-pen fa-xs text-secondary' />
+                                                        </OverlayTrigger>
+                                                    )}
                                                 </div>
                                                 
                                                 <Dropdown className='dropdown-action-menu'>
                                                     <Dropdown.Toggle size='sm' id='dropdown-basic'>⋮</Dropdown.Toggle>
                                                     <Dropdown.Menu>
-                                                        <Dropdown.Item onClick={() => history.push(`courses/${task.courseId}/tasks/${task.id}`)}>Изменить</Dropdown.Item>
+                                                        <Dropdown.Item as={Link} to={`courses/${task.courseId}/tasks/${task.id}`}>Изменить</Dropdown.Item>
                                                         <Dropdown.Item onClick={() => homework.addTask(task)}>Добавить в домашнее</Dropdown.Item>
                                                         <Dropdown.Item>Переместить</Dropdown.Item>
-                                                        <Dropdown.Item className='text-danger'>Удалить</Dropdown.Item>
+                                                        <Dropdown.Item className='text-danger' onClick={() => openRemoveTaskModal(task)}>Удалить</Dropdown.Item>
                                                     </Dropdown.Menu>
                                                 </Dropdown>
                                             </div>
@@ -256,11 +267,10 @@ export const TaskList = ({selectedCourse}) => {
                             })}
                         </div>
                     }
-                    {(tasks !== undefined && !isFetching && pagination.current.page * pagination.current.size < pagination.current.total) &&
+                    {(!isFetching && nextPage) &&
                         <button 
                             className="fetch-types-btn" 
-                            onClick={() => fetchTasks(pagination.current.page + 1)} 
-                            disabled={isFetching}
+                            onClick={() => fetchTasks(nextPage)}
                             ref={ref}
                         >
                             Загрузить еще
@@ -277,20 +287,17 @@ export const TaskList = ({selectedCourse}) => {
                         </Table>}
                 </div>
             </div>
-            <Button 
-                variant='primary' 
-                className={'w-100 mt-2'}
-                disabled={!selectedCourse || !tasks}
-                onClick={() => setIsAddTaskModalShow(true)}
-            >
-                Добавить задание
-            </Button>
-            {<TaskAddModal 
+            <TaskAddModal 
                 show={isAddTaskModalShow} 
                 onClose={() => setIsAddTaskModalShow(false)} 
-                isFetching={isTaskAdding} 
-                taskToAdd={taskToAdd}
+                isFetching={isTaskAdding}
                 onSubmit={addTask}
+            />
+            {isDeleteTaskModalShow && <TaskDeleteModal
+                taskToDelete={taskToDelete}
+                onClose={() => setIsDeleteTaskModalShow(false)}
+                isFetching={isTaskDeleting}
+                onSubmit={removeTask}
             />}
         </>)
 }

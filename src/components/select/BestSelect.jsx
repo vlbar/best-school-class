@@ -1,20 +1,25 @@
 import React, { useState, useRef, useEffect, useContext } from 'react'
 import { Dropdown } from 'react-bootstrap'
-import { LoadingList } from '../loading/LoadingList'
+import { useSelector } from 'react-redux'
 import { useInView } from 'react-intersection-observer'
+
+import useSkipMountEffect from '../common/useSkipMountEffect'
+import { LoadingList } from '../loading/LoadingList'
+import { selectState } from '../../redux/state/stateSelector'
 import './BestSelect.less'
 
 export const SelectContext = React.createContext()
 const ToggleContext = React.createContext()
 
 const BestSelect = ({
-    onSelect,
-    fieldToDisplay = 'name', initialSelectedItem, placeholder = 'Выбрать', isDisableListClosing = false,
+    onSelect, onDropdownToggle,
+    fieldToDisplay = 'name', initialSelectedItem, placeholder = 'Выбрать', isDisableListClosing = false, isResetOnStateChange = false,
     variant = 'white', disabled = false,
     toggle, children, ...props
 }) => {
     const [selectedItem, setSelectedItem] = useState(initialSelectedItem)
     const [isDropdownShow, setIsDropdownShow] = useState(false)
+    const { state } = useSelector(selectState)
 
     // lazy initial selected item
     useEffect(() => {
@@ -22,6 +27,14 @@ const BestSelect = ({
             setSelectedItem(initialSelectedItem)
         }
     }, [initialSelectedItem])
+
+    // on change user state reload
+    useSkipMountEffect(() => {
+        if(isResetOnStateChange || isResetOnStateChange === undefined) {
+            setSelectedItem(undefined)
+            onSelect(undefined)
+        }
+    }, [state])
     
     const onSelectItem = (item) => {
         let targetItem = undefined
@@ -33,11 +46,12 @@ const BestSelect = ({
         if(onSelect) onSelect(targetItem)
     }
 
-    const onDropdownToggle = (show) => {
+    const onDropdownToggleHandler = (show) => {
         if(dropdownLock.current)
             setIsDropdownShow(true)
         else
             setIsDropdownShow(show)
+        onDropdownToggle()
     }
 
     // ну а как иначе 🤷‍♂️
@@ -52,11 +66,11 @@ const BestSelect = ({
     }, [isDisableListClosing])
 
     return (
-        <Dropdown show={isDropdownShow} onToggle={onDropdownToggle} {...props} className={'item-select' + ((props.className) ? ' ' + props.className :'')}>
+        <Dropdown show={isDropdownShow} onToggle={onDropdownToggleHandler} {...props} className={'item-select' + ((props.className) ? ' ' + props.className :'')}>
             <ToggleContext.Provider value={{ selectedItem, fieldToDisplay, disabled, variant, placeholder }}>
                 {toggle ? toggle(selectedItem) : <BestSelectToggle/>}
             </ToggleContext.Provider>
-            <Dropdown.Menu>
+            <Dropdown.Menu style={{maxWidth: '90vh'}}>
                 <SelectContext.Provider value={{ selectedItem, onSelectItem, fieldToDisplay }}>
                     {children}
                 </SelectContext.Provider>
@@ -74,14 +88,14 @@ export const BestSelectToggle = ({children, ...props}) => {
     )
 }
 
-export const BestSelectList = ({isFetching = false, isSearch = false, isCanFetchMore = false, fetchItemsCallback, scrollListRef, notFoundMessage, errorMessage, emptyMessage, disableMessages = false, children, ...props}) => {
+export const BestSelectList = ({isFetching = false, isSearch = false, isCanFetchMore = false, isCanAutoFetch = true, fetchItemsCallback, scrollListRef, notFoundMessage, errorMessage, emptyMessage, disableMessages = false, children, ...props}) => {
     const { ref, inView } = useInView({
-        threshold: 1
+        threshold: 0
     })
 
     //auto fetch
     useEffect(() => {
-        if(inView && !isFetching) fetchItemsCallback()
+        if(inView && !isFetching && isCanAutoFetch) fetchItemsCallback()
     }, [inView])
 
     const getMessage = () => {

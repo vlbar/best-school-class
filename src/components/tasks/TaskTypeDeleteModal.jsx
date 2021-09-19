@@ -1,15 +1,21 @@
 import React from 'react'
 import { Button, Modal, Form } from 'react-bootstrap'
+import ProcessBar from '../process-bar/ProcessBar'
 
-export const TaskTypeDeleteModal = ({deletedTaskType, onSubmit, onClose}) => {
+export const TaskTypeDeleteModal = ({deletedTaskType, isFetching = false, onSubmit, onClose}) => {
+    const onCloseHandler = () => {
+        if(!isFetching) onClose()
+    }
+
     return (
         <>
-            <Modal show onHide={onClose}>
+            <Modal show onHide={onCloseHandler}>
                 <Modal.Header closeButton>
                     <Modal.Title>
                         Удалить тип задания
                     </Modal.Title>
                 </Modal.Header>
+                    <ProcessBar active={isFetching} height='.18Rem' />
                     <Form onSubmit={(e) => {
                         e.preventDefault()
                         onSubmit(deletedTaskType)
@@ -19,7 +25,7 @@ export const TaskTypeDeleteModal = ({deletedTaskType, onSubmit, onClose}) => {
                         </Modal.Body>
 
                         <Modal.Footer>
-                            <Button variant='secondary' onClick={onClose}>
+                            <Button variant='secondary' onClick={onCloseHandler}>
                                 Закрыть
                             </Button>
                             <Button variant='danger' type='submit'>

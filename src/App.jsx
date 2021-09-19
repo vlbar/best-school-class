@@ -49,17 +49,24 @@ function App() {
 
           <PrivateRoute exact path={"/homeworks/"} component={Homeworks} />
           <PrivateRoute path={"/homeworks/:homeworkId"} component={Homeworks} />
+          <Route exact path={"/homeworks/"} component={Homeworks} />
+          <Route exact path={"/homeworks/:homeworkId"} component={Homeworks} />
           <PrivateRoute
             path={"/homeworks/:homeworkId/tasks/:taskId"}
             component={TaskAnswer}
             allowedStates={[STUDENT]}
           />
           <PrivateRoute
+            exact
+            path={"/courses"}
+            component={Courses}
+            allowedStates={[ASSISTANT, TEACHER]}
+          />
+          <PrivateRoute
             path={"/courses/:courseId/tasks/:taskId"}
             component={Task}
             allowedStates={[ASSISTANT, TEACHER]}
           />
-
           <PrivateRoute
             path={"/shedule"}
             component={Shedule}

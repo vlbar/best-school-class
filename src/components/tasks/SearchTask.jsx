@@ -13,19 +13,12 @@ const searchValidationSchema = {
 }
 
 export const SearchTask = ({onSubmit, setIsFetching, emptyAfterTaskName}) => {
-    const [selectedType, setSelectedType] = useState(undefined)
     const [searchedTaskName, setSearchedTaskName] = useState('')
     const searchValidation = useBestValidation(searchValidationSchema)
 
-    const onSelectType = (type) => {
-        setSelectedType(type)
-        submitSearchParams({taskTypeId: type?.id})
-    }
-
     const submitSearchParams = (forceParam) => {
         let params = {
-            name: searchedTaskName,
-            taskTypeId: selectedType?.id
+            name: searchedTaskName
         }
 
         if(forceParam) params = {...params, ...forceParam}
@@ -35,7 +28,7 @@ export const SearchTask = ({onSubmit, setIsFetching, emptyAfterTaskName}) => {
 
     let nameValdiationErros = searchValidation.errors.name
     return (<>
-        <div className='d-flex flex-row my-3'>        
+        <div className='d-flex flex-row w-100'>        
             <LazySearchInput
                 name='name'
                 placeholder='Введите название задания'
@@ -46,7 +39,7 @@ export const SearchTask = ({onSubmit, setIsFetching, emptyAfterTaskName}) => {
                 }}
                 isCanSubmit={!nameValdiationErros}
                 isInvalid={nameValdiationErros}
-                onTimerStart={(name) => { if(searchValidation.validate({name})) setIsFetching(true) }}
+                onTimerStart={(name) => { if(searchValidation.validate({name}) && name.trim().length > 0) setIsFetching(true) }}
                 onSubmit={(value) => submitSearchParams({name: value})}
                 onEmpty={() => submitSearchParams({name: ''})}
                 emptyAfterValue={emptyAfterTaskName}

@@ -16,7 +16,7 @@ const baseUrl = '/courses'
 const subCoursesPartUrl = 'sub-courses'
 
 export const CourseHierarchy = ({onCourseSelect}) => {
-    const [isShowHierarhy, setIsShowHierarhy] = useState(false)
+    const [isShowHierarhy, setIsShowHierarhy] = useState(true)
     const [courses, setCourses] = useState(undefined)
 
     const [isAddCourseShow, setIsAddCourseShow] = useState(false)
@@ -39,7 +39,7 @@ export const CourseHierarchy = ({onCourseSelect}) => {
             .fill('size', coursePage.size)
             .fetch(setIsFetching)
             .then(res => {
-                let items = res.list('courses')
+                let items = res.list('courses') ?? []
                 items = items.map(x => {
                     return mapToNode(x)
                 })
@@ -226,12 +226,12 @@ export const CourseHierarchy = ({onCourseSelect}) => {
 
     return (
         <>
-            <SearchCourse onSearching={(flag) => setIsShowHierarhy(!flag)} onCourseSelect={onCourseSelect} onAddClick={() => openAddCourseModal()} isAddDisabled={!courses}/>
+            <SearchCourse onSearching={(flag) => setIsShowHierarhy(!flag)} onCourseSelect={onCourseSelect} onAddClick={() => openAddCourseModal()} isAddDisabled={!courses || !isShowHierarhy}/>
 
             {isShowHierarhy && (
                 <div className='course-panel'>
                     <ProcessBar active={isFetching} height='.18Rem' className='position-absolute'/>
-                    <div className='course-hierarchy'>
+                    <div className='scroll-container pt-2'>
                         <TreeHierarchy
                             treeData={courses}
                             setTreeData={setCourses}

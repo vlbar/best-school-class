@@ -5,10 +5,11 @@ import { Form } from 'react-bootstrap'
 import { addErrorNotification } from '../../../notifications/notifications'
 import { AnswerSaveContext, answersPartUrl } from '../TaskAnswerTry'
 import { isEquivalent } from '../../edit/TaskSaveManager'
-import { questionPartUrl } from '../../edit/QuestionsList'
 import { SOURCE_TEST_QUESTION, SOURCE_TEXT_QUESTION } from '../../edit/QuestionVariant'
 import { useContextUpdateCyclesSlave } from '../../context-function/ContextFunction'
 import './QuestionAnswer.less'
+
+const questionPartUrl = 'questions'
 
 // auto save
 const SAVE_DELAY = 20 * 1000
