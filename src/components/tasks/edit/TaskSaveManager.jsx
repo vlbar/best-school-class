@@ -41,7 +41,9 @@ export const TaskSaveManager = ({children, autoSaveDelay = 30000}) => {
     const isFakeSaving = useRef(false)
     const expectedSubResponses = useRef(undefined)
     const onSaveClick = () => {
-        if(canSave.current) {
+        setUpdateCycle(updateCycle + 1)
+
+        /*if(canSave.current) {
             canSave.current = false
             autoSaveTimer.current = undefined
             expectedSubResponses.current = subscribers.current.length
@@ -55,7 +57,7 @@ export const TaskSaveManager = ({children, autoSaveDelay = 30000}) => {
         }
 
         setSaveStatus(SAVING_STATUS)
-        generalSaveStatus = SAVING_STATUS
+        generalSaveStatus = SAVING_STATUS*/
     }
 
     // changes
@@ -245,9 +247,15 @@ export function isEquivalent(a, b) {
             if(a[propName].length !== b[propName].length)
                 return false
             
-            for(let j = 0; j < a[propName].length; j++) 
-                if(!isEquivalent(a[propName][j], b[propName][j]))
-                    return false
+            for(let j = 0; j < a[propName].length; j++) {              
+                if(a[propName][j] instanceof Object) {
+                    if(!isEquivalent(a[propName][j], b[propName][j]))
+                        return false
+                } else {
+                    if(a[propName][j] !== b[propName][j])
+                        return false
+                }
+            }
         } else {
             if (a[propName] !== b[propName])
                 return false  

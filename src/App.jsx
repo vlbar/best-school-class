@@ -25,6 +25,7 @@ import Register from "./pages/Register";
 import Homeworks from "./pages/Homeworks";
 import Group from "./pages/Group";
 import { GroupJoinDetails } from "./components/groups/join/GroupJoinDetails";
+import TaskAnswer from "./pages/TaskAnswer";
 
 configureAxios(axios);
 
@@ -46,14 +47,12 @@ function App() {
             allowedStates={[ASSISTANT, TEACHER]}
           />
 
+          <PrivateRoute exact path={"/homeworks/"} component={Homeworks} />
+          <PrivateRoute path={"/homeworks/:homeworkId"} component={Homeworks} />
           <PrivateRoute
-            exact
-            path={"/homeworks/"}
-            component={Homeworks}
-          />
-          <PrivateRoute
-            path={"/homeworks/:homeworkId"}
-            component={Homeworks}
+            path={"/homeworks/:homeworkId/tasks/:taskId"}
+            component={TaskAnswer}
+            allowedStates={[STUDENT]}
           />
           <PrivateRoute
             path={"/courses/:courseId/tasks/:taskId"}
