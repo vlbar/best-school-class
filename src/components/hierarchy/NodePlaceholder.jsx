@@ -91,7 +91,7 @@ export const NodePlaceholder = ({onDragLeaveHandle, insteadNode, upperNode, forc
                 {previousDepthNodes.map((node, index) => {
                     return <DropZone 
                         key={index}
-                        indent={`${4.6+2*(index)}Rem`}
+                        indent={`${5.0+2*(index)}Rem`}
                         upperNode={node}
                         onDropHandler={dropAsChild}
                         forceExpandHandler={forceExpandHandler}

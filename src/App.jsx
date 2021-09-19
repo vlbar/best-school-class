@@ -45,6 +45,7 @@ function App() {
             component={Answers}
             allowedStates={[ASSISTANT, TEACHER]}
           />
+
           <PrivateRoute
             exact
             path={"/homeworks/"}
@@ -59,6 +60,7 @@ function App() {
             component={Task}
             allowedStates={[ASSISTANT, TEACHER]}
           />
+
           <PrivateRoute
             path={"/shedule"}
             component={Shedule}

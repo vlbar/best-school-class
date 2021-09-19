@@ -33,11 +33,12 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchNodesHandler, fetchSu
     });
 
     const [draggedNode, setDraggedNode] = useState(undefined)
+    const [selectedNode, setSelectedNode] = useState(undefined)
 
     let flatTreeData = treeToFlat(treeData)
 
     useEffect(() => {
-        if(fetchNodesHandler !== undefined) fetchNodes(null, 1)
+        if(fetchNodesHandler !== undefined && !treeData) fetchNodes(null, 1)
     }, [])
 
     useEffect(() => {
@@ -101,6 +102,7 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchNodesHandler, fetchSu
         let newTreeData = treeData
 
         if (dragNode.id == targetParentId) return
+        if (dragNode.parentId == targetParentId && dragNode.position == position) return
 
         if (dragNode.parentId != null) { 
             let dragNodeParent = flatTreeData.find(x => x.id === dragNode.parentId)
@@ -144,6 +146,13 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchNodesHandler, fetchSu
         else return treeData[index - 1]
     }
 
+    const onNodeSelect = (node) => {
+        if(selectedNode !== node) {
+            setSelectedNode(node)
+            onNodeClick(node)
+        }
+    }
+
     return (
         <div className={'tree-hierarchy' + (draggedNode !== undefined ? ' disable-hover':'')}>
             {treeData !== undefined && treeData.map((nodeData, index) => {
@@ -161,7 +170,8 @@ export const TreeHierarchy = ({treeData, setTreeData, fetchNodesHandler, fetchSu
                     deleteNodeHandler={onNodeDelete}
                     moveNodeHandler={moveNodeHandler}
                     canNodeDrag={canNodeDrag}
-                    onNodeClick={onNodeClick}
+                    selectedNode={selectedNode}
+                    onNodeClick={onNodeSelect}
                 />
             })}
             {draggedNode && <NodePlaceholder
