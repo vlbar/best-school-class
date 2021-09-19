@@ -21,20 +21,24 @@ export default class Resource {
     return extracter.getCollection(obj, listName);
   }
 
-  static basedOnHref(selfHref, extracter) {
-    var obj = this.wrap({}, extracter);
+  static #lists(obj, extracter) {
+    return extracter.getCollections(obj);
+  }
+
+  static basedOnHref(selfHref, obj = {}, extracter) {
+    var obj = this.wrap(obj, extracter);
     obj.link = (linkName) => new Link(selfHref);
     return obj;
   }
 
-  static based(selfLink, extracter) {
-    var obj = this.wrap({}, extracter);
+  static based(selfLink, obj = {}, extracter) {
+    var obj = this.wrap(obj, extracter);
     obj.link = (linkName) => selfLink;
     return obj;
   }
 
-  static basedList(links, extracter) {
-    var obj = this.wrap({}, extracter);
+  static basedList(links, obj = {}, extracter) {
+    var obj = this.wrap(obj, extracter);
     obj.link = (linkName) => links[linkName] ?? null;
     return obj;
   }
@@ -46,6 +50,10 @@ export default class Resource {
     obj.onLink = (linkName, callback) =>
       this.#onLink(obj, linkName, callback, extracter);
     obj.list = (listName) => this.#list(obj, listName, extracter);
+    obj.lists = () => this.#lists(obj, extracter);
+    Object.values(obj.lists()).forEach((list) =>
+      list.forEach((item) => Resource.wrap(item))
+    );
     return obj;
   }
 

@@ -4,7 +4,7 @@ import { refresh } from "../redux/auth/authActions";
 import { store } from "../redux/rootReducer";
 import Resource from "../util/Hateoas/Resource";
 
-export const BASE_PATH = "https://dss-course-work.herokuapp.com/api/v1";
+export const BASE_PATH = "http://localhost:8080/bestschoolclass/api/v1";
 
 const retryAuth = async (failedRequest) => {
   const refreshToken = localStorage.getItem("refreshToken");
@@ -33,13 +33,7 @@ function applyAuthorizationTokenHeader(axios) {
 
 function createHalResourceInterceptor(axios) {
   axios.interceptors.response.use((response) => {
-    if (response.data) {
-      Resource.wrap(response.data);
-      if (response.data._embedded)
-        Object.values(response.data._embedded).forEach((collection) => {
-          collection.forEach((item) => Resource.wrap(item));
-        });
-    }
+    if (response.data) Resource.wrap(response.data);
 
     return response;
   });
