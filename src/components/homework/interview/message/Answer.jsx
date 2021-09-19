@@ -1,12 +1,14 @@
-import React from "react";
+import React, { useContext } from "react";
 import { useEffect } from "react";
 import { useState } from "react";
 import { Accordion, Card } from "react-bootstrap";
 import AnswerDetails from "./AnswerDetails";
 import AnswerStatus from "./AnswerStatus";
+import { MessageContext } from "./InterviewMessageList";
 
 function Answer({ message, onExpand }) {
   const [expanded, setExpanded] = useState(false);
+  const { disabled } = useContext(MessageContext);
 
   useEffect(() => {
     onExpand && onExpand(expanded);
@@ -33,6 +35,7 @@ function Answer({ message, onExpand }) {
               <AnswerDetails
                 fetchLink={message.link()}
                 answerStatus={message.answerStatus}
+                disabled={disabled}
               />
             )}
           </Card.Body>

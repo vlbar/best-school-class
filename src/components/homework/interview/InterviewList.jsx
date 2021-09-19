@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { useState } from "react";
 import { Button, ListGroup } from "react-bootstrap";
 import { useInView } from "react-intersection-observer";
+import Resource from "../../../util/Hateoas/Resource";
 import ProcessBar from "../../process-bar/ProcessBar";
 import User from "../../user/User";
 
@@ -69,11 +70,18 @@ function InterviewList({
           [
             ...interviews,
             ...newPage.list("members").map((member) => {
-              return {
-                interviewer: member.user,
-                inactive: true,
-                link: () => fetchLink.withPathTale(member.user.id),
-              };
+              return Resource.basedList(
+                {
+                  undefined: fetchLink.withPathTale(member.user.id),
+                  interviewMessages: fetchLink
+                    .withPathTale(member.user.id)
+                    .withPathTale("messages"),
+                },
+                {
+                  interviewer: member.user,
+                  inactive: true,
+                }
+              );
             }),
           ].filter(
             (value, index, self) =>
@@ -126,10 +134,10 @@ function InterviewList({
         </div>
       )}
       <ListGroup variant="flush">
-        {interviews.map((interview, index) => {
+        {interviews.map((interview) => {
           return (
             <ListGroup.Item
-              key={index}
+              key={interview.id}
               active={interview.interviewer.id == active}
               action
               onClick={() => {
@@ -149,7 +157,9 @@ function InterviewList({
                   user={interview.interviewer}
                   iconSize={36}
                 />
-                <div className="text-success">{interview.result}</div>
+                <div className="text-success bg-white rounded p-1">
+                  {interview.result}
+                </div>
               </div>
             </ListGroup.Item>
           );

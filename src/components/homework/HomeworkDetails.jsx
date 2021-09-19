@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Badge,
   Row,
@@ -50,6 +50,7 @@ const HomeworkDetails = ({ homeworkId }) => {
   const [homework, setHomework] = useState(undefined);
   const [interview, setInterview] = useState(undefined);
   const [answer, setAnswer] = useState(null);
+  const mounted = useRef(false);
   const state = useSelector(selectState);
 
   const history = useHistory();
@@ -57,6 +58,11 @@ const HomeworkDetails = ({ homeworkId }) => {
   useEffect(() => {
     fetchHomeworkDetails();
   }, []);
+
+  useEffect(() => {
+    if (mounted.current) history.replace("/homeworks");
+    else mounted.current = true;
+  }, [state]);
 
   useEffect(() => {
     if (homework && state.state == STUDENT)
@@ -75,14 +81,6 @@ const HomeworkDetails = ({ homeworkId }) => {
       )
       .finally(() => setIsFetching(false));
   };
-
-  function closeInterview() {
-    interview
-      .link("changeClosed")
-      .put({ closed: true }, setLoading)
-      .then(() => setInterview({ ...interview, closed: true }))
-      .catch((err) => createError("Не удалось закрыть интервью.", err));
-  }
 
   return (
     <>
@@ -184,12 +182,14 @@ const HomeworkDetails = ({ homeworkId }) => {
               </PrivateContent>
               <Student>
                 <h5 className="">Задания</h5>
-                <HomeworkTaskList
-                  tasks={homework.tasks}
-                  interview={interview}
-                  homeworkId={homeworkId}
-                  updatedAnswer={answer}
-                />
+                <div className="border rounded">
+                  <HomeworkTaskList
+                    tasks={homework.tasks}
+                    interview={interview}
+                    homeworkId={homeworkId}
+                    updatedAnswer={answer}
+                  />
+                </div>
               </Student>
             </>
           )}
@@ -201,47 +201,52 @@ const HomeworkDetails = ({ homeworkId }) => {
                 {interview === undefined && (
                   <>
                     <h5 className="mt-2 mb-2 py-1">Задания</h5>
-                    <HomeworkTaskList
-                      tasks={homework.tasks}
-                      interview={interview}
-                      homeworkId={homeworkId}
-                      updatedAnswer={answer}
-                    />
-                  </>
-                )}
-                {interview !== undefined && (
-                  <Tabs fill defaultActiveKey="interview">
-                    <Tab
-                      eventKey="interview"
-                      title={
-                        <span>
-                          Интервью{" "}
-                          {interview.closed != null && (
-                            <i
-                              className={`p-1 fas fa-lock${
-                                "-" + (interview.closed ? "" : "open")
-                              } float-right`}
-                            ></i>
-                          )}
-                        </span>
-                      }
-                    >
-                      <Interview
-                        fetchLink={interview.link()}
-                        userId={interview.interviewer?.id}
-                        createLink={homework.link("interviews")}
-                        onAnswer={setAnswer}
-                        onInterviewChange={setInterview}
-                      />
-                    </Tab>
-                    <Tab eventKey="taskList" title="Задания">
+                    <div className="border rounded">
                       <HomeworkTaskList
                         tasks={homework.tasks}
                         interview={interview}
                         homeworkId={homeworkId}
                         updatedAnswer={answer}
-                        onInterviewChange={setInterview}
                       />
+                    </div>
+                  </>
+                )}
+                {interview !== undefined && (
+                  <Tabs fill defaultActiveKey="interview">
+                    <Tab eventKey="interview" title="Интервью">
+                      <div
+                        className="border border-top-0"
+                        style={{
+                          borderBottomLeftRadius: ".25rem",
+                          borderBottomRightRadius: ".25rem",
+                        }}
+                      >
+                        <Interview
+                          fetchLink={interview.link()}
+                          userId={interview.interviewer?.id}
+                          createLink={homework.link("interviews")}
+                          closed={interview.closed}
+                          onAnswer={setAnswer}
+                          onInterviewChange={setInterview}
+                        />
+                      </div>
+                    </Tab>
+                    <Tab eventKey="taskList" title="Задания">
+                      <div
+                        className="border border-top-0"
+                        style={{
+                          borderBottomLeftRadius: ".25rem",
+                          borderBottomRightRadius: ".25rem",
+                        }}
+                      >
+                        <HomeworkTaskList
+                          tasks={homework.tasks}
+                          interview={interview}
+                          homeworkId={homeworkId}
+                          updatedAnswer={answer}
+                          onInterviewChange={setInterview}
+                        />
+                      </div>
                     </Tab>
                   </Tabs>
                 )}
@@ -249,12 +254,15 @@ const HomeworkDetails = ({ homeworkId }) => {
               {interview !== undefined && (
                 <Student>
                   <h5>Интервью</h5>
-                  <Interview
-                    fetchLink={interview.link()}
-                    createLink={homework.link("interviews")}
-                    onAnswer={setAnswer}
-                    onInterviewChange={setInterview}
-                  />
+                  <div className="border rounded">
+                    <Interview
+                      fetchLink={interview.link()}
+                      closed={interview.closed}
+                      createLink={homework.link("interviews")}
+                      onAnswer={setAnswer}
+                      onInterviewChange={setInterview}
+                    />
+                  </div>
                 </Student>
               )}
             </div>

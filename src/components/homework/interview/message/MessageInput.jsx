@@ -8,7 +8,7 @@ import { useEffect } from "react";
 import { createError } from "../../../notifications/notifications";
 import UserName from "../../../user/UserName";
 
-function MessageInput({ messagesLink }) {
+function MessageInput({ messagesLink, onSubmit: handleSubmit }) {
   //Context
   const {
     replyMessage,
@@ -69,7 +69,10 @@ function MessageInput({ messagesLink }) {
           replyOnId: replyMessage ? replyMessage.id : null,
           questionAnswerId: commentingAnswer?.questionAnswer?.questionId,
         })
-        .then(reset)
+        .then((message) => {
+          reset();
+          handleSubmit?.(message);
+        })
         .catch((err) => createError("Не удалось отправить сообщение.", err));
   }
 
@@ -77,23 +80,38 @@ function MessageInput({ messagesLink }) {
     if (
       text != editingMessage.text ||
       replyMessage?.id != editingMessage.replyOn?.id
-    )
+    ) {
+      let editedMessage = {
+        type: editingMessage.type,
+        content: text,
+        replyOnId: replyMessage ? replyMessage.id : null,
+      };
       editingMessage
         .link()
-        .put({
-          type: editingMessage.type,
-          content: text,
-          replyOnId: replyMessage ? replyMessage.id : null,
+        .put(editedMessage)
+        .then(() => {
+          reset();
+          handleSubmit?.({
+            ...editingMessage,
+            ...editedMessage,
+            editedAt: new Date(),
+          });
         })
-        .then(reset)
         .catch((err) => createError("Не удалось обновить сообщение.", err));
+    }
   }
 
   function deleteMessage() {
     editingMessage
       .link()
       .remove()
-      .then(reset)
+      .then(() => {
+        reset();
+        handleSubmit?.({
+          ...editingMessage,
+          deletedAt: new Date(),
+        });
+      })
       .catch((err) => createError("Не удалось удалить сообщение.", err));
   }
 

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import { useRef } from "react";
 import { useEffect } from "react";
 import { useState } from "react";
@@ -21,7 +21,7 @@ import User from "../../../user/User";
 import HumanReadableDate from "./HumanReadableDate";
 import QuestionContainer from "./QuestionContainer";
 
-function AnswerDetails({ fetchLink, answerStatus, onStatusChanged }) {
+function AnswerDetails({ fetchLink, answerStatus, onStatusChanged, disabled }) {
   const user = useSelector(selectUser);
 
   const [answer, setAnswer] = useState(null);
@@ -109,7 +109,7 @@ function AnswerDetails({ fetchLink, answerStatus, onStatusChanged }) {
                 <h4 className="d-inline mr-2">{task.name}</h4>
                 {task.taskType && (
                   <Badge
-                  className="p-1"
+                    className="p-1"
                     style={{
                       backgroundColor: getTaskTypeColor(task.taskType.id),
                       color: getContrastColor(
@@ -259,7 +259,7 @@ function AnswerDetails({ fetchLink, answerStatus, onStatusChanged }) {
                 </div>
               </>
             )}
-            {!isEdit && (
+            {!isEdit && !disabled && (
               <div className="d-flex justify-content-end">
                 {answer.answerStatus == "NOT_PERFORMED" ? (
                   <Button

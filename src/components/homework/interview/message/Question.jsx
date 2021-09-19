@@ -18,7 +18,8 @@ function Question({
   onSaving,
   readOnly = false,
 }) {
-  const { commentingAnswer, setCommentingAnswer } = useContext(MessageContext);
+  const { commentingAnswer, setCommentingAnswer, disabled } =
+    useContext(MessageContext);
 
   const scoreRef = useRef(questionAnswer?.score);
   const [status, setStatus] = useState("saved");
@@ -56,17 +57,21 @@ function Question({
         }`}
       >
         <b>{question.formulation}</b>
-        {questionAnswer && question.id != commentingAnswer?.question.id && (
-          <div className="tool-panel">
-            <Button
-              variant="transparent"
-              className="p-0 d-flex align-items-baseline tool"
-              onClick={() => setCommentingAnswer({ question, questionAnswer })}
-            >
-              <i className="fas fa-reply fa-sm"></i>
-            </Button>
-          </div>
-        )}
+        {!disabled &&
+          questionAnswer &&
+          question.id != commentingAnswer?.question.id && (
+            <div className="tool-panel">
+              <Button
+                variant="transparent"
+                className="p-0 d-flex align-items-baseline tool"
+                onClick={() =>
+                  setCommentingAnswer({ question, questionAnswer })
+                }
+              >
+                <i className="fas fa-reply fa-sm"></i>
+              </Button>
+            </div>
+          )}
       </div>
       {questionAnswer && (
         <>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Badge, Modal, ModalBody } from "react-bootstrap";
+import { Badge, Button, Modal, ModalBody } from "react-bootstrap";
 import { Link, useHistory } from "react-router-dom";
 
 import { getTaskTypeColor } from "../tasks/TaskTypeDropdown";
@@ -13,6 +13,7 @@ import { useSelector } from "react-redux";
 import { selectState } from "../../redux/state/stateSelector";
 import InterviewMarkInput from "./interview/InterviewMarkInput";
 import { createError } from "../notifications/notifications";
+import ProcessBar from "../process-bar/ProcessBar";
 
 const MAX_DISPLAY_TASKS = 10;
 
@@ -25,17 +26,20 @@ const HomeworkTaskList = ({
   onInterviewChange,
 }) => {
   const [answers, setAnswers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [isEdit, setEdit] = useState(false);
   const state = useSelector(selectState);
   const fetchLinkHref = useRef(null);
 
   useEffect(() => {
     if (interview && interview.link()) {
       if (interview.link("interviewMessages").href != fetchLinkHref.current) {
+        setAnswers([]);
         fetchLinkHref.current = interview.link("interviewMessages").href;
         interview
           .link("interviewMessages")
           ?.fill("type", "ANSWER")
-          .fetch()
+          .fetch(setLoading)
           .then((page) => setAnswers(page.list("messages") ?? []));
       }
     } else setAnswers([]);
@@ -55,16 +59,19 @@ const HomeworkTaskList = ({
     }
   }, [updatedAnswer]);
 
-  function markInterview(mark) {
+  function markInterview({ mark: result, closed }) {
     interview
       .link("changeMark")
-      .put({ mark })
-      .then(() =>
+      .put({ result, closed })
+      .then(() => {
         onInterviewChange({
           ...interview,
-          result: mark,
-        })
-      )
+          result,
+          closed,
+          inactive: false,
+        });
+        setEdit(false);
+      })
       .catch((err) => createError("Не удалось поставить оценку.", err));
   }
 
@@ -72,11 +79,12 @@ const HomeworkTaskList = ({
   let maxScore = 0;
   return (
     <>
-      <div
-        className={`border ${
-          interview && state.state != STUDENT ? "border-top-0" : ""
-        } d-flex flex-column justify-content-between interview-container`}
-      >
+      <div className="d-flex flex-column justify-content-between interview-container position-relative">
+        <ProcessBar
+          active={loading}
+          height={2}
+          className="position-absolute w-100"
+        />
         {tasks && (
           <>
             <div className="overflow-auto">
@@ -93,36 +101,98 @@ const HomeworkTaskList = ({
                     homeworkId={homeworkId}
                     answer={answers?.find((answer) => answer.taskId == task.id)}
                     inInterview={!!interview}
+                    disabled={interview?.closed}
                   />
                 );
               })}
             </div>
             {interview && (
-              <div
-                className="flex-fill text-secondary d-flex flex-column justify-content-between align-items-end"
-                style={{ padding: "0.75rem" }}
-              >
-                <div>
-                  Итого: {total}/{maxScore} (
-                  {((total * 100) / maxScore).toFixed(2)}
-                  %)
-                </div>
-
-                <PrivateContent allowedStates={[TEACHER, ASSISTANT]}>
-                  <InterviewMarkInput
-                    interview={interview}
-                    total={total}
-                    onSubmit={markInterview}
-                    isInitMarking={answers.length == tasks.length}
-                  />
-                </PrivateContent>
-
-                {interview.result && (
-                  <div>
-                    <i>Оценка:</i> <b>{interview.result}</b>
+              <>
+                {interview.result != null && interview.closed && !isEdit && (
+                  <div
+                    className="position-absolute h-100 w-100"
+                    style={{
+                      backgroundColor: "rgba(248 249 250 / 50%)",
+                      pointerEvents: "none",
+                    }}
+                  >
+                    <div className="d-flex h-100 w-100 justify-content-center align-items-center">
+                      <div
+                        className="text-center"
+                        style={{ pointerEvents: "all" }}
+                      >
+                        <h4>Оценено</h4>
+                        <h3 className="mt-2">{interview.result}</h3>
+                        <PrivateContent allowedStates={[TEACHER, ASSISTANT]}>
+                          <Button variant="link" onClick={() => setEdit(true)}>
+                            Переоценить
+                          </Button>
+                        </PrivateContent>
+                      </div>
+                    </div>
                   </div>
                 )}
-              </div>
+
+                <div
+                  className="mt-auto text-secondary d-flex justify-content-between align-items-center flex-wrap"
+                  style={{ padding: "0.75rem" }}
+                >
+                  <div className="mt-3" style={{ padding: "0.75rem" }}>
+                    Итого: {total}/{maxScore} (
+                    {((total * 100) / maxScore).toFixed(2)}
+                    %)
+                  </div>
+
+                  <div
+                    className="d-flex mt-3 justify-content-between align-items-center"
+                    style={{ padding: "0.75rem" }}
+                  >
+                    {isEdit && (
+                      <PrivateContent allowedStates={[TEACHER, ASSISTANT]}>
+                        <Button
+                          variant="link"
+                          className="px-0 mr-2"
+                          onClick={() => setEdit(false)}
+                        >
+                          Отменить
+                        </Button>
+
+                        <div>
+                          <InterviewMarkInput
+                            interview={interview}
+                            total={interview.result ?? total}
+                            onSubmit={markInterview}
+                            onEdit={setEdit}
+                            isInitMarking={answers.length == tasks.length}
+                          />
+                        </div>
+                      </PrivateContent>
+                    )}
+                    {!isEdit && (
+                      <>
+                        {!interview.closed && (
+                          <PrivateContent allowedStates={[TEACHER, ASSISTANT]}>
+                            <Button
+                              variant="link"
+                              className="px-0 mr-2"
+                              onClick={() => setEdit(true)}
+                            >
+                              {interview.result != null
+                                ? "Переоценить"
+                                : "Оценить"}
+                            </Button>
+                          </PrivateContent>
+                        )}
+                        {interview.result && (
+                          <div>
+                            <i>Оценка: </i> <b>{interview.result}</b>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              </>
             )}
           </>
         )}
@@ -131,8 +201,13 @@ const HomeworkTaskList = ({
   );
 };
 
-const TaskTableItem = ({ task, homeworkId, answer, inInterview = true }) => {
-  const history = useHistory();
+const TaskTableItem = ({
+  task,
+  homeworkId,
+  answer,
+  inInterview = true,
+  disabled,
+}) => {
   const [show, setIsShow] = useState(false);
 
   return (
@@ -154,6 +229,7 @@ const TaskTableItem = ({ task, homeworkId, answer, inInterview = true }) => {
               <AnswerDetails
                 fetchLink={answer.link()}
                 answerStatus={answer.answerStatus}
+                disabled={disabled}
               />
             </div>
           </ModalBody>
@@ -179,6 +255,7 @@ const TaskTableItem = ({ task, homeworkId, answer, inInterview = true }) => {
                   <span className="mr-2  text-dark" title={task.name}>
                     <Student>
                       {inInterview &&
+                      !disabled &&
                       (!answer ||
                         answer.answerStatus == "NOT_PERFORMED" ||
                         answer.answerStatus == "RETURNED") ? (

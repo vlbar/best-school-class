@@ -11,6 +11,7 @@ import { createContext } from "react";
 import MessageInput from "./MessageInput";
 import ProcessBar from "../../../process-bar/ProcessBar";
 import HumanReadableDate from "./HumanReadableDate";
+import axios from "axios";
 
 const BLOCK_TIME_RANGE_IN_MILLIS = 1000 * 60 * 5;
 
@@ -75,59 +76,75 @@ function InterviewMessageList({
   }
 
   function fetchMessages(link) {
-    link.fetch(setLoading).then((newPage) => {
-      let newMessages = newPage.list("messages");
-      if (newMessages) {
-        newMessages = newMessages.reduce((map, message) => {
-          map[message.submittedAt] = message;
-          return map;
-        }, {});
-        if (page.current == null) {
-          messagesRef.current = newMessages;
-        } else {
-          messagesRef.current = { ...messagesRef.current, ...newMessages };
+    link
+      .fetch(setLoading)
+      .then((newPage) => {
+        let newMessages = newPage.list("messages");
+        if (newMessages) {
+          newMessages = newMessages.reduce((map, message) => {
+            map[message.submittedAt] = message;
+            return map;
+          }, {});
+          if (page.current == null) {
+            messagesRef.current = newMessages;
+          } else {
+            messagesRef.current = { ...messagesRef.current, ...newMessages };
+          }
+          setMessages(Object.values(messagesRef.current));
         }
-        setMessages(Object.values(messagesRef.current));
-      }
-      page.current = newPage;
-      if (hasNextRef.current) hasNextRef.current = !!newPage.link("next");
+        page.current = newPage;
+        if (hasNextRef.current) hasNextRef.current = !!newPage.link("next");
 
-      setHasNext(hasNextRef.current);
+        setHasNext(hasNextRef.current);
 
-      if (!closed) reloadChanges(newPage.link("changedAfter"));
-    });
+        if (!closed) reloadChanges(newPage.link("changedAfter"));
+      })
+      .catch((err) => setHasNext(false));
   }
 
   function fetchChanges(link) {
     link.fetch().then((changes) => {
       let changedMessages = changes.list("messages");
-      let addedMessages = {};
+
       if (changedMessages) {
-        let keys = Object.keys(messagesRef.current);
-        let lastKey = keys.pop();
-        let firstKey = keys.shift();
-        changedMessages = changedMessages.reduce((map, message) => {
-          if (!firstKey || Number(firstKey) < message.submittedAt)
-            addedMessages[message.submittedAt] = message;
-          else if (Number(lastKey) <= message.submittedAt)
-            map[message.submittedAt] = message;
-          if (message.type == "ANSWER") onAnswer && onAnswer(message);
-          return map;
-        }, {});
-        //WHAT THE CRINGE
-        messagesRef.current = {
-          ...addedMessages,
-          ...messagesRef.current,
-          ...changedMessages,
-        };
-        setMessages(Object.values(messagesRef.current));
+        updateMessages(changedMessages);
         reloadChanges(changes.link("changedAfter"));
       } else reloadChanges(link);
     });
   }
 
+  function updateMessages(changedMessages) {
+    let keys = Object.keys(messagesRef.current);
+    let lastKey = keys.pop();
+    let firstKey = keys.shift();
+    let addedMessages = {};
+
+    changedMessages = changedMessages.reduce((map, message) => {
+      if (!firstKey || Number(firstKey) < message.submittedAt)
+        addedMessages[message.submittedAt] = message;
+      else if (Number(lastKey) <= message.submittedAt)
+        map[message.submittedAt] = message;
+      if (message.type == "ANSWER") onAnswer && onAnswer(message);
+      return map;
+    }, {});
+
+    messagesRef.current = {
+      ...addedMessages,
+      ...messagesRef.current,
+      ...changedMessages,
+    };
+    setMessages(Object.values(messagesRef.current));
+  }
+
   function fetchPrev() {
     fetchMessages(page.current.link("next"));
+  }
+
+  function handleMessage(message) {
+    if (page.current == null) fetchMessages(fetchLink);
+    else {
+      updateMessages([message]);
+    }
   }
 
   return (
@@ -157,12 +174,20 @@ function InterviewMessageList({
             </div>
           )}
           <div className="d-flex flex-fill bg-white flex-column-reverse overflow-auto position-relative justify-content-start">
-            <MessageGroupContainer
-              messages={messages}
-              currentUser={currentUser}
-              blockTimeRange={BLOCK_TIME_RANGE_IN_MILLIS}
-              onDateChange={setDate}
-            />
+            {messages.length > 0 && (
+              <MessageGroupContainer
+                messages={messages}
+                currentUser={currentUser}
+                blockTimeRange={BLOCK_TIME_RANGE_IN_MILLIS}
+                onDateChange={setDate}
+              />
+            )}
+            {messages.length == 0 && (
+              <div className="text-muted text-center my-auto">
+                <div>Похоже, тут пока никто не писал</div>
+                <div>Начните первым!</div>
+              </div>
+            )}
             <div>
               {!loading && hasNext && (
                 <Button
@@ -177,7 +202,9 @@ function InterviewMessageList({
             </div>
           </div>
           <div className="p-1" style={{ borderTop: "1px solid #dee2e6" }}>
-            {!closed && <MessageInput messagesLink={fetchLink} />}
+            {!closed && (
+              <MessageInput messagesLink={fetchLink} onSubmit={handleMessage} />
+            )}
             {closed && (
               <div className="text-center my-auto p-2 text-muted">
                 Интервью закрыто. Писать сообщения более невозможно.
