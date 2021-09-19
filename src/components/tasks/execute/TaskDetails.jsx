@@ -1,10 +1,8 @@
 import React from 'react'
 import { Badge } from 'react-bootstrap'
-import { Link } from 'react-router-dom'
 
 import { getTaskTypeColor } from '../TaskTypeDropdown'
 import { LoadingItem } from '../../loading/LoadingList'
-import ProcessBar from '../../process-bar/ProcessBar'
 import { toLocaleTimeDurationString } from '../../common/LocaleTimeString'
 
 const TaskDetails = ({ task, isFetching }) => {
@@ -12,13 +10,6 @@ const TaskDetails = ({ task, isFetching }) => {
     let isDataLoading = isFetching || !task
     return (
         <div>
-            <div>
-                <Link to='/homeworks' className='text-secondary text-decoration-none nav-link'>
-                    <i className='fas fa-chevron-left'></i> Вернуться
-                </Link>
-            </div>
-
-            <ProcessBar active={isFetching} height='.18Rem' className='mt-1' />
             {isDataLoading ? (
                 <>
                     <LoadingItem height='1.2Rem' width='250px' className='my-1' />
@@ -41,7 +32,7 @@ const TaskDetails = ({ task, isFetching }) => {
                                 )}
                             </div>
                             <div>
-                                <span className='text-secondary'>Из курса: {task.course.name}</span>
+                                <span className='text-secondary'></span>
                             </div>
                         </div>
                         <div className='mb-3'>

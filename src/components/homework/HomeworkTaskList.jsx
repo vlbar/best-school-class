@@ -13,6 +13,7 @@ import { useSelector } from "react-redux";
 import { selectState } from "../../redux/state/stateSelector";
 import InterviewMarkInput from "./interview/InterviewMarkInput";
 import { createError } from "../notifications/notifications";
+import Resource from "../../util/Hateoas/Resource";
 
 const MAX_DISPLAY_TASKS = 10;
 
@@ -23,6 +24,7 @@ const HomeworkTaskList = ({
   homeworkId,
   updatedAnswer,
   onInterviewChange,
+  onTaskClick
 }) => {
   const [answers, setAnswers] = useState([]);
   const state = useSelector(selectState);
@@ -93,6 +95,7 @@ const HomeworkTaskList = ({
                     homeworkId={homeworkId}
                     answer={answers?.find((answer) => answer.taskId == task.id)}
                     inInterview={!!interview}
+                    onTaskClick={onTaskClick}
                   />
                 );
               })}
@@ -131,7 +134,7 @@ const HomeworkTaskList = ({
   );
 };
 
-const TaskTableItem = ({ task, homeworkId, answer, inInterview = true }) => {
+const TaskTableItem = ({ task, homeworkId, answer, inInterview = true, onTaskClick }) => {
   const history = useHistory();
   const [show, setIsShow] = useState(false);
 
@@ -182,12 +185,12 @@ const TaskTableItem = ({ task, homeworkId, answer, inInterview = true }) => {
                       (!answer ||
                         answer.answerStatus == "NOT_PERFORMED" ||
                         answer.answerStatus == "RETURNED") ? (
-                        <Link
-                          className="stretched-link  text-dark"
-                          to={`/homeworks/${homeworkId}/tasks/${task.id}`}
+                        <span
+                          className="stretched-link text-dark"
+                          onClick={() => onTaskClick(Resource.of(task).link())}
                         >
                           {task.name}
-                        </Link>
+                        </span>
                       ) : (
                         task.name
                       )}

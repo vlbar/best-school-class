@@ -29,6 +29,7 @@ import User from "../user/User";
 import { useSelector } from "react-redux";
 import { selectState } from "../../redux/state/stateSelector";
 import Resource from "../../util/Hateoas/Resource";
+import ExecuteTaskModal from "../tasks/execute/ExecuteTaskModal";
 
 let options = {
   year: "numeric",
@@ -51,6 +52,9 @@ const HomeworkDetails = ({ homeworkId }) => {
   const [interview, setInterview] = useState(undefined);
   const [answer, setAnswer] = useState(null);
   const state = useSelector(selectState);
+
+  const [isExecuteTaskModalShow, setIsExecuteTaskModalShow] = useState(false);
+  const [taskLink, setTaskLink] = useState(undefined);
 
   const history = useHistory();
 
@@ -82,6 +86,11 @@ const HomeworkDetails = ({ homeworkId }) => {
       .put({ closed: true }, setLoading)
       .then(() => setInterview({ ...interview, closed: true }))
       .catch((err) => createError("Не удалось закрыть интервью.", err));
+  }
+
+  function executeTask(link) {
+    setTaskLink(link);
+    setIsExecuteTaskModalShow(true);
   }
 
   return (
@@ -189,6 +198,7 @@ const HomeworkDetails = ({ homeworkId }) => {
                   interview={interview}
                   homeworkId={homeworkId}
                   updatedAnswer={answer}
+                  onTaskClick={executeTask}
                 />
               </Student>
             </>
@@ -261,6 +271,8 @@ const HomeworkDetails = ({ homeworkId }) => {
           )}
         </Col>
       </Row>
+
+      <ExecuteTaskModal show={isExecuteTaskModalShow} taskLink={taskLink} onClose={() => setIsExecuteTaskModalShow(false)} />
     </>
   );
 };
