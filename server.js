@@ -9,10 +9,14 @@ const corsOptions = {
 }
 
 const app = express()
-    app.use(function(req, res, next) {
+app.use(function(req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
     res.header("Access-Control-Allow-Headers", "*");
+       
+    if (!req.secure) {
+       return response.redirect("https://" + req.headers.host + req.url);
+    }
     next();
 });
 
