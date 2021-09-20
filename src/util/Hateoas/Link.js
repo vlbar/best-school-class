@@ -12,7 +12,8 @@ export default class Link {
     this.originHref = originHref ?? href;
     this.href = href.indexOf("{") > 0 ? href.slice(0, href.indexOf("{")) : href;
     if(this.href.indexOf('https') < 0)
-      this.href = this.href.slice(0, 3) + "s" + this.href.slice(3);
+      if(this.href.indexOf('http') >= 0)
+        this.href = this.href.slice(0, 3) + "s" + this.href.slice(3);
     this.source = axios.CancelToken.source();
     this.params = this.href
       .slice(this.href.indexOf("?") + 1)
