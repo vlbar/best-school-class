@@ -15,7 +15,7 @@ app.use(function(req, res, next) {
     res.header("Access-Control-Allow-Headers", "*");
        
     if (!req.secure) {
-       return response.redirect("https://" + req.headers.host + req.url);
+       return res.redirect("https://" + req.headers.host + req.url);
     }
     next();
 });
