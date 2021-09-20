@@ -14,9 +14,6 @@ app.use(function(req, res, next) {
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
     res.header("Access-Control-Allow-Headers", "*");
        
-    if (!req.secure) {
-       return res.redirect("https://" + req.headers.host + req.url);
-    }
     next();
 });
 
