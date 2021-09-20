@@ -44,6 +44,7 @@ function configureAxios(axios) {
   applyAuthorizationTokenHeader(axios);
   createAuthRefreshInterceptor(axios, retryAuth);
   createHalResourceInterceptor(axios);
+  axios.defaults.headers.common['X-Forwarded-Proto'] = 'https'
 }
 
 export default configureAxios;
