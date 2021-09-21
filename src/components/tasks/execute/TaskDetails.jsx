@@ -4,6 +4,7 @@ import { Badge } from 'react-bootstrap'
 import { getTaskTypeColor } from '../TaskTypeDropdown'
 import { LoadingItem } from '../../loading/LoadingList'
 import { toLocaleTimeDurationString } from '../../common/LocaleTimeString'
+import User from '../../user/User'
 
 const TaskDetails = ({ task, isFetching }) => {
 
@@ -19,26 +20,23 @@ const TaskDetails = ({ task, isFetching }) => {
                 </>
             ) : (
                 <>
-                    <div className='d-flex flex-wrap justify-content-between'>
-                        <div className='mb-2'>
-                            <div className='d-flex flex-wrap align-items-center'>
-                                <h4 className='mr-2 mb-0'>{task.name}</h4>
-                                {task.taskType !== null && (
-                                    <div>
-                                        <Badge variant='secondary' style={{ backgroundColor: getTaskTypeColor(task.taskType.id) }}>
-                                            {task.taskType.name}
-                                        </Badge>
-                                    </div>
-                                )}
-                            </div>
-                            <div>
-                                <span className='text-secondary'></span>
-                            </div>
+                    <div className='mb-2'>
+                        <div className='d-flex flex-wrap align-items-center'>
+                            <h4 className='mr-2 mb-0'>{task.name}</h4>
+                            {task.taskType !== null && (
+                                <div>
+                                    <Badge variant='secondary' style={{ backgroundColor: getTaskTypeColor(task.taskType.id) }}>
+                                        {task.taskType.name}
+                                    </Badge>
+                                </div>
+                            )}
                         </div>
-                        <div className='mb-3'>
-                            <div>{task.creatorId}</div>
-                            <div className='text-secondary'>Составитель</div>
+                        <div>
+                            <span className='text-secondary'></span>
                         </div>
+                    </div>
+                    <div className='mb-3'>
+                        <User fetchLink={task.link('creator')} containerClasses='text-secondary ml-2' iconSize={21} />
                     </div>
 
                     {/* DANGER */}

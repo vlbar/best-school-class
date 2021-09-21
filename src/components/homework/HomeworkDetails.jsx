@@ -272,7 +272,15 @@ const HomeworkDetails = ({ homeworkId }) => {
         </Col>
       </Row>
 
-      <ExecuteTaskModal show={isExecuteTaskModalShow} taskLink={taskLink} onClose={() => setIsExecuteTaskModalShow(false)} />
+      {homework && (
+        <ExecuteTaskModal 
+          show={isExecuteTaskModalShow} 
+          taskLink={taskLink}
+          homeworkId={homework.id}
+          createLink={homework.link('createMessage')} 
+          onClose={() => setIsExecuteTaskModalShow(false)} 
+        />
+      )}
     </>
   );
 };

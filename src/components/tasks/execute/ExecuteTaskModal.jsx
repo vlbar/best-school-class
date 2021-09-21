@@ -3,9 +3,10 @@ import { Modal } from 'react-bootstrap'
 import usePageTitle from '../../feedback/usePageTitle'
 import { createError } from '../../notifications/notifications'
 import ProcessBar from '../../process-bar/ProcessBar'
+import TaskAnswerTry from './TaskAnswerTry'
 import TaskDetails from './TaskDetails'
 
-const ExecuteTaskModal = ({ show, onClose, taskLink }) => {
+const ExecuteTaskModal = ({ show, onClose, taskLink, homeworkId, createLink }) => {
     const [taskHref, setTaskHref] = useState(undefined)
     const [isFetching, setIsFetching] = useState(false)
     const [task, setTask] = useState(undefined)
@@ -23,7 +24,9 @@ const ExecuteTaskModal = ({ show, onClose, taskLink }) => {
     const fetchTask = () => {
         taskLink
             ?.fetch(setIsFetching)
-            .then(setTask)
+            .then((data) => {
+                setTask(data)
+            })
             .catch(error => createError('Не удалось загрузить информацию о задании.', error))
     }
 
@@ -36,6 +39,7 @@ const ExecuteTaskModal = ({ show, onClose, taskLink }) => {
                     <span className='sr-only'>Close</span>
                 </button>
                 <TaskDetails task={task} isFetching={isFetching} />
+                {task && <TaskAnswerTry task={task} createLink={createLink} homeworkId={homeworkId} />}
             </Modal.Body>
         </Modal>
     )

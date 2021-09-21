@@ -3,14 +3,14 @@ import axios from 'axios'
 import { Button, Modal, ProgressBar } from 'react-bootstrap'
 import { useHistory } from 'react-router-dom'
 
-import { addErrorNotification, addInfoNotification } from '../../notifications/notifications'
 import AnimateHeight from 'react-animate-height'
 import ProcessBar from '../../process-bar/ProcessBar'
 import QuestionAnswerList from './question-answer/QuestionAnswerList'
+import { addInfoNotification, createError } from '../../notifications/notifications'
 import { tasksBaseUrl } from '../../../pages/TaskAnswer'
 import { toLocaleTimeDurationString } from '../../common/LocaleTimeString'
-import './TaskAnswerTry.less'
 import { useContextUpdateCycles } from '../context-function/ContextFunction'
+import './TaskAnswerTry.less'
 
 const STATUS_NOT_PERFORMED = 'NOT_PERFORMED'
 const STATUS_PERFORMED = 'PERFORMED'
@@ -25,19 +25,11 @@ export const AnswerSaveContext = React.createContext()
 // requests
 export const answersPartUrl = 'answers'
 
-async function fetchAnswer(taskId) {
-    return axios.get(`${tasksBaseUrl}/${taskId}/${answersPartUrl}?size=1&r=s`)
-}
-
-async function createAnswer(taskId) {
-    return axios.post(`${tasksBaseUrl}/${taskId}/${answersPartUrl}?r=s`)
-}
-
 async function updateAnswer(taskId, taskAnswer) {
     return axios.put(`${tasksBaseUrl}/${taskId}/${answersPartUrl}/${taskAnswer.id}?r=s`, taskAnswer)
 }
 
-const TaskAnswerTry = ({ task, homeworkId }) => {
+const TaskAnswerTry = ({ homeworkId, task, createLink }) => {
     const [isFetching, setIsFetching] = useState(false)
     const [selectedAnswerTry, setSelectedAnswerTry] = useState(undefined)
     const [isConfirmed, setIsConfirmed] = useState(undefined)
@@ -65,12 +57,11 @@ const TaskAnswerTry = ({ task, homeworkId }) => {
     }, [])
 
     const fetchTaskAnswer = () => {
-        setIsFetching(true)
-
-        fetchAnswer(task.id)
-            .then(res => {
-                let fetchedData = res.data
-                let targetAnswerTry = fetchedData.items[0]
+        task.link('answers')
+            .fill('homeworkId', homeworkId)
+            .fetch(setIsFetching)
+            .then(data => {
+                let targetAnswerTry = (data.page.totalElements > 0) ? data.list('taskAnswers')[0] : undefined
 
                 if (!targetAnswerTry) {
                     setIsConfirmed(false)
@@ -84,25 +75,27 @@ const TaskAnswerTry = ({ task, homeworkId }) => {
                             setIsConfirmed(false)
                             break
                         default:
-                            history.push(`/homeworks/${homeworkId}`)
+                            //history.push(`/homeworks/${homeworkId}`)
                     }
                 }
             })
-            .catch(error => addErrorNotification('Не удалось загрузить ответ на задание. \n' + error))
-            .finally(() => setIsFetching(false))
+            .catch(error => createError('Не удалось загрузить ответ на задание.', error))
     }
 
     const createTaskAnswer = () => {
         setIsConfirmed(true)
-        setIsFetching(true)
 
-        createAnswer(task.id)
-            .then(res => {
-                let fetchedData = res.data
-                setSelectedAnswerTry(fetchedData)
+        let taskAnswer = {
+            type: 'ANSWER',
+            taskId: task.id,
+        }
+
+        createLink
+            .post(taskAnswer, setIsFetching)
+            .then(data => {
+                setSelectedAnswerTry(data)
             })
-            .catch(error => addErrorNotification('Не удалось создать ответ на задание. \n' + error))
-            .finally(() => setIsFetching(false))
+            .catch(error => createError('Не удалось создать ответ на задание.', error))
     }
 
     // timer
@@ -158,10 +151,10 @@ const TaskAnswerTry = ({ task, homeworkId }) => {
             .then(res => {
                 setTaskSaveModalState(modalStateConst.SAVED)
                 setTimeout(() => {
-                    history.push(`/homeworks/${homeworkId}`)
+                    //history.push(`/homeworks/${homeworkId}`)
                 }, 5000)
              })
-            .catch(error => addErrorNotification('Не удалось обновить статус задания. \n' + error))
+            .catch(error => createError('Не удалось обновить статус задания.', error))
             .finally(() => setIsFetching(false))
     }
 
@@ -208,7 +201,7 @@ const TaskAnswerTry = ({ task, homeworkId }) => {
             {isConfirmed && selectedAnswerTry && (
                 <>
                     <div className='d-flex justify-content-between mb-2'>
-                        <div className='my-auto'>Оставшееся время: {isReadOnly ? '-' : toLocaleTimeDurationString(secondsLeft)}</div>
+                        <div className='my-auto'>Оставшееся время: {isReadOnly || !selectedAnswerTry.completionDate ? '-' : toLocaleTimeDurationString(secondsLeft)}</div>
                         <div>
                             <Button variant='outline-primary' size='sm' onClick={() => {
                                     setIsCompleteTaskModalShow(true)
@@ -235,7 +228,7 @@ const TaskAnswerTry = ({ task, homeworkId }) => {
             {isFetching && <ProcessBar height='.18Rem' className='mt-2' />}
             {isConfirmed === false && (
                 <div className='text-center'>
-                    <div className='mx-auto mb-3'>
+                    <div className='mx-auto my-3'>
                         <b>Вопросы еще не получены, так как выполнение задания еще не начато.</b>
                         <br />
                         Вы можете ознакомится с условиями задания и начать его выполнение.
