@@ -11,6 +11,7 @@ import { tasksBaseUrl } from '../../../pages/TaskAnswer'
 import { toLocaleTimeDurationString } from '../../common/LocaleTimeString'
 import { useContextUpdateCycles } from '../context-function/ContextFunction'
 import './TaskAnswerTry.less'
+import { useInView } from 'react-intersection-observer'
 
 const STATUS_NOT_PERFORMED = 'NOT_PERFORMED'
 const STATUS_PERFORMED = 'PERFORMED'
@@ -45,6 +46,11 @@ const TaskAnswerTry = ({ homeworkId, task, createLink }) => {
     const [taskSaveModalState, setTaskSaveModalState] = useState(undefined)
     const [updateCycle, questionAnswerSaveRequest] = useContextUpdateCycles()
     const selectedAnswerTryAnswers = useRef(undefined)
+
+    // answer progress panel
+    const { ref, inView } = useInView({
+        threshold: 0
+    })
 
     const history = useHistory()
 
@@ -126,7 +132,7 @@ const TaskAnswerTry = ({ homeworkId, task, createLink }) => {
     }
 
     const getSecondsLeft = () => {
-        return (selectedAnswerTry.startDate + task.duration * 60 * 1000 - new Date()) / 1000
+        return selectedAnswerTry.completionDate - new Date()
     }
 
     const stopTimer = () => {
@@ -199,32 +205,34 @@ const TaskAnswerTry = ({ homeworkId, task, createLink }) => {
     var isReadOnly = selectedAnswerTry && secondsLeft != null && !(selectedAnswerTry.answerStatus === STATUS_NOT_PERFORMED && secondsLeft > 0)
     return (
         <>
-            <h5 className='mb-1'>Вопросы:</h5>
+            <h5 ref={ref} className='mb-1'>Вопросы:</h5>
             {isConfirmed && selectedAnswerTry && (
-                <>
-                    <div className='d-flex justify-content-between mb-2'>
-                        <div className='my-auto'>Оставшееся время: {isReadOnly || !selectedAnswerTry.completionDate ? '-' : toLocaleTimeDurationString(secondsLeft)}</div>
-                        <div>
-                            <Button variant='outline-primary' size='sm' onClick={() => {
-                                    setIsCompleteTaskModalShow(true)
-                                    setTaskSaveModalState(modalStateConst.CONFIRM)
-                                }} disabled={isReadOnly}>
-                                Завершить
-                            </Button>
+                <div className={'answer-panel' + (inView ? '':' fixed')}>
+                    <div className='inner-container'>
+                        <div className='d-flex justify-content-between mb-2'>
+                            <div className='my-auto'>Оставшееся время: {isReadOnly || !selectedAnswerTry.completionDate ? '-' : toLocaleTimeDurationString(secondsLeft)}</div>
+                            <div>
+                                <Button variant='outline-primary' size='sm' onClick={() => {
+                                        setIsCompleteTaskModalShow(true)
+                                        setTaskSaveModalState(modalStateConst.CONFIRM)
+                                    }} disabled={isReadOnly}>
+                                    Завершить
+                                </Button>
+                            </div>
                         </div>
+                        <ProgressBar max={selectedAnswerTry.questionCount} now={currentProgress} />
+                        <CompleteTaskModal
+                            isShow={isCompleteTaskModalShow}
+                            modalState={taskSaveModalState}
+                            onClose={() => {
+                                setIsCompleteTaskModalShow(false)
+                                setTaskSaveModalState(modalStateConst.NONE)
+                            }}
+                            onConfirm={forceQuestionAnswersSave}
+                            onRefresh={forceQuestionAnswersSave}
+                        />
                     </div>
-                    <ProgressBar max={selectedAnswerTry.questionCount} now={currentProgress} />
-                    <CompleteTaskModal
-                        isShow={isCompleteTaskModalShow}
-                        modalState={taskSaveModalState}
-                        onClose={() => {
-                            setIsCompleteTaskModalShow(false)
-                            setTaskSaveModalState(modalStateConst.NONE)
-                        }}
-                        onConfirm={forceQuestionAnswersSave}
-                        onRefresh={forceQuestionAnswersSave}
-                    />
-                </>
+                </div>
             )}
 
             {isFetching && <ProcessBar height='.18Rem' className='mt-2' />}

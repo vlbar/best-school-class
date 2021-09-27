@@ -37,7 +37,7 @@ const FORMAT_SECONDS = 's'
 */
 
 const defaultOptions = { type: TYPE_LONG, trim: true, format: 'd h m' }
-export const toLocaleTimeDurationString = (seconds, options = defaultOptions) => {
+export const toLocaleTimeDurationString = (milliseconds, options = defaultOptions) => {
     if (!options.format) options.format = 'd:h:m:s'
 
     // a это wee-wee lёt
@@ -47,7 +47,7 @@ export const toLocaleTimeDurationString = (seconds, options = defaultOptions) =>
     let isNeedSeconds = options.format.replace(/ *\[[^)]*\] */g, '').includes(FORMAT_SECONDS)
 
     let resultString = options.format
-    let currentSeconds = seconds
+    let currentSeconds = milliseconds / 1000
 
     const formatTime = (divide, formatChar, isCeil, toLocaleCallback, pad = 0) => {
         let time = isCeil ? Math.ceil(currentSeconds / divide) : Math.floor(currentSeconds / divide)

@@ -167,7 +167,7 @@ const TaskTableItem = ({ task, homeworkId, answer, inInterview = true, onTaskCli
           "task-table-item d-flex position-relative" +
           (inInterview && (answer ? " bg-light" : ""))
         }
-        onClick={() => answer && setIsShow(true)}
+        onClick={() => answer && (answer.answerStatus !== "NOT_PERFORMED" && answer.answerStatus !== "RETURNED" && answer.answerStatus !== "NOT_ACCEPTED") && setIsShow(true)}
       >
         <div className="d-flex w-100 align-items-center justify-content-between">
           <div className="overflow-hidden">

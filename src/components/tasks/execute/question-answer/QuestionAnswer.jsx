@@ -212,11 +212,12 @@ const QuestionAnswer = ({ index, taskQuestionAnswer, setQuestionAnswer, progress
         let isCurentAnaswered = isQuestionAnswered(questionAnswer)
         if(isAnswered.current === undefined) {
             isAnswered.current = isCurentAnaswered
+            if(isCurentAnaswered) progress.add()
         } else {
             if(isCurentAnaswered) {
-                if(!isAnswered.current) progress.add(1)
+                if(!isAnswered.current) progress.add()
             } else {
-                if(isAnswered.current) progress.remove(1)
+                if(isAnswered.current) progress.remove()
             }
 
             isAnswered.current = isCurentAnaswered
