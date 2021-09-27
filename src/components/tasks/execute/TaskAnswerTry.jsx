@@ -83,17 +83,19 @@ const TaskAnswerTry = ({ homeworkId, task, createLink }) => {
     }
 
     const createTaskAnswer = () => {
-        setIsConfirmed(true)
-
         let taskAnswer = {
             type: 'ANSWER',
             taskId: task.id,
         }
 
+        console.log(createLink)
+
         createLink
             .post(taskAnswer, setIsFetching)
             .then(data => {
+                console.log(data)
                 setSelectedAnswerTry(data)
+                setIsConfirmed(true)
             })
             .catch(error => createError('Не удалось создать ответ на задание.', error))
     }
@@ -194,7 +196,7 @@ const TaskAnswerTry = ({ homeworkId, task, createLink }) => {
         selectedAnswerTryAnswers.current = questionAnswers
     }
 
-    var isReadOnly = selectedAnswerTry && secondsLeft && !(selectedAnswerTry.answerStatus === STATUS_NOT_PERFORMED && secondsLeft > 0)
+    var isReadOnly = selectedAnswerTry && secondsLeft != null && !(selectedAnswerTry.answerStatus === STATUS_NOT_PERFORMED && secondsLeft > 0)
     return (
         <>
             <h5 className='mb-1'>Вопросы:</h5>
@@ -233,7 +235,7 @@ const TaskAnswerTry = ({ homeworkId, task, createLink }) => {
                         <br />
                         Вы можете ознакомится с условиями задания и начать его выполнение.
                     </div>
-                    <Button variant='outline-primary' type='submit' onClick={() => createTaskAnswer(true)}>
+                    <Button variant='outline-primary' type='submit' onClick={() => createTaskAnswer(true)} disabled={isFetching}>
                         Начать выполнение
                     </Button>
                 </div>
@@ -244,7 +246,8 @@ const TaskAnswerTry = ({ homeworkId, task, createLink }) => {
                         answerId={selectedAnswerTry.id}
                         progress={{ add: addProgress, remove: removeProgress }}
                         setQuestionAnswers={setSelectedAnswerTryAnswers}
-                        readOnly={isReadOnly}
+                        readOnly={false}
+                        questionsLink={selectedAnswerTry.link('questions')}
                     />
                 </AnswerSaveContext.Provider>
             )}
