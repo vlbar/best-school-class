@@ -30,7 +30,7 @@ async function updateAnswer(taskId, taskAnswer) {
     return axios.put(`${tasksBaseUrl}/${taskId}/${answersPartUrl}/${taskAnswer.id}?r=s`, taskAnswer)
 }
 
-const TaskAnswerTry = ({ homeworkId, task, createLink }) => {
+const TaskAnswerTry = ({ task, interview, createLink }) => {
     const [isFetching, setIsFetching] = useState(false)
     const [selectedAnswerTry, setSelectedAnswerTry] = useState(undefined)
     const [isConfirmed, setIsConfirmed] = useState(undefined)
@@ -64,7 +64,7 @@ const TaskAnswerTry = ({ homeworkId, task, createLink }) => {
 
     const fetchTaskAnswer = () => {
         task.link('answers')
-            .fill('homeworkId', homeworkId)
+            .fill('interviewId', interview.id)
             .fetch(setIsFetching)
             .then(data => {
                 let targetAnswerTry = (data.page.totalElements > 0) ? data.list('taskAnswers')[0] : undefined

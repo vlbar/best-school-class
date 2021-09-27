@@ -276,8 +276,8 @@ const HomeworkDetails = ({ homeworkId }) => {
         <ExecuteTaskModal 
           show={isExecuteTaskModalShow} 
           taskLink={taskLink}
-          homeworkId={homework.id}
-          createLink={homework.link('createMessage')} 
+          createLink={homework.link('createMessage')}
+          interview={interview}
           onClose={() => setIsExecuteTaskModalShow(false)} 
         />
       )}

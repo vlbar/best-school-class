@@ -6,7 +6,7 @@ import ProcessBar from '../../process-bar/ProcessBar'
 import TaskAnswerTry from './TaskAnswerTry'
 import TaskDetails from './TaskDetails'
 
-const ExecuteTaskModal = ({ show, onClose, taskLink, homeworkId, createLink }) => {
+const ExecuteTaskModal = ({ show, onClose, taskLink, createLink, interview }) => {
     const [taskHref, setTaskHref] = useState(undefined)
     const [isFetching, setIsFetching] = useState(false)
     const [task, setTask] = useState(undefined)
@@ -39,7 +39,7 @@ const ExecuteTaskModal = ({ show, onClose, taskLink, homeworkId, createLink }) =
                     <span className='sr-only'>Close</span>
                 </button>
                 <TaskDetails task={task} isFetching={isFetching} />
-                {task && <TaskAnswerTry task={task} createLink={createLink} homeworkId={homeworkId} />}
+                {task && <TaskAnswerTry task={task} createLink={createLink} interview={interview} />}
             </Modal.Body>
         </Modal>
     )
