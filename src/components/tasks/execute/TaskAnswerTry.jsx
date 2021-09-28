@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useRef } from 'react'
-import axios from 'axios'
 import { Button, Modal, ProgressBar } from 'react-bootstrap'
 import { useHistory } from 'react-router-dom'
 
@@ -7,11 +6,10 @@ import AnimateHeight from 'react-animate-height'
 import ProcessBar from '../../process-bar/ProcessBar'
 import QuestionAnswerList from './question-answer/QuestionAnswerList'
 import { addInfoNotification, createError } from '../../notifications/notifications'
-import { tasksBaseUrl } from '../../../pages/TaskAnswer'
 import { toLocaleTimeDurationString } from '../../common/LocaleTimeString'
 import { useContextUpdateCycles } from '../context-function/ContextFunction'
-import './TaskAnswerTry.less'
 import { useInView } from 'react-intersection-observer'
+import './TaskAnswerTry.less'
 
 const STATUS_NOT_PERFORMED = 'NOT_PERFORMED'
 const STATUS_PERFORMED = 'PERFORMED'
@@ -26,14 +24,11 @@ export const AnswerSaveContext = React.createContext()
 // requests
 export const answersPartUrl = 'answers'
 
-async function updateAnswer(taskId, taskAnswer) {
-    return axios.put(`${tasksBaseUrl}/${taskId}/${answersPartUrl}/${taskAnswer.id}?r=s`, taskAnswer)
-}
-
-const TaskAnswerTry = ({ task, interview, createLink, setTaskModalHide, onClose }) => {
+const TaskAnswerTry = ({ task, interview, createLink, setTaskModalHide, onClose, onCreateAnswer }) => {
     const [isFetching, setIsFetching] = useState(false)
     const [selectedAnswerTry, setSelectedAnswerTry] = useState(undefined)
     const [isConfirmed, setIsConfirmed] = useState(undefined)
+    const [selfLink, setSelfLink] = useState(undefined)
 
     const [currentProgress, setCurrentProgress] = useState(undefined)
 
@@ -72,15 +67,15 @@ const TaskAnswerTry = ({ task, interview, createLink, setTaskModalHide, onClose 
             return
         }
 
-        task.link('answers')
-            .fill('interviewId', interview.id)
+        interview.link('answers')
+            .fill('taskId', task.id)
+            .fill('size', 1)
             .fetch(setIsFetching)
             .then(data => {
-                let targetAnswerTry = (data.page.totalElements > 0) ? data.list('taskAnswers')[0] : undefined
+                if(data.page.totalElements > 0) {
+                    let targetAnswerTry = data.list('messages')[0]
+                    setSelfLink(targetAnswerTry.link())
 
-                if (!targetAnswerTry) {
-                    setIsConfirmed(false)
-                } else {
                     switch (targetAnswerTry.answerStatus) {
                         case STATUS_NOT_PERFORMED:
                             setSelectedAnswerTry(targetAnswerTry)
@@ -92,6 +87,8 @@ const TaskAnswerTry = ({ task, interview, createLink, setTaskModalHide, onClose 
                         default:
                             onClose()
                     }
+                } else {
+                    setIsConfirmed(false)
                 }
             })
             .catch(error => createError('Не удалось загрузить ответ на задание.', error))
@@ -106,8 +103,10 @@ const TaskAnswerTry = ({ task, interview, createLink, setTaskModalHide, onClose 
         createLink
             .post(taskAnswer, setIsFetching)
             .then(data => {
+                onCreateAnswer?.(data)
                 setSelectedAnswerTry(data)
                 setIsConfirmed(true)
+                setSelfLink(data.link())
             })
             .catch(error => createError('Не удалось создать ответ на задание.', error))
     }
@@ -159,17 +158,15 @@ const TaskAnswerTry = ({ task, interview, createLink, setTaskModalHide, onClose 
         let targetAnswer = {
             id: selectedAnswerTry.id,
             answerStatus: STATUS_PERFORMED,
+            type: 'ANSWER'
         }
 
-        updateAnswer(task.id, targetAnswer)
+        selfLink
+            .put(targetAnswer, setIsFetching)
             .then(res => {
                 setTaskSaveModalState(modalStateConst.SAVED)
-                setTimeout(() => {
-                    onClose()
-                }, 5000)
              })
             .catch(error => createError('Не удалось обновить статус задания.', error))
-            .finally(() => setIsFetching(false))
     }
 
     // save question answers
