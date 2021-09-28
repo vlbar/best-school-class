@@ -113,7 +113,7 @@ const TaskAnswerTry = ({ task, interview, createLink, setTaskModalHide, onClose,
 
     // timer
     useEffect(() => {
-        if (selectedAnswerTry && !timeLeftInterval.current) {
+        if (selectedAnswerTry && selectedAnswerTry.completionDate != null && !timeLeftInterval.current) {
             setCurrentProgress(selectedAnswerTry.answeredQuestionCount)
             setSecondsLeft(getSecondsLeft())
             timeLeftInterval.current = setInterval(() => {
