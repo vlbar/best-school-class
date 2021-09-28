@@ -45,7 +45,7 @@ const TaskDetails = ({ task, isFetching }) => {
                     <div className='homework-card my-4'>
                         <div className='just-homework-line' />
                         <div>
-                            <div>Длительность: {task.duration > 0 ? toLocaleTimeDurationString(task.duration * 60) : 'Неограничено'}</div>
+                            <div>Длительность: {task.duration > 0 ? toLocaleTimeDurationString(task.duration * 60 * 1000) : 'Неограничено'}</div>
                             <div>Максимальная оценка: {task.maxScore}</div>
                         </div>
                     </div>
