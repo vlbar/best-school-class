@@ -10,6 +10,7 @@ const ExecuteTaskModal = ({ show, onClose, taskLink, createLink, interview }) =>
     const [taskHref, setTaskHref] = useState(undefined)
     const [isFetching, setIsFetching] = useState(false)
     const [task, setTask] = useState(undefined)
+    const [hideByModal, setHideByModal] = useState(false)
 
     usePageTitle({ title: task?.name })
 
@@ -31,7 +32,7 @@ const ExecuteTaskModal = ({ show, onClose, taskLink, createLink, interview }) =>
     }
 
     return (
-        <Modal show={show} onHide={onClose} size='lg'>
+        <Modal show={show} onHide={onClose} size='lg' style={{zIndex: (hideByModal ? '1000' : '1050')}}>
             <ProcessBar height='.18Rem' active={isFetching} />
             <Modal.Body>
                 <button type='button' className='close' onClick={() => onClose()}>
@@ -39,7 +40,7 @@ const ExecuteTaskModal = ({ show, onClose, taskLink, createLink, interview }) =>
                     <span className='sr-only'>Close</span>
                 </button>
                 <TaskDetails task={task} isFetching={isFetching} />
-                {task && <TaskAnswerTry task={task} createLink={createLink} interview={interview} />}
+                {task && <TaskAnswerTry task={task} createLink={createLink} interview={interview} setTaskModalHide={setHideByModal} onClose={onClose} />}
             </Modal.Body>
         </Modal>
     )

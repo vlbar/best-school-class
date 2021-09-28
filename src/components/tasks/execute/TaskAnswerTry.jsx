@@ -30,7 +30,7 @@ async function updateAnswer(taskId, taskAnswer) {
     return axios.put(`${tasksBaseUrl}/${taskId}/${answersPartUrl}/${taskAnswer.id}?r=s`, taskAnswer)
 }
 
-const TaskAnswerTry = ({ task, interview, createLink }) => {
+const TaskAnswerTry = ({ task, interview, createLink, setTaskModalHide, onClose }) => {
     const [isFetching, setIsFetching] = useState(false)
     const [selectedAnswerTry, setSelectedAnswerTry] = useState(undefined)
     const [isConfirmed, setIsConfirmed] = useState(undefined)
@@ -62,7 +62,16 @@ const TaskAnswerTry = ({ task, interview, createLink }) => {
         }
     }, [])
 
+    useEffect(() => {
+        setTaskModalHide(isCompleteTaskModalShow)
+    }, [isCompleteTaskModalShow])
+
     const fetchTaskAnswer = () => {
+        if(!interview.id) {
+            setIsConfirmed(false)
+            return
+        }
+
         task.link('answers')
             .fill('interviewId', interview.id)
             .fetch(setIsFetching)
@@ -81,7 +90,7 @@ const TaskAnswerTry = ({ task, interview, createLink }) => {
                             setIsConfirmed(false)
                             break
                         default:
-                            //history.push(`/homeworks/${homeworkId}`)
+                            onClose()
                     }
                 }
             })
@@ -94,12 +103,9 @@ const TaskAnswerTry = ({ task, interview, createLink }) => {
             taskId: task.id,
         }
 
-        console.log(createLink)
-
         createLink
             .post(taskAnswer, setIsFetching)
             .then(data => {
-                console.log(data)
                 setSelectedAnswerTry(data)
                 setIsConfirmed(true)
             })
@@ -159,7 +165,7 @@ const TaskAnswerTry = ({ task, interview, createLink }) => {
             .then(res => {
                 setTaskSaveModalState(modalStateConst.SAVED)
                 setTimeout(() => {
-                    //history.push(`/homeworks/${homeworkId}`)
+                    onClose()
                 }, 5000)
              })
             .catch(error => createError('Не удалось обновить статус задания.', error))
@@ -228,6 +234,7 @@ const TaskAnswerTry = ({ task, interview, createLink }) => {
                                 setIsCompleteTaskModalShow(false)
                                 setTaskSaveModalState(modalStateConst.NONE)
                             }}
+                            onAnswerClose={onClose}
                             onConfirm={forceQuestionAnswersSave}
                             onRefresh={forceQuestionAnswersSave}
                         />
@@ -273,10 +280,14 @@ const modalStateConst = {
 
 const MODAL_TRANSITION_DURATION = 500
 
-const CompleteTaskModal = ({ isShow, modalState, onClose, onConfirm, onRefresh }) => {
+const CompleteTaskModal = ({ isShow, modalState, onClose, onConfirm, onRefresh, onAnswerClose }) => {
     const onCloseHandle = () => {
         if (modalState === modalStateConst.CONFIRM) {
             onClose()
+        }
+
+        if(modalState === modalStateConst.SAVED) {
+            onAnswerClose()
         }
     }
 
