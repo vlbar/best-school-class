@@ -68,6 +68,11 @@ const HomeworkDetails = ({ homeworkId }) => {
       .finally(() => setIsFetching(false));
   };
 
+  function executeTask(link) {
+    setTaskLink(link);
+    setIsExecuteTaskModalShow(true);
+  }
+
   return (
     <>
       <div className="d-flex flex-wrap justify-content-between mt-3">
@@ -174,7 +179,7 @@ const HomeworkDetails = ({ homeworkId }) => {
                     interview={interview}
                     homeworkId={homeworkId}
                     updatedAnswer={answer}
-                    onTaskClick={() => setIsExecuteTaskModalShow(true)}
+                    onTaskClick={executeTask}
                   />
                 </div>
               </Student>
