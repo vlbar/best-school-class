@@ -33,13 +33,7 @@ function applyAuthorizationTokenHeader(axios) {
 
 function createHalResourceInterceptor(axios) {
   axios.interceptors.response.use((response) => {
-    if (response.data) {
-      Resource.wrap(response.data);
-      if (response.data._embedded)
-        Object.values(response.data._embedded).forEach((collection) => {
-          collection.forEach((item) => Resource.wrap(item));
-        });
-    }
+    if (response.data) Resource.wrap(response.data);
 
     return response;
   });

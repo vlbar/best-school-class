@@ -215,7 +215,7 @@ function Group({ match, baseHref = "/groups", fetchHref }) {
                   <HomeworkList
                     groupId={id}
                     role={state.state}
-                    className="high-homework-list border-top-0"
+                    className="high-homework-list"
                     canExpandTasks={false}
                     onClick={(hw) => history.push(`/homeworks/${hw.id}`)}
                   />

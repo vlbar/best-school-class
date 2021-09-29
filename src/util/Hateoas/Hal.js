@@ -9,6 +9,10 @@ export default class Hal {
 
   //extracts collection from hal _embedded section
   getCollection(halData, collectionName) {
-    return halData._embedded ? halData._embedded[collectionName] : null;
+    return this.getCollections(halData)[collectionName] ?? null;
+  }
+
+  getCollections(halData) {
+    return halData._embedded ?? [];
   }
 }

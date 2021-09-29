@@ -17,8 +17,10 @@ function Question({
   onScoreChange,
   onSaving,
   readOnly = false,
+  short = false,
 }) {
-  const { commentingAnswer, setCommentingAnswer } = useContext(MessageContext);
+  const { commentingAnswer, setCommentingAnswer, disabled } =
+    useContext(MessageContext);
 
   const scoreRef = useRef(questionAnswer?.score);
   const [status, setStatus] = useState("saved");
@@ -55,28 +57,44 @@ function Question({
           !questionAnswer && "text-muted"
         }`}
       >
-        <b>{question.formulation}</b>
-        {questionAnswer && question.id != commentingAnswer?.question.id && (
-          <div className="tool-panel">
-            <Button
-              variant="transparent"
-              className="p-0 d-flex align-items-baseline tool"
-              onClick={() => setCommentingAnswer({ question, questionAnswer })}
-            >
-              <i className="fas fa-reply fa-sm"></i>
-            </Button>
-          </div>
+        {!short && (
+          <b
+            className="text-break"
+            dangerouslySetInnerHTML={{ __html: question.formulation }}
+          ></b>
         )}
+        {short && (
+          <b className="text-break">
+            {question.formulation.replace(/<[^>]*>?/gm, "")}
+          </b>
+        )}
+        {!disabled &&
+          questionAnswer &&
+          question.id != commentingAnswer?.question.id && (
+            <div className="tool-panel">
+              <Button
+                variant="transparent"
+                className="p-0 d-flex align-items-baseline tool"
+                onClick={() =>
+                  setCommentingAnswer({ question, questionAnswer })
+                }
+              >
+                <i className="fas fa-reply fa-sm"></i>
+              </Button>
+            </div>
+          )}
       </div>
       {questionAnswer && (
         <>
           <span className="mb-1">Ответ ученика:</span>
-          {questionAnswer.type == "TEXT_QUESTION" && (
-            <TextQuestionAnswer question={{ question, questionAnswer }} />
-          )}
-          {questionAnswer.type == "TEST_QUESTION" && (
-            <TestQuestionAnswer question={{ question, questionAnswer }} />
-          )}
+          <div className="question-container">
+            {questionAnswer.type == "TEXT_QUESTION" && (
+              <TextQuestionAnswer question={{ question, questionAnswer }} />
+            )}
+            {questionAnswer.type == "TEST_QUESTION" && (
+              <TestQuestionAnswer question={{ question, questionAnswer }} />
+            )}
+          </div>
           <div className="w-100 d-flex justify-content-end mt-3">
             {!readOnly && (
               <div className="d-flex align-items-center position-relative">
