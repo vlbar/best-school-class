@@ -10,6 +10,7 @@ import { toLocaleTimeDurationString } from '../../common/LocaleTimeString'
 import { useContextUpdateCycles } from '../context-function/ContextFunction'
 import { useInView } from 'react-intersection-observer'
 import './TaskAnswerTry.less'
+import useSkipMountEffect from '../../common/useSkipMountEffect'
 
 const STATUS_NOT_PERFORMED = 'NOT_PERFORMED'
 const STATUS_PERFORMED = 'PERFORMED'
@@ -24,7 +25,7 @@ export const AnswerSaveContext = React.createContext()
 // requests
 export const answersPartUrl = 'answers'
 
-const TaskAnswerTry = ({ task, interview, createLink, setTaskModalHide, onClose, onCreateAnswer }) => {
+const TaskAnswerTry = ({ task, interview, createLink, setTaskModalHide, onClose, onCreateAnswer, needForceSave }) => {
     const [isFetching, setIsFetching] = useState(false)
     const [selectedAnswerTry, setSelectedAnswerTry] = useState(undefined)
     const [isConfirmed, setIsConfirmed] = useState(undefined)
@@ -47,8 +48,6 @@ const TaskAnswerTry = ({ task, interview, createLink, setTaskModalHide, onClose,
         threshold: 0
     })
 
-    const history = useHistory()
-
     useEffect(() => {
         fetchTaskAnswer()
 
@@ -56,6 +55,17 @@ const TaskAnswerTry = ({ task, interview, createLink, setTaskModalHide, onClose,
             stopTimer()
         }
     }, [])
+
+    const saveOnClose = () => {
+        setIsCompleteTaskModalShow(true)
+        forceQuestionAnswersSave()
+    }
+
+    useEffect(() => {
+        if(needForceSave) {
+            saveOnClose()
+        }
+    }, [needForceSave])
 
     useEffect(() => {
         setTaskModalHide(isCompleteTaskModalShow)
@@ -193,8 +203,12 @@ const TaskAnswerTry = ({ task, interview, createLink, setTaskModalHide, onClose,
         questionAnswersResponsedCount.current++
         if(!isSuccess) isOnSaveErrors.current = true
         if (questionAnswersResponsedCount.current >= expectedQuestionAnswerResponsesCount.current) {
-            if(!isOnSaveErrors.current) 
-                updateStatus() 
+            if(!isOnSaveErrors.current)
+                if(needForceSave) {
+                    setIsConfirmed(false)
+                    setSelectedAnswerTry(undefined)
+                    onClose()
+                } else updateStatus()
             else {
                 setTaskSaveModalState(modalStateConst.SAVE_ERROR)
             }
