@@ -13,8 +13,10 @@ import { useSelector } from "react-redux";
 import { selectState } from "../../redux/state/stateSelector";
 import InterviewMarkInput from "./interview/InterviewMarkInput";
 import { createError } from "../notifications/notifications";
+import Resource from "../../util/Hateoas/Resource";
 import ProcessBar from "../process-bar/ProcessBar";
 import { MessageContext } from "./interview/message/InterviewMessageList";
+
 
 const MAX_DISPLAY_TASKS = 10;
 
@@ -25,6 +27,7 @@ const HomeworkTaskList = ({
   homeworkId,
   updatedAnswer,
   onInterviewChange,
+  onTaskClick
 }) => {
   const [answers, setAnswers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -103,6 +106,7 @@ const HomeworkTaskList = ({
                     homeworkId={homeworkId}
                     answer={answers?.find((answer) => answer.taskId == task.id)}
                     inInterview={!!interview}
+                    onTaskClick={onTaskClick}
                     disabled={interview?.closed}
                   />
                 );
@@ -203,14 +207,18 @@ const HomeworkTaskList = ({
   );
 };
 
+
 const TaskTableItem = ({
   task,
   homeworkId,
   answer,
+  onTaskClick,
   inInterview = true,
   disabled,
 }) => {
+
   const [show, setIsShow] = useState(false);
+  const history = useHistory();
 
   return (
     <>
@@ -244,7 +252,7 @@ const TaskTableItem = ({
           "task-table-item d-flex position-relative" +
           (inInterview && (answer ? " bg-light" : ""))
         }
-        onClick={() => answer && setIsShow(true)}
+        onClick={() => answer && (answer.answerStatus !== "NOT_PERFORMED" && answer.answerStatus !== "RETURNED" && answer.answerStatus !== "NOT_ACCEPTED") && setIsShow(true)}
       >
         <div className="d-flex w-100 align-items-center justify-content-between">
           <div className="overflow-hidden">
@@ -263,12 +271,12 @@ const TaskTableItem = ({
                       (!answer ||
                         answer.answerStatus == "NOT_PERFORMED" ||
                         answer.answerStatus == "RETURNED") ? (
-                        <Link
-                          className="stretched-link  text-dark"
-                          to={`/homeworks/${homeworkId}/tasks/${task.id}`}
+                        <span
+                          className="stretched-link text-dark"
+                          onClick={() => onTaskClick(Resource.of(task).link())}
                         >
                           {task.name}
-                        </Link>
+                        </span>
                       ) : (
                         task.name
                       )}

@@ -19,6 +19,7 @@ import User from "../user/User";
 import { useSelector } from "react-redux";
 import { selectState } from "../../redux/state/stateSelector";
 import Resource from "../../util/Hateoas/Resource";
+import ExecuteTaskModal from "../tasks/execute/ExecuteTaskModal";
 
 // requests
 const baseUrl = "/homeworks";
@@ -34,6 +35,9 @@ const HomeworkDetails = ({ homeworkId }) => {
   const [answer, setAnswer] = useState(null);
   const mounted = useRef(false);
   const state = useSelector(selectState);
+
+  const [isExecuteTaskModalShow, setIsExecuteTaskModalShow] = useState(false);
+  const [taskLink, setTaskLink] = useState(undefined);
 
   const history = useHistory();
 
@@ -170,6 +174,7 @@ const HomeworkDetails = ({ homeworkId }) => {
                     interview={interview}
                     homeworkId={homeworkId}
                     updatedAnswer={answer}
+                    onTaskClick={executeTask}
                   />
                 </div>
               </Student>
@@ -254,6 +259,16 @@ const HomeworkDetails = ({ homeworkId }) => {
           )}
         </Col>
       </Row>
+
+      {homework && (
+        <ExecuteTaskModal 
+          show={isExecuteTaskModalShow} 
+          taskLink={taskLink}
+          createLink={homework.link('createMessage')}
+          interview={interview}
+          onClose={() => setIsExecuteTaskModalShow(false)} 
+        />
+      )}
     </>
   );
 };

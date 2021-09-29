@@ -17,3 +17,39 @@
         left: 0;
     }
 }
+
+.answer-panel {
+    z-index: 999;
+
+    &.fixed {
+        width: 100%;
+        position: fixed;
+        top: 0px;
+
+        margin-left: -1Rem;
+        padding-right: calc(1.5Rem + 2px);
+
+        .inner-container {
+            padding: 1Rem;
+            background-color: white;
+            border-bottom: 1px solid #dee2e6!important;
+        }
+    }
+}
+
+@media (min-width: 576px) {
+    .answer-panel.fixed {
+        padding-right: 0px;
+        max-width: 498px;
+    }
+}
+
+@media (min-width: 992px) {
+    .answer-panel.fixed {
+        max-width: 798px;
+    }
+}
+
+.fade.modal-backdrop.show ~ .fade.modal-backdrop.show {
+    display: none;
+}

@@ -1,17 +1,9 @@
-import axios from 'axios'
 import React, { useState, useRef, useEffect } from 'react'
 import { addErrorNotification } from '../../../notifications/notifications'
 import ProcessBar from '../../../process-bar/ProcessBar'
-import { answersPartUrl } from '../TaskAnswerTry'
 import QuestionAnswer from './QuestionAnswer'
 
-const questionsPartUrl = 'questions'
-
-async function fetch(answerId, role) {
-    return axios.get(`/${answersPartUrl}/${answerId}/${questionsPartUrl}?size=20&r=${role[0]}`)
-}
-
-const QuestionAnswerList = ({ answerId, role = 'student', progress, setTaskAnswerQuestionsHandle, setQuestionAnswers, readOnly = false }) => {
+const QuestionAnswerList = ({ answerId, role = 'student', progress, setTaskAnswerQuestionsHandle, setQuestionAnswers, readOnly = false, questionsLink }) => {
     const [isFetching, setIsFetching] = useState(false)
     const [taskAnswerQuestions, setTaskAnswerQuestions] = useState(undefined)
 
@@ -26,16 +18,12 @@ const QuestionAnswerList = ({ answerId, role = 'student', progress, setTaskAnswe
     }, [])
 
     const fetchQuestions = () => {
-        setIsFetching(true)
-        pagination.current.page++
-
-        fetch(answerId, role)
-            .then(res => {
-                let fetchedData = res.data
-                setTaskAnswerQuestions(fetchedData.items)
+        questionsLink
+            .fetch(setIsFetching)
+            .then(data => {
+                setTaskAnswerQuestions(data.list('questions'))
             })
             .catch(error => addErrorNotification('Не удалось загрузить список вопросов. \n' + error))
-            .finally(() => setIsFetching(false))
     }
 
     const setQuestionAnswer = (questionAnswer) => {
