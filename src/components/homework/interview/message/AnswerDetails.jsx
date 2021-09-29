@@ -16,6 +16,7 @@ import { useSelector } from "react-redux";
 import { ASSISTANT, TEACHER } from "../../../../redux/state/stateActions";
 import { selectUser } from "../../../../redux/user/userSelectors";
 import getContrastColor from "../../../../util/ContrastColor";
+import { toLocaleTimeDurationString } from "../../../common/LocaleTimeString";
 import PrivateContent from "../../../routing/PrivateContent";
 import { getTaskTypeColor } from "../../../tasks/TaskTypeDropdown";
 import User from "../../../user/User";
@@ -39,7 +40,6 @@ function AnswerDetails({
   const [saved, setSaved] = useState(true);
   const scrollRef = useRef();
   const scoreRef = useRef(0);
-
 
   useEffect(() => {
     if (updatedAnswer) {
@@ -164,14 +164,9 @@ function AnswerDetails({
                   {answer.completionDate >= new Date().getTime() && (
                     <div>
                       <i>Осталось:</i>{" "}
-                      <Moment
-                        locale="ru"
-                        format="HH:mm:ss"
-                        interval={1000}
-                        durationFromNow={answer.completionDate}
-                      >
-                        {answer.completionDate}
-                      </Moment>
+                      {toLocaleTimeDurationString(
+                        answer.completionDate - new Date().getTime()
+                      )}
                     </div>
                   )}
                 </div>
