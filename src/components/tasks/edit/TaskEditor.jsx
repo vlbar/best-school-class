@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useReducer, useRef, useContext } from 'react'
+import React, { useState, useEffect, useLayoutEffect, useReducer, useRef, useContext } from 'react'
 import { Container, Row, Col, Form, Button, Dropdown, ButtonGroup } from 'react-bootstrap'
-import { addErrorNotification } from '../../notifications/notifications'
+import { createError } from '../../notifications/notifications'
 import { TaskSaveContext, useTaskSaveManager, isEquivalent, SAVED_STATUS, ERROR_STATUS, VALIDATE_ERROR_STATUS } from './TaskSaveManager'
 import { QuestionsList } from './QuestionsList'
 import TaskTypeDropdown from '../TaskTypeDropdown'
@@ -8,8 +8,8 @@ import ProcessBar from '../../process-bar/ProcessBar'
 import usePageTitle from '../../feedback/usePageTitle'
 import useBestValidation, { STRING_TYPE, NUMBER_TYPE } from './useBestValidation'
 import JoditEditor from 'jodit-react'
-import axios from 'axios'
 import './TaskEditor.less'
+import Resource from '../../../util/Hateoas/Resource'
 
 //time
 const MINUTES = 'MINUTES'
@@ -39,6 +39,7 @@ const TASK_DESC = 'DESCRIPTION'
 const TASK_MAX_SCORE = 'MAX_SCORE'
 const TASK_DURATION = 'DURATION'
 const TASK_TYPE = 'TASK_TYPE'
+const IS_COMPLETED = 'IS_COMPLETED'
 
 const taskReducer = (state, action) => {
     switch (action.type) {
@@ -53,7 +54,9 @@ const taskReducer = (state, action) => {
         case TASK_DURATION:
             return { ...state, duration: action.payload }
         case TASK_TYPE:
-            return { ...state, taskTypeId: action.payload }
+            return { ...state, taskType: action.payload }
+        case IS_COMPLETED:
+            return { ...state, isCompleted: action.payload }
         default:
             return state
     }
@@ -83,18 +86,14 @@ const taskValidationSchema = {
 
 //requests
 export const tasksBaseUrl = '/tasks'
-async function fetchTaskDetails(taskId) {
-    return axios.get(`${tasksBaseUrl}/${taskId}`)
-}
-
-async function updateTaskDetails(taskId, task) {
-    return axios.put(`${tasksBaseUrl}/${taskId}`, task)
-}
+const baseLink = Resource.basedOnHref(tasksBaseUrl).link()
+const taskLink = (id) => { return Resource.basedOnHref(`${tasksBaseUrl}/${id}`).link() }
 
 export const TaskEditor = ({taskId}) => {
-    const { taskDisplay, autoSave, displayStatus, onSaveClick } = useContext(TaskSaveContext)
+    const { autoSave, displayStatus, onSaveClick } = useContext(TaskSaveContext)
     const [isTaskFetching, setIsTaskFetching] = useState(true)
     const [isInputBlock, setIsInputBlock] = useState(true)
+    const [questionsLink, setQuestionsLink] = useState(undefined)
 
     const taskValidation = useBestValidation(taskValidationSchema)
 
@@ -104,10 +103,12 @@ export const TaskEditor = ({taskId}) => {
     const setDescription = (description) => taskDispatch({ type: TASK_DESC, payload: description })
     const setMaxScore = (maxScore) => taskDispatch({ type: TASK_MAX_SCORE, payload: maxScore })
     const setDuration = (duration) => taskDispatch({ type: TASK_DURATION, payload: duration })
-    const setTaskTypeId = (taskTypeId) => taskDispatch({ type: TASK_TYPE, payload: taskTypeId })
+    const setTaskType = (taskType) => taskDispatch({ type: TASK_TYPE, payload: taskType })
+    const setIsComplited = (isCompleted) => taskDispatch({ type: IS_COMPLETED, payload: isCompleted })
 
-    const { statusBySub, setIsChanged } = useTaskSaveManager(saveTaskDetails)
+    const { callbackSubStatus, setIsChanged } = useTaskSaveManager(saveTaskDetails)
     const lastSavedData = useRef({})
+    const [isBarShow, setIsBarShow] = useState(false)
 
     const descriptionEditor = useRef(null)
     
@@ -146,50 +147,90 @@ export const TaskEditor = ({taskId}) => {
     }, [])
 
     const fetchTask = () => {
-        setIsTaskFetching(true)
         setIsInputBlock(true)
-        fetchTaskDetails(taskId)
-            .then(res => {
-                let fetchedData = res.data
-                setTask(fetchedData)
-                lastSavedData.current = fetchedData
-                taskDisplay.setTaskName(fetchedData.name)
+        taskLink(taskId)
+            .fetch(setIsTaskFetching)
+            .then(data => {
+                setQuestionsLink(data.link('questions'))
+                setTask(data)
+                lastSavedData.current = data
 
                 setIsTaskFetching(false)
                 setIsInputBlock(false)
             })
-            .catch(error => 
-                addErrorNotification('Не удалось загрузить информацию о задании. \n' + (error?.response?.data ? error.response.data.message : error))
-            )
-            .finally(() => {
-                setIsTaskFetching(false)
+            .catch(error => {
+                callbackSubStatus(ERROR_STATUS)
+                createError('Не удалось загрузить информацию о задании.', error)
             })
     }
 
     function saveTaskDetails() {
         if(isEquivalent(taskDetails, lastSavedData.current)) { 
-            statusBySub(SAVED_STATUS)
+            callbackSubStatus(SAVED_STATUS)
             return
         }
 
         if(!taskValidation.validate(taskDetails)) {
-            statusBySub(VALIDATE_ERROR_STATUS)
+            callbackSubStatus(VALIDATE_ERROR_STATUS)
             return
         }
 
-        updateTaskDetails(taskId, taskDetails)
-            .then(res => { 
-                statusBySub(SAVED_STATUS)
-                lastSavedData.current = taskDetails
+        let taskToUpdate = taskDetails
+        taskToUpdate.taskTypeId = taskDetails.taskType?.id
+
+        taskLink(taskId)
+            .put(taskToUpdate)
+            .then(data => { 
+                callbackSubStatus(SAVED_STATUS)
+                lastSavedData.current = taskToUpdate
             })
             .catch(error => {
-                statusBySub(ERROR_STATUS)
-                addErrorNotification('Не удалось загрузить информацию о задании. \n' + (error?.response?.data?.message ? error.response.data.message : error))
+                callbackSubStatus(ERROR_STATUS)
+                createError('Не удалось сохранить информацию о задании.', error)
             })
     }
 
+    //bar show
+    const listener = (e) => {
+        setIsBarShow(window.scrollY >= 100)
+    }
+
+    useLayoutEffect(() => {
+        window.addEventListener('scroll', listener)
+        return () => {
+            window.removeEventListener('scroll', listener)
+        }
+    }, [])
+
     return (
         <>
+            <div className={'task-save-panel' + (isBarShow ? ' show':'')}>
+                <Container>
+                    <Row>
+                        <Col md={8} className='d-flex mt-2'>
+                            <h4>Задание</h4>
+                            <span className='label-center text-ellipsis ml-2'>
+                                {taskDetails?.name}
+                                <button className='icon-btn ml-1' onClick={() => window.scrollTo(0, 0)}>
+                                    <i className='fas fa-pen fa-xs'></i>
+                                </button>
+                            </span>
+                        </Col>
+                        <Col md={4} className='d-flex justify-content-between mt-2'>
+                            <div className='save-status'>{displayStatus}</div>
+                            <Dropdown as={ButtonGroup}>
+                                <Button variant='outline-primary' onClick={() => onSaveClick()}>Сохранить</Button>
+                                <Dropdown.Toggle split variant='outline-primary' />
+
+                                <Dropdown.Menu>
+                                    <Dropdown.Item onClick={() => setIsComplited(!taskDetails.isCompleted)}>{(taskDetails?.isCompleted) && <i className='fas fa-check'></i>} Завершить</Dropdown.Item>
+                                    <Dropdown.Item onClick={() => autoSave.setIsAutoSaveEnabled(!autoSave.isEnabled)}>{(autoSave.isEnabled) && <i className='fas fa-check'></i>} Автосохранение</Dropdown.Item>
+                                </Dropdown.Menu>
+                            </Dropdown>
+                        </Col>
+                    </Row>
+                </Container>
+            </div>
             <Container>
                 <div className='d-flex justify-content-between'>
                     <h4 className='mt-2'>Задание</h4>
@@ -200,7 +241,7 @@ export const TaskEditor = ({taskId}) => {
                             <Dropdown.Toggle split variant='outline-primary' />
 
                             <Dropdown.Menu>
-                                <Dropdown.Item>Завершить</Dropdown.Item>
+                                <Dropdown.Item onClick={() => setIsComplited(!taskDetails.isCompleted)}>{(taskDetails?.isCompleted) && <i className='fas fa-check'></i>} Завершить</Dropdown.Item>
                                 <Dropdown.Item onClick={() => autoSave.setIsAutoSaveEnabled(!autoSave.isEnabled)}>{(autoSave.isEnabled) && <i className='fas fa-check'></i>} Автосохранение</Dropdown.Item>
                             </Dropdown.Menu>
                         </Dropdown>
@@ -223,7 +264,6 @@ export const TaskEditor = ({taskId}) => {
                             onBlur={taskValidation.blurHandle}
                             onChange={(e) => {
                                 setName(e.target.value)
-                                taskDisplay.setTaskName(e.target.value)
                                 taskValidation.changeHandle(e)
                             }}
                         />
@@ -312,15 +352,17 @@ export const TaskEditor = ({taskId}) => {
                         Тип задания
                     </Form.Label>
                     <Col sm={10}>
-                        <TaskTypeDropdown initialSelectedType={taskDetails.taskType} onSelect={(t) => setTaskTypeId(t ? t.id : null)} placeholder='Выберите тип...' disabled={isInputBlock}/>
+                        <TaskTypeDropdown initialSelectedType={taskDetails.taskType} onSelect={(t) => setTaskType(t)} placeholder='Выберите тип...' disabled={isInputBlock} className='bordered' />
                     </Col>
                 </Form.Group>
                 <hr/>
-                {(taskDetails?.name === undefined && !isTaskFetching) ? <div className='task-message-container'>
-                    <h5>Произошла ошибка</h5>
-                    <p className='text-muted'>Не удалось загрузить данные задания.</p>
-                </div>
-                : <QuestionsList taskId={taskId}/>}
+                {(taskDetails?.name === undefined && !isTaskFetching) && (
+                     <div className='task-message-container'>
+                        <h5>Произошла ошибка</h5>
+                        <p className='text-muted'>Не удалось загрузить данные задания.</p>
+                    </div>
+                )}
+                {taskDetails?.name && <QuestionsList questionsLink={questionsLink} />}
             </Container>
         </>
     )

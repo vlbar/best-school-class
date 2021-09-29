@@ -19,6 +19,8 @@ import MemberSettingsModal from "../components/groups/details/members/MemberSett
 import { createError } from "../components/notifications/notifications";
 import { changed } from "../redux/state/stateReduser";
 import { types } from "../redux/state/stateActions";
+import User from "../components/user/User";
+import HomeworkList from "../components/homework/HomeworkList";
 
 export const GroupContext = createContext({
   group: null,
@@ -102,7 +104,10 @@ function Group({ match, baseHref = "/groups", fetchHref }) {
       <GroupContext.Provider
         value={{ group, creator, member, onGroupEdit: setGroup }}
       >
-        <NavLink to={getBack()} className="text-secondary text-decoration-none">
+        <NavLink
+          to={getBack()}
+          className="text-secondary text-decoration-none d-block mb-2"
+        >
           <i className="fas fa-chevron-left"></i> Вернуться
         </NavLink>
         {loading && <ProcessBar height="2px" className="mb-2" />}
@@ -116,13 +121,19 @@ function Group({ match, baseHref = "/groups", fetchHref }) {
                 />
               </Col>
               <Col md={6} lg={4}>
-                <div className="float-right">
-                  {creator && (
-                    <GroupCreator
-                      creator={creator}
-                      isCurrent={creator.id === user.id}
-                    />
-                  )}
+                <div className="float-right text-right">
+                  <User
+                    fetchLink={group.link("creator")}
+                    showCurrent={group.creatorId === user.id}
+                    iconPlacement="right"
+                    className="ml-2"
+                    containerClasses=""
+                    iconSize={36}
+                  >
+                    <small>
+                      <i>Создатель</i>
+                    </small>
+                  </User>
                 </div>
               </Col>
             </Row>
@@ -200,7 +211,15 @@ function Group({ match, baseHref = "/groups", fetchHref }) {
             <PrivateRoute
               path={`/groups/:id/tasks`}
               component={() => {
-                return "tasks...";
+                return (
+                  <HomeworkList
+                    groupId={id}
+                    role={state.state}
+                    className="high-homework-list"
+                    canExpandTasks={false}
+                    onClick={(hw) => history.push(`/homeworks/${hw.id}`)}
+                  />
+                );
               }}
             />
             <PrivateRoute

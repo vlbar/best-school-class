@@ -1,9 +1,10 @@
-import React, { useRef } from 'react'
+import React from 'react'
 import { Button, Modal, Form } from 'react-bootstrap'
 import { Formik, Field } from 'formik'
 import * as Yup from 'yup'
 
 import './TaskTypeAddUpdateModal.less'
+import ProcessBar from '../process-bar/ProcessBar'
 
 const taskTypeSchema = Yup.object().shape({
     name: Yup.string()
@@ -13,7 +14,7 @@ const taskTypeSchema = Yup.object().shape({
         .required('Не введено название типа работы')
 });
 
-export const TaskTypeAddUpdateModal = ({onSubmit, onClose, updatedTaskType}) => {
+export const TaskTypeAddUpdateModal = ({onSubmit, onClose, isFetching = false, updatedTaskType}) => {
     const submitHandle = (values) => {
         if(updatedTaskType !== undefined) 
             onSubmit({...updatedTaskType, ...values})
@@ -21,9 +22,13 @@ export const TaskTypeAddUpdateModal = ({onSubmit, onClose, updatedTaskType}) => 
             onSubmit(values)
     }
 
+    const onCloseHandler = () => {
+        if(!isFetching) onClose()
+    }
+
     return (
         <>
-            <Modal show onHide={onClose}>
+            <Modal show onHide={onCloseHandler} className='processable-modal'>
                 <Modal.Header closeButton>
                     <Modal.Title>
                     {!updatedTaskType ?
@@ -31,7 +36,7 @@ export const TaskTypeAddUpdateModal = ({onSubmit, onClose, updatedTaskType}) => 
                         'Изменить тип задания'}
                     </Modal.Title>
                 </Modal.Header>
-                
+                <ProcessBar active={isFetching} height='.18Rem' />
                 <Formik
                     initialValues={{
                         name: updatedTaskType?.name || ''
@@ -62,7 +67,7 @@ export const TaskTypeAddUpdateModal = ({onSubmit, onClose, updatedTaskType}) => 
                             </Modal.Body>
 
                             <Modal.Footer>
-                                <Button variant='secondary' onClick={onClose}>
+                                <Button variant='secondary' onClick={onCloseHandler}>
                                     Закрыть
                                 </Button>
                                 <Button variant='primary' type='submit'>

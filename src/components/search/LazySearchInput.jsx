@@ -12,10 +12,14 @@ const LazySearchInput = ({
     const lastSubmitedValue = useRef('')
     const notSubmitAfterValue = useRef(undefined)
     const delayTimer = useRef(undefined)
+    const isMount = useRef(false)
 
     useEffect(() => {
-        if(!isCanSubmit) clearTimeout(delayTimer.current)
-        else updateValue(value)
+        if(isMount.current) {
+            if(!isCanSubmit) clearTimeout(delayTimer.current)
+            else updateValue(value)
+        }
+        isMount.current = true
     }, [isCanSubmit])
 
     useEffect(() => {

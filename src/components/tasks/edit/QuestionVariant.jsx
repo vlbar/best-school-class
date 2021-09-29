@@ -1,28 +1,28 @@
 import React, { useState, useRef, useContext, useEffect, useReducer } from 'react'
-import { Row, Col, Button, Form, Dropdown } from 'react-bootstrap'
-import { addErrorNotification } from '../../notifications/notifications'
+import { Row, Col, Form, Dropdown } from 'react-bootstrap'
 import { sortableContainer, sortableElement, sortableHandle, arrayMove } from 'react-sortable-hoc'
-import { useTaskSaveManager, isEquivalent, SAVED_STATUS, ERROR_STATUS, VALIDATE_ERROR_STATUS } from './TaskSaveManager'
-import { questionPartUrl } from './QuestionsList'
-import { TaskQuestionContext } from './TaskQuestion'
-import useBestValidation from './useBestValidation'
+
 import FeedbackMessage from '../../feedback/FeedbackMessage'
 import JoditEditor from 'jodit-react'
-import axios from 'axios'
+import Resource from '../../../util/Hateoas/Resource'
+import useBestValidation from './useBestValidation'
+import { TaskQuestionContext } from './TaskQuestion'
+import { createError } from '../../notifications/notifications'
+import { useTaskSaveManager, isEquivalent, SAVED_STATUS, ERROR_STATUS, VALIDATE_ERROR_STATUS } from './TaskSaveManager'
 import './QuestionVariant.less'
 
 //question types
-const TEXT_QUESTION = 'TEXT_QEUSTION'
-const TEST_QUESTION = 'TEST_QUESTION'
-const TEST_MULTI_QUESTION = 'TEST_MULTI_QUESTION'
+export const TEXT_QUESTION = 'TEXT_QEUSTION'
+export const TEST_QUESTION = 'TEST_QUESTION'
+export const TEST_MULTI_QUESTION = 'TEST_MULTI_QUESTION'
 
 const questionTypeNames = {}
 questionTypeNames[TEXT_QUESTION] = 'Текстовый ответ'
 questionTypeNames[TEST_QUESTION] = 'Один из списка'
 questionTypeNames[TEST_MULTI_QUESTION] = 'Несколько из списка'
 
-const SOURCE_TEXT_QUESTION = 'TEXT_QUESTION'
-const SOURCE_TEST_QUESTION = 'TEST_QUESTION'
+export const SOURCE_TEXT_QUESTION = 'TEXT_QUESTION'
+export const SOURCE_TEST_QUESTION = 'TEST_QUESTION'
 const unambiguousQuestionTypeTranslate = {}
 unambiguousQuestionTypeTranslate[SOURCE_TEXT_QUESTION] = TEXT_QUESTION
 
@@ -40,6 +40,7 @@ const SortableItem = sortableElement(({index_, answerVariant}) => (
 
 //flux
 const SET = 'SET'
+const ID = 'ID'
 const FORMULATION = 'FORMULATION'
 const QUESTION_TYPE = 'QUESTION_TYPE'
 
@@ -62,6 +63,8 @@ const variantReducer = (state, action) => {
         case SET:
             state = action.payload
             return { ...state }
+        case ID:
+            return { ...state, id: action.payload}
         case FORMULATION:
             return { ...state, formulation: action.payload }
         case QUESTION_TYPE:
@@ -131,6 +134,7 @@ const variantValidationSchema = {
     // text variant
     numberOfSymbols: {
         type: 'number',
+        nullable: true,
         min: [1, 'Длина ответа должна быть больше 0'],
         max: [9223372036854775807, 'Слишком большая длина ответа']
     },
@@ -182,31 +186,18 @@ const formulationEditorConfig = {
 //context for question answer variants
 const QuestionAnswerContext = React.createContext();
 
-//requests
-export const variantsPartUrl = 'variants'
-
-async function addVariant(variant, questionId) {
-    return axios.post(`${questionPartUrl}/${questionId}/${variantsPartUrl}`, variant)
-}
-
-async function updateVariant(variant, questionId) {
-    return axios.put(`${questionPartUrl}/${questionId}/${variantsPartUrl}/${variant.id}`, variant)
-}
-
-async function deleteVariant(variant, questionId) {
-    return axios.delete(`${questionPartUrl}/${questionId}/${variantsPartUrl}/${variant.id}`)
-}
-
-export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
+export const QuestionVariant = ({ show, index, questionVariant, isEditing, variantsLink }) => {
     const [questionType, setQuestionType] = useState(TEXT_QUESTION)
     const [variant, dispatchVariant] = useReducer(variantReducer, questionVariant)
-    const { statusBySub, setIsChanged } = useTaskSaveManager(saveVariant)
+    const { callbackSubStatus, setIsChanged } = useTaskSaveManager(saveVariant)
     const lastSavedData = useRef({...questionVariant})
     const awaitQuestionSave = useRef(false)
+    const [selfLink, setSelfLink] = useState(questionVariant._links && Resource.wrap(questionVariant).link())
 
     const { question, setQuestionVariant, pasteVariantAfter, variantCount, markForDeleteVariant, deleteQuestionVariant } = useContext(TaskQuestionContext)
     const isDeleted = useRef(false)
 
+    const setId = (id) => dispatchVariant({ type: ID, payload: id })
     const setVariant = (variant) => dispatchVariant({ type: SET, payload: variant })
     const setFormulation = (formulation) => dispatchVariant({ type: FORMULATION, payload: formulation })
     const setVariantType = (questionType) => dispatchVariant({ type: QUESTION_TYPE, payload: questionType })
@@ -231,9 +222,9 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
 
     useEffect(() => {
         let targetVariant = variant
-        targetVariant.isValid = variantValidation.isValid
+        targetVariant.isValid = variantValidation.isValid && answerVariantsValdiation.isValid
         setQuestionVariant(targetVariant, index)
-    }, [variantValidation.isValid])
+    }, [variantValidation.isValid, answerVariantsValdiation.isValid])
 
     useEffect(() => {
         getQuestionParams()
@@ -250,7 +241,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
             awaitQuestionSave.current = false
             saveVariant()
         }
-    }, [question.id])
+    }, [question])
 
     // -Anti select varinat focus. 
     // -Ford?
@@ -292,6 +283,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
         }
     }
 
+    // TEST QUESTIONS
     const uncheckMultiVarinats = () => {
         let testAnswerVariants = variant.testAnswerVariants
         if(testAnswerVariants !== undefined) {
@@ -329,9 +321,16 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
         answerVariantsValdiation.changeHandle(NO_IS_RIGHT_VALIDATION, testAnswerVariants)
     }
 
-    async function saveVariant() {
-        if(!variantValidation.validate(variant) | (variant.type === SOURCE_TEST_QUESTION && !answerVariantsValdiation.validate([...variant.testAnswerVariants]))) {
-            statusBySub(VALIDATE_ERROR_STATUS)
+    // SAVING
+    function saveVariant() {
+        // send saved without validation if varinat now editing and formulation not touched
+        if(show && variant.formulation.length == 0) { 
+            callbackSubStatus(SAVED_STATUS)
+            return
+        }
+
+        if(isVariantInvalid()) {
+            callbackSubStatus(VALIDATE_ERROR_STATUS)
             return
         }
 
@@ -341,54 +340,78 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
         }
 
         if(!isDeleted.current && isEquivalent(variant, lastSavedData.current)) { 
-            statusBySub(SAVED_STATUS)
+            callbackSubStatus(SAVED_STATUS)
             return
         }
 
+        let reqestedVariant = variant
         if(!variant.id) {
             if(variant.type == SOURCE_TEST_QUESTION) {
                 setIsMultipleAnswer(questionType == TEST_MULTI_QUESTION)
             }
 
-            addVariant(variant, question.id)
-                .then(res => successfulSaved())
+            variantsLink
+                .post(variant)
+                .then(data => {
+                    lastSavedData.current = { ...reqestedVariant, id: data.id }
+
+                    setId(data.id)
+                    setSelfLink(data.link())
+                    successfulSaved()
+                })
                 .catch(error => catchSaveError(error))
         } else {
             if(!isDeleted.current)
                 if(lastSavedData.current.type !== variant.type) {
-                    deleteVariant(variant, question.id)
-                    .then(res => {
-                        addVariant(variant, question.id)
-                        .then(res => { 
-                            statusBySub(SAVED_STATUS)
-                            setLastSavedData(variant)
+                    selfLink
+                        .remove()
+                        .then(data => {
+                            variantsLink
+                                .post(variant)
+                                .then(data => {
+                                    lastSavedData.current = { ...reqestedVariant, id: data.id }
+
+                                    setId(data.id)
+                                    setSelfLink(data.link())
+                                    callbackSubStatus(SAVED_STATUS)
+                                    setLastSavedData(variant)
+                                })
+                                .catch(error => catchSaveError(error))
                         })
                         .catch(error => catchSaveError(error))
-                    })
-                    .catch(error => catchSaveError(error))
                 } else {
-                    updateVariant(variant, question.id)
-                    .then(res => successfulSaved())
-                    .catch(error => catchSaveError(error))
+                    selfLink
+                        .put(variant)
+                        .then(data => {
+                            lastSavedData.current = reqestedVariant
+                            successfulSaved()
+                        })
+                        .catch(error => catchSaveError(error))
                 }
             else
-                deleteVariant(variant, question.id)
-                    .then(res => { 
-                        statusBySub(SAVED_STATUS)
+                selfLink
+                    .remove()
+                    .then(data => { 
+                        callbackSubStatus(SAVED_STATUS)
                         deleteQuestionVariant(index)
                     })
                     .catch(error => catchSaveError(error))
+                
         }
     }
 
+    const isVariantInvalid = () => {
+        return !variantValidation.validate(variant) | (variant.type === SOURCE_TEST_QUESTION && !answerVariantsValdiation.validate([...variant.testAnswerVariants]))
+    }
+
     const successfulSaved = () => {
-        statusBySub(SAVED_STATUS)
+        callbackSubStatus(SAVED_STATUS)
         setLastSavedData(variant)
     }
 
     const catchSaveError = (error) => {
-        statusBySub(ERROR_STATUS)
-        addErrorNotification('Не удалось сохранить информацию о задании. \n' + (error?.response?.data?.message ? error.response.data.message : error))
+        callbackSubStatus(ERROR_STATUS)
+        createError('Не удалось сохранить информацию о задании.', error)
     }
 
     const setLastSavedData = (questionVariant) => {
@@ -399,6 +422,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
         }
     }
 
+    // COPING QUESTIONS
     const saveVariantToStorage = () => {
         localStorage.copiedVariant = JSON.stringify(variant)
     }
@@ -425,7 +449,7 @@ export const QuestionVariant = ({show, index, questionVariant, isEditing}) => {
                                 type='number'
                                 min={1}
                                 className='short-input hover-border'
-                                value={variant.numberOfSymbols}
+                                value={variant.numberOfSymbols ?? ''}
                                 name='numberOfSymbols'
                                 isInvalid={variantValidation.errors.numberOfSymbols}
                                 onBlur={variantValidation.blurHandle}
@@ -585,6 +609,7 @@ const NO_IS_RIGHT_VALIDATION = 'noIsRight'
 
 function useAnswerVariantsValidationHook(validationSchema) {
     const [errors, setErrors] = useState({})
+    const [isValid, setIsValid] = useState(true)
 
     function changeHandle(fieldName, variants) {
         let targetErrors = errors
@@ -601,15 +626,12 @@ function useAnswerVariantsValidationHook(validationSchema) {
                 })
 
                 if(!hasCheked)
-                    addError(NO_IS_RIGHT_VALIDATION, validationSchema[NO_IS_RIGHT_VALIDATION])
+                    targetErrors[NO_IS_RIGHT_VALIDATION] = validationSchema[NO_IS_RIGHT_VALIDATION]
                 break
         }
-    }
 
-    function addError(fieldName, error) {
-        let targetErrors = errors
-        targetErrors[fieldName] = error
         setErrors(targetErrors)
+        setIsValid(isEmpty(errors))
     }
 
     function validate(variants) {
@@ -620,12 +642,14 @@ function useAnswerVariantsValidationHook(validationSchema) {
             changeHandle(x, variants)
         })
 
+        setIsValid(isEmpty(errors))
         return isEmpty(errors)
     }
 
     return {
         changeHandle,
         validate,
+        isValid,
         errors
     }
 }

@@ -1,137 +1,158 @@
-import React, { useState, useRef, useEffect } from 'react'
-import HomeworkListHeader from './HomeworkListHeader'
-import { useInView } from 'react-intersection-observer'
-import axios from 'axios'
+import React, { useState, useRef, useEffect } from "react";
+import HomeworkListHeader from "./HomeworkListHeader";
+import { useInView } from "react-intersection-observer";
 
-import ProcessBar from '../process-bar/ProcessBar'
-import HomeworkListItem, { FakeHomeworkListItem } from './HomeworkListItem'
-import { addErrorNotification } from '../notifications/notifications'
-import { TEACHER } from '../../redux/state/stateActions'
-import './HomeworkList.less'
+import HomeworkListItem, { FakeHomeworkListItem } from "./HomeworkListItem";
+import ProcessBar from "../process-bar/ProcessBar";
+import Resource from "../../util/Hateoas/Resource";
+import useSkipMountEffect from "../common/useSkipMountEffect";
+import { createError } from "../notifications/notifications";
+import { selectState } from "../../redux/state/stateSelector";
+import { useSelector } from "react-redux";
+import "./HomeworkList.less";
 
-const baseUrl = '/homeworks'
+const baseUrl = "/homeworks";
+const pageLink = Resource.basedOnHref(baseUrl).link().fill("size", 20);
 
-async function fetch(page, size, groupId, role, order) {
-    return axios.get(`${baseUrl}?page=${page}&size=${size}${groupId !== undefined ? `&groupId=${groupId}`:''}${order !== undefined ? `&order=${order}`:''}&r=${role[0]}`)
-}
+const HomeworkList = ({
+  onSelect,
+  onClick,
+  canExpandTasks = true,
+  ...props
+}) => {
+  // fetching
+  const [homeworks, setHomeworks] = useState(undefined);
+  const [isFetching, setIsFetching] = useState(false);
+  const [isHasFetchingErrors, setIsHasFetchingErrors] = useState(false);
 
-const HomeworkList = ({onSelect, onClick, canExpandTasks = true, role = TEACHER, ...props}) => {
-    // fetching
-    const [homeworks, setHomeworks] = useState(undefined)
-    const [isFetching, setIsFetching] = useState(false)
+  const { state } = useSelector(selectState);
+  const searchParams = useRef({
+    groupId: null,
+    orderBy: "openingDate-desc",
+  });
 
-    const pagination = useRef({
-        page: 0, 
-        size: 10, 
-        total: undefined,
-        groupId: undefined,
-        orderBy: 'openingDate-desc',
-    })
+  const [nextPage, setNextPage] = useState(undefined);
+  const getFirstPage = () => {
+    return pageLink
+      .fill("groupId", searchParams.current.groupId)
+      .fill("order", searchParams.current.orderBy)
+      .fill("r", state[0]);
+  };
 
-    useEffect(() => {
-        if(!homeworks) fetchHomeworks()
-    }, [])
+  //auto fetch
+  const { ref, inView } = useInView({
+    threshold: 0,
+  });
 
-    //auto fetch
-    const { ref, inView } = useInView({
-        threshold: 1
-    })
+  useEffect(() => {
+    if (!homeworks) fetchHomeworks(getFirstPage());
+  }, []);
 
-    useEffect(() => {
-        if(inView && !isFetching) fetchHomeworks()
-    }, [inView])
+  useSkipMountEffect(() => {
+    setHomeworks([]);
+    fetchHomeworks(getFirstPage());
+  }, [state]);
 
+  useSkipMountEffect(() => {
+    if (inView && !isFetching && !isHasFetchingErrors) fetchHomeworks(nextPage);
+  }, [inView]);
 
-    const onSelectFilterHandler = (filter) => { 
-        pagination.current = {...pagination.current, ...filter}
-        pagination.current.page = 0
-        fetchHomeworks()
-    }
-    let isSearching = pagination.current.groupId != undefined
+  const onSelectFilterHandler = (filter) => {
+    searchParams.current = { ...searchParams.current, ...filter };
+    setHomeworks([]);
+    fetchHomeworks(getFirstPage());
+  };
 
-    const fetchHomeworks = () => {
-        setIsFetching(true)
-        pagination.current.page++
+  let isSearching = searchParams.current.groupId != undefined;
 
-        if(pagination.current.page == 1) {
-            setHomeworks(undefined)
-        }
+  const fetchHomeworks = (link) => {
+    link
+      ?.fetch(setIsFetching)
+      .then((data) => {
+        let fetchedHomeworks = data.list("homeworks") ?? [];
+        setNextPage(data.link("next"));
 
-        fetch(pagination.current.page, pagination.current.size, pagination.current.groupId, role, pagination.current.orderBy)
-            .then(res => {
-                let fetchedData = res.data
-                pagination.current.total = fetchedData.totalItems
-  
-                if(pagination.current.page == 1)
-                    setHomeworks(fetchedData.items)
-                else
-                    setHomeworks([...homeworks, ...fetchedData.items])
-            })
-            .catch(error => addErrorNotification('Не удалось загрузить список домащних работ. \n' + error))
-            .finally(() => setIsFetching(false))
-    }
+        if (data.page.number == 1) setHomeworks(fetchedHomeworks);
+        else setHomeworks([...homeworks, ...fetchedHomeworks]);
+        setIsHasFetchingErrors(false);
+      })
+      .catch((error) => {
+        setIsHasFetchingErrors(true);
+        createError("Не удалось загрузить список домашних работ.", error);
+      });
+  };
 
-    return (
-        <div {...props}>
-            <HomeworkListHeader onSelectFilter={onSelectFilterHandler} />
-            <div className='homework-list'>
-                {isFetching && <ProcessBar height=".18Rem" className='position-absolute'/>}
-                <div className='scroll-container'>
-                    {homeworks && homeworks.map(homework => {
-                        return (
-                            <HomeworkListItem 
-                                key={homework.id} 
-                                homework={homework} 
-                                onSelect={onSelect && (() => onSelect(homework))} 
-                                onClick={onClick && (() => onClick(homework))} 
-                                canExpandTasks={canExpandTasks}
-                            />
-                        )
-                    })}
-                    {(isFetching) && (
-                        <>
-                            <FakeHomeworkListItem canExpandTasks={canExpandTasks} />
-                            <FakeHomeworkListItem canExpandTasks={canExpandTasks} />
-                        </>
-                    )}
-                    {(homeworks !== undefined && !isFetching && pagination.current.page * pagination.current.size < pagination.current.total) &&
-                        <button 
-                            className="fetch-types-btn" 
-                            onClick={() => fetchHomeworks()} 
-                            disabled={isFetching}
-                            ref={ref}
-                        >
-                            Загрузить еще
-                        </button>
-                    }
-                    {!isFetching && (
-                        homeworks ? (
-                            homeworks.length === 0 && (
-                                isSearching ? (
-                                    <div className='m-2 text-center'>
-                                        <h6 className='mt-4'>Ничего не найдено</h6>
-                                        <p className='text-muted'>По вашему запросу ничего не найдено.</p>
-                                    </div>
-                                ) : (
-                                    <div className='m-2 text-center'>
-                                        <h6 className='mt-4'>Ничего нет</h6>
-                                        <p className='text-muted'>Еще ничего не добавлено.</p>
-                                    </div>
-                                )
-                            )
-                        ) : (
-                            !isSearching && (
-                                <div className='m-2 text-center'>
-                                    <h6 className='mt-4'>Произошла ошибка</h6>
-                                    <p className='text-muted'>Не удалось загрузить данные.</p>
-                                </div>
-                            )
-                        )
-                    )}
-                </div>
-            </div>
+  const retryFetch = () => {
+    fetchHomeworks(homeworks ? nextPage : getFirstPage());
+  };
+
+  return (
+    <div {...props}>
+      <HomeworkListHeader onSelectFilter={onSelectFilterHandler} />
+      <div className="homework-list">
+        {isFetching && (
+          <ProcessBar height=".18Rem" className="position-absolute" />
+        )}
+        <div className="scroll-container">
+          {homeworks &&
+            homeworks.map((homework) => {
+              return (
+                <HomeworkListItem
+                  key={homework.id}
+                  homework={homework}
+                  onSelect={onSelect && (() => onSelect(homework))}
+                  onClick={onClick && (() => onClick(homework))}
+                  canExpandTasks={canExpandTasks}
+                />
+              );
+            })}
+          {isFetching && (
+            <>
+              <FakeHomeworkListItem canExpandTasks={canExpandTasks} />
+              <FakeHomeworkListItem canExpandTasks={canExpandTasks} />
+            </>
+          )}
+          {!isFetching && nextPage && (
+            <button
+              className="fetch-types-btn"
+              onClick={() => fetchHomeworks(nextPage)}
+              disabled={isFetching}
+              ref={ref}
+            >
+              Загрузить еще
+            </button>
+          )}
+          {!isFetching &&
+            (homeworks
+              ? homeworks.length === 0 &&
+                (isSearching ? (
+                  <div className="m-2 text-center">
+                    <h6 className="mt-4">Ничего не найдено</h6>
+                    <p className="text-muted">
+                      По вашему запросу ничего не найдено.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="m-2 text-center">
+                    <h6 className="mt-4">Ничего нет</h6>
+                    <p className="text-muted">Еще ничего не добавлено.</p>
+                  </div>
+                ))
+              : !isSearching && (
+                  <div className="m-2 text-center">
+                    <h6 className="mt-4">Произошла ошибка</h6>
+                    <p className="text-muted">
+                      Не удалось загрузить домашние работы.{" "}
+                      <span className="hover-link" onClick={() => retryFetch()}>
+                        Повторить попытку
+                      </span>
+                    </p>
+                  </div>
+                ))}
         </div>
-    )
-}
+      </div>
+    </div>
+  );
+};
 
-export default HomeworkList
+export default HomeworkList;
