@@ -36,7 +36,7 @@ const HomeworkList = ({
     return pageLink
       .fill("groupId", searchParams.current.groupId)
       .fill("order", searchParams.current.orderBy)
-      .fill("r", state[0]);
+      .fill("role", state);
   };
 
   //auto fetch
