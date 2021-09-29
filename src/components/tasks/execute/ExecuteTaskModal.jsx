@@ -37,7 +37,7 @@ const ExecuteTaskModal = ({ show, onClose, taskLink, createLink, interview, onCr
     }, [show])
 
     return (
-        <Modal show={show} onHide={onClose} size='lg' style={{zIndex: (hideByModal ? '1000' : '1050')}}>
+        <Modal show={show} onHide={() => setNeedForceSave(true)} size='lg' style={{zIndex: (hideByModal ? '1000' : '1050')}}>
             <ProcessBar height='.18Rem' active={isFetching} />
             <Modal.Body>
                 <button type='button' className='close' onClick={() => setNeedForceSave(true)}>
