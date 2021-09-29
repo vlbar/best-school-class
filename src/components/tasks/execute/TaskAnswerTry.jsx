@@ -123,14 +123,16 @@ const TaskAnswerTry = ({ task, interview, createLink, setTaskModalHide, onClose,
 
     // timer
     useEffect(() => {
-        if (selectedAnswerTry && selectedAnswerTry.completionDate != null && !timeLeftInterval.current) {
+        if (selectedAnswerTry) {
             setCurrentProgress(selectedAnswerTry.answeredQuestionCount)
-            setSecondsLeft(getSecondsLeft())
-            timeLeftInterval.current = setInterval(() => {
-                let currentSeconds = getSecondsLeft()
-                callTimerEvents(currentSeconds)
-                setSecondsLeft(currentSeconds)
-            }, UPDATE_TIME_LEFT_INTERVAL)
+            if (selectedAnswerTry.completionDate != null && !timeLeftInterval.current) {
+                setSecondsLeft(getSecondsLeft())
+                timeLeftInterval.current = setInterval(() => {
+                    let currentSeconds = getSecondsLeft()
+                    callTimerEvents(currentSeconds)
+                    setSecondsLeft(currentSeconds)
+                }, UPDATE_TIME_LEFT_INTERVAL)
+            }
         }
     }, [selectedAnswerTry])
 
