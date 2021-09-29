@@ -174,7 +174,7 @@ const HomeworkDetails = ({ homeworkId }) => {
                     interview={interview}
                     homeworkId={homeworkId}
                     updatedAnswer={answer}
-                    onTaskClick={executeTask}
+                    onTaskClick={() => setIsExecuteTaskModalShow(true)}
                   />
                 </div>
               </Student>
@@ -261,12 +261,12 @@ const HomeworkDetails = ({ homeworkId }) => {
       </Row>
 
       {homework && (
-        <ExecuteTaskModal 
-          show={isExecuteTaskModalShow} 
+        <ExecuteTaskModal
+          show={isExecuteTaskModalShow}
           taskLink={taskLink}
-          createLink={homework.link('createMessage')}
+          createLink={homework.link("createMessage")}
           interview={interview}
-          onClose={() => setIsExecuteTaskModalShow(false)} 
+          onClose={() => setIsExecuteTaskModalShow(false)}
         />
       )}
     </>
