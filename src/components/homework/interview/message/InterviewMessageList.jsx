@@ -11,7 +11,7 @@ import { createContext } from "react";
 import MessageInput from "./MessageInput";
 import ProcessBar from "../../../process-bar/ProcessBar";
 import HumanReadableDate from "./HumanReadableDate";
-import axios from "axios";
+import { createError } from "../../../notifications/notifications";
 
 const BLOCK_TIME_RANGE_IN_MILLIS = 1000 * 60 * 5;
 
@@ -32,6 +32,8 @@ function InterviewMessageList({
   closed = false,
   currentUser,
   onAnswer,
+  messageCreateLink,
+  onMessageCreate,
 }) {
   //Context
   const [replyMessage, setReply] = useState(null);
@@ -43,11 +45,14 @@ function InterviewMessageList({
   const messagesRef = useRef({});
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [hasNext, setHasNext] = useState(true);
+  const [hasNext, setHasNext] = useState(false);
   const hasNextRef = useRef(true);
   const timeout = useRef(null);
   const { ref, inView } = useInView({ threshold: 0 });
+  const scrollRef = useRef();
   const [date, setDate] = useState(null);
+  const [bottomScrollVisibility, setBottomScrollVisibility] =
+    useState(undefined);
   const fetchLinkHref = useRef(null);
 
   useEffect(() => {
@@ -57,7 +62,11 @@ function InterviewMessageList({
   }, []);
 
   useEffect(() => {
-    if (page.current == null && fetchLink.href != fetchLinkHref.current) {
+    if (
+      fetchLink &&
+      page.current == null &&
+      fetchLink.href != fetchLinkHref.current
+    ) {
       fetchLinkHref.current = fetchLink.href;
       clearTimeout(timeout.current);
       fetchMessages(fetchLink.fill("size", 30));
@@ -99,24 +108,33 @@ function InterviewMessageList({
 
         if (!closed) reloadChanges(newPage.link("changedAfter"));
       })
-      .catch((err) => setHasNext(false));
+      .catch((err) => {
+        setHasNext(false);
+        createError("Не удалось загрузить сообщения.", err);
+      });
   }
 
   function fetchChanges(link) {
-    link.fetch().then((changes) => {
-      let changedMessages = changes.list("messages");
+    link
+      .fetch()
+      .then((changes) => {
+        let changedMessages = changes.list("messages");
 
-      if (changedMessages) {
-        updateMessages(changedMessages);
-        reloadChanges(changes.link("changedAfter"));
-      } else reloadChanges(link);
-    });
+        if (changedMessages) {
+          updateMessages(changedMessages);
+          reloadChanges(changes.link("changedAfter"));
+        } else reloadChanges(link);
+      })
+      .catch((err) => {
+        createError("Не удалось обновить сообщения.", err);
+      });
   }
 
   function updateMessages(changedMessages) {
     let keys = Object.keys(messagesRef.current);
     let lastKey = keys.pop();
     let firstKey = keys.shift();
+    if (!firstKey) firstKey = lastKey;
     let addedMessages = {};
 
     changedMessages = changedMessages.reduce((map, message) => {
@@ -141,10 +159,17 @@ function InterviewMessageList({
   }
 
   function handleMessage(message) {
-    if (page.current == null) fetchMessages(fetchLink);
-    else {
-      updateMessages([message]);
-    }
+    if (page.current != null) updateMessages([message]);
+
+    onMessageCreate?.();
+  }
+
+  function scrollToBottom() {
+    scrollRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+    setBottomScrollVisibility(false);
   }
 
   return (
@@ -174,15 +199,21 @@ function InterviewMessageList({
             </div>
           )}
           <div className="d-flex flex-fill bg-white flex-column-reverse overflow-auto position-relative justify-content-start">
+            <div ref={scrollRef}></div>
             {messages.length > 0 && (
               <MessageGroupContainer
                 messages={messages}
                 currentUser={currentUser}
                 blockTimeRange={BLOCK_TIME_RANGE_IN_MILLIS}
                 onDateChange={setDate}
+                onNeedBottomScroll={(need) => {
+                  if (bottomScrollVisibility === undefined)
+                    setBottomScrollVisibility(null);
+                  else setBottomScrollVisibility(need);
+                }}
               />
             )}
-            {messages.length == 0 && (
+            {messages.length == 0 && !loading && (
               <div className="text-muted text-center my-auto">
                 <div>Похоже, тут пока никто не писал</div>
                 <div>Начните первым!</div>
@@ -201,9 +232,29 @@ function InterviewMessageList({
               )}
             </div>
           </div>
-          <div className="p-1" style={{ borderTop: "1px solid #dee2e6" }}>
+          <div
+            className="p-1 position-relative"
+            style={{ borderTop: "1px solid #dee2e6" }}
+          >
+            {bottomScrollVisibility && (
+              <div
+                className="position-absolute w-100"
+                style={{ top: -50, height: 40 }}
+              >
+                <Button
+                  className="mx-auto border rounded-circle h-100"
+                  variant="light"
+                  onClick={scrollToBottom}
+                >
+                  <i className="fas mx-auto fa-arrow-down"></i>
+                </Button>
+              </div>
+            )}
             {!closed && (
-              <MessageInput messagesLink={fetchLink} onSubmit={handleMessage} />
+              <MessageInput
+                messagesLink={messageCreateLink}
+                onSubmit={handleMessage}
+              />
             )}
             {closed && (
               <div className="text-center my-auto p-2 text-muted">

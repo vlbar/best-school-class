@@ -17,7 +17,6 @@ function MessageInput({ messagesLink, onSubmit: handleSubmit }) {
     setEdit,
     commentingAnswer,
     setCommentingAnswer,
-    setDisabled,
   } = useContext(MessageContext);
 
   const [text, setText] = useState("");
@@ -34,7 +33,8 @@ function MessageInput({ messagesLink, onSubmit: handleSubmit }) {
         });
       inputRef.current.focus();
     } else {
-      reset();
+      setText("");
+      setReply(null);
     }
   }, [editingMessage]);
 
@@ -43,8 +43,17 @@ function MessageInput({ messagesLink, onSubmit: handleSubmit }) {
   }, [replyMessage]);
 
   useEffect(() => {
-    if (commentingAnswer) inputRef.current.focus();
-    setDisabled(!!commentingAnswer);
+    if (commentingAnswer) {
+      inputRef.current.focus();
+      if (
+        editingMessage &&
+        editingMessage.questionAnswer != commentingAnswer.questionAnswer
+      ) {
+        setEdit(null);
+        setText("");
+        setReply(null);
+      }
+    } else reset();
   }, [commentingAnswer]);
 
   function reset() {
@@ -127,7 +136,7 @@ function MessageInput({ messagesLink, onSubmit: handleSubmit }) {
                 <i
                   className="fas fa-times tool"
                   style={{ opacity: 0.5 }}
-                  onClick={() => setEdit(null)}
+                  onClick={reset}
                 ></i>
               </div>
             </div>
@@ -161,20 +170,21 @@ function MessageInput({ messagesLink, onSubmit: handleSubmit }) {
           )}
           {commentingAnswer && (
             <div className="d-flex w-100 ">
-              <div
-                className="pl-2 text-left text-muted mb-2 w-100"
-                style={{ borderLeft: "2px solid #dee2e6" }}
-              >
-                <div className="position-relative w-100">
-                  <div className="text-truncate pr-3 w-100">
-                    {commentingAnswer.question.formulation}
-                  </div>
-                  <div className="text-truncate w-100">
-                    {commentingAnswer.questionAnswer ? (
-                      <>Ответ: {commentingAnswer.questionAnswer.content} </>
-                    ) : (
-                      <>Ответ отсутствует.</>
-                    )}
+              <div className="text-muted w-100 position-relative">
+                {!editingMessage && (
+                  <div className="mb-2">Комментарий на вопрос</div>
+                )}
+                <div
+                  className="pl-2 text-left mb-2 w-100"
+                  style={{ borderLeft: "2px solid #dee2e6" }}
+                >
+                  <div className="position-relative w-100">
+                    <div className="text-truncate pr-3 w-100">
+                      {commentingAnswer.question.formulation.replace(
+                        /<[^>]*>?/gm,
+                        ""
+                      )}
+                    </div>
                   </div>
                   {!editingMessage && (
                     <div
@@ -184,12 +194,11 @@ function MessageInput({ messagesLink, onSubmit: handleSubmit }) {
                       <i
                         className="fas fa-times tool"
                         style={{ opacity: 0.5 }}
-                        onClick={() => setCommentingAnswer(null)}
+                        onClick={reset}
                       ></i>
                     </div>
                   )}
                 </div>
-                <div className="d-flex justify-content-end"></div>
               </div>
             </div>
           )}

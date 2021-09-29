@@ -9,7 +9,7 @@ function TestQuestionAnswer({ question }) {
         (x) => x === answerVariant.id
       ) != null;
     return (
-      <div key={answerVariant.id}>
+      <div key={answerVariant.id} className="text-break">
         <Form.Check
           custom
           disabled
@@ -21,10 +21,10 @@ function TestQuestionAnswer({ question }) {
           defaultChecked={answerVariant.checked}
           className={
             !answerVariant.right && !answerVariant.checked
-              ? ""
+              ? "text-break"
               : answerVariant.right && answerVariant.checked
-              ? "right"
-              : "not-right"
+              ? "right text-break"
+              : "not-right text-break"
           }
         />
       </div>

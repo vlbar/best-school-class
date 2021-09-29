@@ -1,15 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import {
-  Badge,
-  Row,
-  Col,
-  ProgressBar,
-  Button,
-  DropdownButton,
-  Dropdown,
-  Tabs,
-  Tab,
-} from "react-bootstrap";
+import { Badge, Row, Col, Tabs, Tab } from "react-bootstrap";
 import { useHistory } from "react-router-dom";
 import axios from "axios";
 
@@ -29,14 +19,6 @@ import User from "../user/User";
 import { useSelector } from "react-redux";
 import { selectState } from "../../redux/state/stateSelector";
 import Resource from "../../util/Hateoas/Resource";
-
-let options = {
-  year: "numeric",
-  month: "long",
-  day: "numeric",
-  hour: "numeric",
-  minute: "numeric",
-};
 
 // requests
 const baseUrl = "/homeworks";
@@ -223,7 +205,9 @@ const HomeworkDetails = ({ homeworkId }) => {
                       >
                         <Interview
                           fetchLink={interview.link()}
-                          userId={interview.interviewer?.id}
+                          messageCreateLink={interview.link(
+                            "interviewMessages"
+                          )}
                           createLink={homework.link("interviews")}
                           closed={interview.closed}
                           onAnswer={setAnswer}
@@ -257,6 +241,7 @@ const HomeworkDetails = ({ homeworkId }) => {
                   <div className="border rounded">
                     <Interview
                       fetchLink={interview.link()}
+                      messageCreateLink={interview.link("interviewMessages")}
                       closed={interview.closed}
                       createLink={homework.link("interviews")}
                       onAnswer={setAnswer}

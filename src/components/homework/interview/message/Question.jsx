@@ -17,6 +17,7 @@ function Question({
   onScoreChange,
   onSaving,
   readOnly = false,
+  short = false,
 }) {
   const { commentingAnswer, setCommentingAnswer, disabled } =
     useContext(MessageContext);
@@ -56,7 +57,17 @@ function Question({
           !questionAnswer && "text-muted"
         }`}
       >
-        <b>{question.formulation}</b>
+        {!short && (
+          <b
+            className="text-break"
+            dangerouslySetInnerHTML={{ __html: question.formulation }}
+          ></b>
+        )}
+        {short && (
+          <b className="text-break">
+            {question.formulation.replace(/<[^>]*>?/gm, "")}
+          </b>
+        )}
         {!disabled &&
           questionAnswer &&
           question.id != commentingAnswer?.question.id && (
@@ -76,12 +87,14 @@ function Question({
       {questionAnswer && (
         <>
           <span className="mb-1">Ответ ученика:</span>
-          {questionAnswer.type == "TEXT_QUESTION" && (
-            <TextQuestionAnswer question={{ question, questionAnswer }} />
-          )}
-          {questionAnswer.type == "TEST_QUESTION" && (
-            <TestQuestionAnswer question={{ question, questionAnswer }} />
-          )}
+          <div className="question-container">
+            {questionAnswer.type == "TEXT_QUESTION" && (
+              <TextQuestionAnswer question={{ question, questionAnswer }} />
+            )}
+            {questionAnswer.type == "TEST_QUESTION" && (
+              <TestQuestionAnswer question={{ question, questionAnswer }} />
+            )}
+          </div>
           <div className="w-100 d-flex justify-content-end mt-3">
             {!readOnly && (
               <div className="d-flex align-items-center position-relative">

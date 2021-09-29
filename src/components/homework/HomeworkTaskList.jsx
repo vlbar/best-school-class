@@ -14,6 +14,7 @@ import { selectState } from "../../redux/state/stateSelector";
 import InterviewMarkInput from "./interview/InterviewMarkInput";
 import { createError } from "../notifications/notifications";
 import ProcessBar from "../process-bar/ProcessBar";
+import { MessageContext } from "./interview/message/InterviewMessageList";
 
 const MAX_DISPLAY_TASKS = 10;
 
@@ -32,13 +33,14 @@ const HomeworkTaskList = ({
   const fetchLinkHref = useRef(null);
 
   useEffect(() => {
-    if (interview && interview.link()) {
+    if (interview && !interview.inactive && interview.link()) {
       if (interview.link("interviewMessages").href != fetchLinkHref.current) {
         setAnswers([]);
         fetchLinkHref.current = interview.link("interviewMessages").href;
         interview
           .link("interviewMessages")
           ?.fill("type", "ANSWER")
+          .fill("size", 100) //FIXME: nu tut vse ponyatno :\
           .fetch(setLoading)
           .then((page) => setAnswers(page.list("messages") ?? []));
       }
@@ -55,7 +57,7 @@ const HomeworkTaskList = ({
             else return answer;
           })
         );
-      else answers.push(updatedAnswer);
+      else answers.unshift(updatedAnswer);
     }
   }, [updatedAnswer]);
 
@@ -213,27 +215,29 @@ const TaskTableItem = ({
   return (
     <>
       {answer && (
-        <Modal
-          show={show}
-          size="lg"
-          onHide={() => setIsShow(false)}
-          className="font-size-14"
-        >
-          <ModalBody className="py-0">
-            <div className="position-relative">
-              <Modal.Header
-                closeButton
-                className="p-3 position-absolute border-0"
-                style={{ right: -20 }}
-              />
-              <AnswerDetails
-                fetchLink={answer.link()}
-                answerStatus={answer.answerStatus}
-                disabled={disabled}
-              />
-            </div>
-          </ModalBody>
-        </Modal>
+        <MessageContext.Provider value={{ disabled: true }}>
+          <Modal
+            show={show}
+            size="lg"
+            onHide={() => setIsShow(false)}
+            className="font-size-14"
+          >
+            <ModalBody className="py-0">
+              <div className="position-relative">
+                <Modal.Header
+                  closeButton
+                  className="p-3 position-absolute border-0"
+                  style={{ right: -20 }}
+                />
+                <AnswerDetails
+                  fetchLink={answer.link()}
+                  updatedAnswer={answer}
+                  disabled={disabled}
+                />
+              </div>
+            </ModalBody>
+          </Modal>
+        </MessageContext.Provider>
       )}
       <div
         className={
@@ -299,7 +303,7 @@ const TaskTableItem = ({
           <div className="d-flex ml-3 text-center flex-wrap align-items-center text-center">
             {answer && (
               <span>
-                {answer.score ?? answer.notConfirmedScore}/{answer.taskMaxScore}
+                {answer.score ?? answer.notConfirmedScore}/{task.maxScore}
               </span>
             )}
             {!answer && (

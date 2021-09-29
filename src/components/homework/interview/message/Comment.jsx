@@ -5,8 +5,14 @@ import { MessageContext } from "./InterviewMessageList";
 import "./TestQuestionAnswer.less";
 
 function Comment({ message, isAuthor }) {
-  const { replyMessage, setReply, editingMessage, setEdit, disabled } =
-    useContext(MessageContext);
+  const {
+    replyMessage,
+    setReply,
+    editingMessage,
+    setEdit,
+    commentingAnswer,
+    disabled,
+  } = useContext(MessageContext);
 
   if (message.deletedAt)
     return <div className="text-muted">Комментарий удален.</div>;
@@ -27,7 +33,7 @@ function Comment({ message, isAuthor }) {
         )}
 
         <div className="text-muted border-left pl-2 text-left">
-          <div>{message.formulation}</div>
+          <div dangerouslySetInnerHTML={{ __html: message.formulation }}></div>
           {message.questionAnswer.content ? (
             <div>Ответ: {message.questionAnswer.content}</div>
           ) : (
@@ -62,23 +68,25 @@ function Comment({ message, isAuthor }) {
           {!disabled && (
             <div className="position-absolute right-panel h-100">
               <div className="tool-panel h-100 d-flex align-items-start mt-1 justify-content-end">
-                {isAuthor && (
-                  <Button
-                    variant="transparent"
-                    className="p-0 mr-1 d-flex align-items-baseline tool"
-                    onClick={() => setEdit(message)}
-                  >
-                    <i className="fas fa-pen fa-sm"></i>
-                  </Button>
-                )}
-                {(!editingMessage || editingMessage.id != message.id) && (
-                  <Button
-                    variant="transparent"
-                    className="p-0 d-flex align-items-baseline tool"
-                    onClick={() => setReply(message)}
-                  >
-                    <i className="fas fa-reply fa-sm"></i>
-                  </Button>
+                {isAuthor && editingMessage?.id != message.id && (
+                  <>
+                    <Button
+                      variant="transparent"
+                      className="p-0 mr-1 d-flex align-items-baseline tool"
+                      onClick={() => setEdit(message)}
+                    >
+                      <i className="fas fa-pen fa-sm"></i>
+                    </Button>
+                    {!commentingAnswer && (
+                      <Button
+                        variant="transparent"
+                        className="p-0 d-flex align-items-baseline tool"
+                        onClick={() => setReply(message)}
+                      >
+                        <i className="fas fa-reply fa-sm"></i>
+                      </Button>
+                    )}
+                  </>
                 )}
                 {message.editedAt && (
                   <div className="text-muted position-absolute label my-auto">

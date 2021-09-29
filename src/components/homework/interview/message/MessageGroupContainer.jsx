@@ -17,6 +17,7 @@ function MessageGroupContainer({
   currentUser,
   blockTimeRange,
   onDateChange,
+  onNeedBottomScroll,
 }) {
   const currentDate = useRef(new Date().getTime());
 
@@ -59,6 +60,7 @@ function MessageGroupContainer({
       onDateChange && onDateChange(new Date(messageGroups[idx - 1].time));
       currentDate.current = messageGroups[idx - 1].time;
     }
+    if (idx == 0) onNeedBottomScroll?.(!inView);
   }
 
   return (

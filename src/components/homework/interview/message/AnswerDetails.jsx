@@ -1,3 +1,4 @@
+import moment, { duration } from "moment";
 import React, { useContext } from "react";
 import { useRef } from "react";
 import { useEffect } from "react";
@@ -21,7 +22,12 @@ import User from "../../../user/User";
 import HumanReadableDate from "./HumanReadableDate";
 import QuestionContainer from "./QuestionContainer";
 
-function AnswerDetails({ fetchLink, answerStatus, onStatusChanged, disabled }) {
+function AnswerDetails({
+  fetchLink,
+  updatedAnswer,
+  onStatusChanged,
+  disabled,
+}) {
   const user = useSelector(selectUser);
 
   const [answer, setAnswer] = useState(null);
@@ -34,18 +40,14 @@ function AnswerDetails({ fetchLink, answerStatus, onStatusChanged, disabled }) {
   const scrollRef = useRef();
   const scoreRef = useRef(0);
 
-  useEffect(() => {
-    if (fetchLink && answer == null && !loading)
-      fetchLink.fetch(setLoading).then(setAnswer);
-  }, [fetchLink]);
 
   useEffect(() => {
-    if (answer) {
-      setAnswer({ ...answer, answerStatus });
+    if (updatedAnswer) {
+      setAnswer(updatedAnswer);
+
+      setIsEdit(updatedAnswer.answerStatus == "PERFORMED");
     }
-
-    setIsEdit(answerStatus == "PERFORMED");
-  }, [answerStatus]);
+  }, [updatedAnswer]);
 
   useEffect(() => {
     setExpanded(isEdit);
@@ -106,7 +108,7 @@ function AnswerDetails({ fetchLink, answerStatus, onStatusChanged, disabled }) {
           <div>
             <div ref={scrollRef}>
               <div className="d-flex flex-wrap align-items-center">
-                <h4 className="d-inline mr-2">{task.name}</h4>
+                <h4 className="d-inline mr-2 text-break">{task.name}</h4>
                 {task.taskType && (
                   <Badge
                     className="p-1"
@@ -121,17 +123,20 @@ function AnswerDetails({ fetchLink, answerStatus, onStatusChanged, disabled }) {
                   </Badge>
                 )}
               </div>
-              <i className="text-muted">{task.description}</i>
+              <i
+                className="text-muted text-break"
+                dangerouslySetInnerHTML={{ __html: task.description }}
+              ></i>
               <hr />
             </div>
             <Row>
               <Col lg={"auto"} md={"auto"}>
-                <div className="mt-2">
+                <div>
                   <span>
                     <i>Начато:</i>{" "}
                     <HumanReadableDate date={answer.submittedAt} withTime />
                   </span>
-                  {answer.completionDate && (
+                  {answer.answerStatus != "NOT_PERFORMED" && (
                     <>
                       <div>
                         <i>Выполнено:</i>{" "}
@@ -146,17 +151,19 @@ function AnswerDetails({ fetchLink, answerStatus, onStatusChanged, disabled }) {
                           locale="ru"
                           format="Y [г.] M [мес.] w [нед.] d [д.] h [ч.] m [мин.] ss [сек]"
                           trim
-                          duration={new Date(answer.submittedAt)}
+                          duration={moment(answer.completionDate).subtract(
+                            answer.totalDuration,
+                            "millisecond"
+                          )}
                         >
-                          {new Date(answer.completionDate)}
+                          {answer.completionDate}
                         </Moment>
-                        .
                       </div>
                     </>
                   )}
                   {answer.completionDate >= new Date().getTime() && (
                     <div>
-                      Осталось:{" "}
+                      <i>Осталось:</i>{" "}
                       <Moment
                         locale="ru"
                         format="HH:mm:ss"
@@ -169,31 +176,42 @@ function AnswerDetails({ fetchLink, answerStatus, onStatusChanged, disabled }) {
                   )}
                 </div>
               </Col>
-              {answer.evaluatorId && (
-                <Col className="text-right">
-                  <div className="d-flex justify-content-end">
-                    <div>
-                      <User
-                        fetchLink={answer.link("evaluator")}
-                        className="ml-2"
-                        iconPlacement="right"
-                        iconSize={30}
-                      />
+              {answer.evaluatorId &&
+                answer.answerStatus != "NOT_PERFORMED" &&
+                answer.answerStatus != "PERFORMED" && (
+                  <Col className="text-right">
+                    <div className="d-flex justify-content-end">
+                      <div>
+                        <User
+                          fetchLink={answer.link("evaluator")}
+                          className="ml-2"
+                          iconPlacement="right"
+                          iconSize={30}
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <i>Принял:</i>{" "}
-                    <HumanReadableDate date={answer.editedAt} withTime />
-                  </div>
-
-                  <div>
-                    <i>Оценка:</i>{" "}
-                    <b>
-                      {answer.score} из {task.maxScore}
-                    </b>
-                  </div>
-                </Col>
-              )}
+                    <div>
+                      {answer.answerStatus == "APPRECIATED" && <b>Принял:</b>}
+                      {answer.answerStatus == "NOT_APPRECIATED" && (
+                        <b>Отклонил:</b>
+                      )}
+                      {(answer.answerStatus == "RETURNED" ||
+                        answer.answerStatus == "NOT_PERFORMED" ||
+                        answer.answerStatus == "PERFORMED") && (
+                        <b>Вернул:</b>
+                      )}{" "}
+                      <HumanReadableDate date={answer.editedAt} withTime />
+                    </div>
+                    {answer.answerStatus == "APPRECIATED" && (
+                      <div>
+                        <i>Оценка:</i>{" "}
+                        <b>
+                          {answer.score} из {task.maxScore}
+                        </b>
+                      </div>
+                    )}
+                  </Col>
+                )}
             </Row>
           </div>
           <PrivateContent allowedStates={[TEACHER, ASSISTANT]}>
@@ -244,9 +262,15 @@ function AnswerDetails({ fetchLink, answerStatus, onStatusChanged, disabled }) {
                         onClick={() => updateAnswer("APPRECIATED")}
                         disabled={!saved}
                       >
-                        <Dropdown.Item onClick={() => updateAnswer("RETURNED")}>
-                          Вернуть
-                        </Dropdown.Item>
+                        {(!task.duration ||
+                          task.duration - 5 >
+                            answer.totalDuration / 1000 / 60) && (
+                          <Dropdown.Item
+                            onClick={() => updateAnswer("RETURNED")}
+                          >
+                            Вернуть
+                          </Dropdown.Item>
+                        )}
                         <Dropdown.Item
                           className="text-danger"
                           onClick={() => updateAnswer("NOT_APPRECIATED")}

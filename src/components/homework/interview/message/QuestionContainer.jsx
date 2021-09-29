@@ -15,7 +15,7 @@ function QuestionContainer({
 }) {
   const page = useRef(null);
   const savingQuestions = useRef([]);
-  const [hasNext, setHasNext] = useState(true);
+  const [hasNext, setHasNext] = useState(false);
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const { ref, inView } = useInView({ threshold: 0 });

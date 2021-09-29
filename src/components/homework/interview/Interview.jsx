@@ -20,17 +20,25 @@ function Interview({ fetchLink, userId, onInterviewChange, closed, onAnswer }) {
   useEffect(() => {
     if (fetchLink && interviewHref.current != fetchLink.href) {
       interviewHref.current = fetchLink.href;
-      setInterview(undefined);
-      fetchLink
-        .fetch(setLoading)
-        .then((interview) => {
-          setInterview(interview);
-        })
-        .catch((err) => {
-          if (err.response && err.response.status == 404) setInterview(null);
-        });
+      fetchInterview();
     }
   }, [fetchLink]);
+
+  function fetchInterview() {
+    setInterview(undefined);
+    fetchLink
+      .fetch(setLoading)
+      .then((interview) => {
+        setInterview(interview);
+      })
+      .catch((err) => {
+        if (err.response && err.response.status == 404) setInterview(null);
+      });
+  }
+
+  function onMessageCreate() {
+    if (interview == null) fetchInterview();
+  }
 
   return (
     <div className="position-relative">
@@ -45,13 +53,15 @@ function Interview({ fetchLink, userId, onInterviewChange, closed, onAnswer }) {
         {!loading && interview !== undefined && (
           <>
             <InterviewMessageList
-              fetchLink={
+              fetchLink={interview?.link("interviewMessages")}
+              messageCreateLink={             
                 interview?.link("interviewMessages") ??
                 fetchLink.withPathTale("messages")
               }
               closed={closed}
               currentUser={user}
               onAnswer={onAnswer}
+              onMessageCreate={onMessageCreate}
             />
           </>
         )}

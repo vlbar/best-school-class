@@ -34,7 +34,7 @@ function Answer({ message, onExpand }) {
             {expanded && (
               <AnswerDetails
                 fetchLink={message.link()}
-                answerStatus={message.answerStatus}
+                updatedAnswer={message}
                 disabled={disabled}
               />
             )}

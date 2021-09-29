@@ -1,3 +1,4 @@
+import { duration } from "moment";
 import React from "react";
 import { Badge, OverlayTrigger, Tooltip } from "react-bootstrap";
 import Moment from "react-moment";
@@ -29,7 +30,7 @@ function AnswerStatus({ answer, padding = 2, withTime, variant = "badge" }) {
           </span>
         </div>
       ),
-      time: answer.submittedAt,
+      time: answer.continueDate ?? answer.submittedAt,
     },
     PERFORMED: {
       color: "primary",
@@ -51,7 +52,7 @@ function AnswerStatus({ answer, padding = 2, withTime, variant = "badge" }) {
     },
     NOT_APPRECIATED: {
       color: "danger",
-      name: "Не принято",
+      name: "Отклонено",
       icon: <i className="fas fa-times"></i>,
       time: answer.editedAt,
     },
@@ -85,8 +86,9 @@ function AnswerStatus({ answer, padding = 2, withTime, variant = "badge" }) {
               format="HH:mm:ss"
               trim
               date={status.time}
+              subtract={duration(answer.totalDuration, "millisecond")}
               locale="ru"
-            />
+            ></Moment>
           </div>
         ))}
     </div>
