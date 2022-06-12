@@ -1,79 +1,106 @@
-import React from "react";
+import React, { useRef, useState, useEffect } from "react";
+import { IoChevronDown, IoSettingsOutline, IoExitOutline, IoHelpOutline, IoChevronForwardOutline, IoTodayOutline } from "react-icons/io5";
+import { Link, useLocation } from "react-router-dom";
+import { Nav, Button } from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
-import { selectLoggedIn } from "../../redux/auth/authSelectors";
-import { Nav, Button, Row, Col } from "react-bootstrap";
-import { NavLink, useLocation } from "react-router-dom";
+
+import "./auth-panel.less";
+import NotificationButton from "./../profile/Notification";
+import SheduleButton from "./../profile/Shedule";
+import StatePicker from "../state/StatePicker";
+import UserIcon from "../user/UserIcon";
+import UserName from "../user/UserName";
+import useOutsideClick from "../../util/useOutsideClick";
 import { logouted } from "../../redux/auth/authReducer";
-import { useEffect } from "react";
-import MD5 from "md5";
 import { me, restore } from "../../redux/user/userActions";
+import { selectLoggedIn } from "../../redux/auth/authSelectors";
 import { selectUser } from "../../redux/user/userSelectors";
-import User from "../user/User";
 
 function AuthPanel() {
-  const isLoggedIn = useSelector(selectLoggedIn);
-  const dispatch = useDispatch();
-  const user = useSelector(selectUser);
-  const location = useLocation();
+    const isLoggedIn = useSelector(selectLoggedIn);
+    const dispatch = useDispatch();
+    const user = useSelector(selectUser);
+    const location = useLocation();
 
-  useEffect(() => {
-    if (isLoggedIn) dispatch(me());
-    else dispatch(restore());
-  }, [isLoggedIn]);
+    const [isMenuShow, setIsMenuShow] = useState(false);
+    const profileMenuRef = useRef(null);
+    useOutsideClick(profileMenuRef, closeMenu);
 
-  const handleLogoutSumbit = () => {
-    dispatch(logouted());
-  };
+    useEffect(() => {
+        if (isLoggedIn) dispatch(me());
+        else dispatch(restore());
+    }, [isLoggedIn]);
 
-  if (!isLoggedIn) {
-    return (
-      <Nav>
-        <Nav.Link
-          as={NavLink}
-          to={{
-            pathname: "/login",
-            state: { from: location.state?.from },
-          }}
-        >
-          Вход
-        </Nav.Link>
-        <Nav.Link
-          as={NavLink}
-          to={{
-            pathname: "/register",
-            state: { from: location.state?.from },
-          }}
-        >
-          Регистрация
-        </Nav.Link>
-      </Nav>
-    );
-  } else {
-    return (
-      <Row>
-        {user && (
-          <Col className="text-light my-auto">
-            <User
-              user={user}
-              iconSize="36"
-              iconPlacement="right"
-              short
-              className="ml-2"
-            />
-          </Col>
-        )}
-        <Col className="my-auto" sm="auto">
-          <Button
-            variant="secondary"
-            className="w-100 text-light"
-            onClick={handleLogoutSumbit}
-          >
-            Выйти
-          </Button>
-        </Col>
-      </Row>
-    );
-  }
+    const handleLogoutSumbit = () => {
+        dispatch(logouted());
+    };
+
+    function toggleMenu() {
+        setIsMenuShow(!isMenuShow);
+    }
+
+    function closeMenu() {
+        setIsMenuShow(false);
+    }
+
+    const onMenuButtonClick = callback => {
+        setIsMenuShow(false);
+        callback?.();
+    };
+
+    if (!isLoggedIn) {
+        return (
+            <Nav>
+                <Link
+                    to={{
+                        pathname: "/login",
+                        state: { from: location.state?.from },
+                    }}>
+                    <Button className="d-flex align-items-center pr-3">
+                        Начать <IoChevronForwardOutline size={18} className="ml-2" />
+                    </Button>
+                </Link>
+            </Nav>
+        );
+    } else {
+        return (
+            <div className="profile-panel">
+                <div className="d-none d-sm-block">
+                    <SheduleButton />
+                    <NotificationButton className="mr-2" />
+                </div>
+
+                <div className="profile">
+                    <div className="mr-3">
+                        <div className="username">{user && <UserName user={user} short />}</div>
+                        <StatePicker />
+                    </div>
+                    <div className={"user" + (isMenuShow ? " hover" : "")} onClick={toggleMenu}>
+                        <UserIcon email={user?.email} iconSize={40} />
+                        <IoChevronDown size={12} />
+                    </div>
+                    {isMenuShow && (
+                        <div className="profile-menu" ref={profileMenuRef}>
+                            <div className="m-2">
+                                <Button variant="light" onClick={() => onMenuButtonClick()}>
+                                    <IoSettingsOutline size={21} className="mr-2" />
+                                    Настройки
+                                </Button>
+                                <Button variant="light" onClick={() => onMenuButtonClick()}>
+                                    <IoHelpOutline size={21} className="mr-2" />
+                                    Помощь
+                                </Button>
+                                <Button variant="light" onClick={() => onMenuButtonClick(handleLogoutSumbit)}>
+                                    <IoExitOutline size={21} className="mr-2" />
+                                    Выйти
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
 }
 
 export default AuthPanel;

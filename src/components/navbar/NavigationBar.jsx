@@ -1,60 +1,63 @@
 import React from "react";
-import { Navbar, Nav, Button } from "react-bootstrap";
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
+import { Navbar, Nav } from "react-bootstrap";
+
 import "./navigation-bar.less";
 import AuthPanel from "../auth/AuthPanel";
 import PrivateContent from "../routing/PrivateContent";
-import StatePicker from "../state/StatePicker";
-import { ASSISTANT, STUDENT, TEACHER } from "../../redux/state/stateActions";
-import PublicContent from "../routing/PublicContent";
+import useWindowDimensions from "./../../util/useWindowDimensions";
 
-function NavigationBar() {
-  return (
-    <Navbar collapseOnSelect expand="lg" bg="dark" variant="dark">
-      <Navbar.Brand>Best School Class</Navbar.Brand>
-      <Navbar.Toggle aria-controls="responsive-navbar-nav" />
-      <Navbar.Collapse id="responsive-navbar-nav">
-        <Nav className="mr-auto">
-          <PublicContent>
-            <Nav.Link as={NavLink} exact to="/">
-              Главная
-            </Nav.Link>
-          </PublicContent>
-          <PrivateContent>
-            <Nav.Link as={NavLink} to="/home">
-              Главная
-            </Nav.Link>
-          </PrivateContent>
-          <PrivateContent allowedStates={[STUDENT, TEACHER]}>
-            <Nav.Link as={NavLink} to="/shedule">
-              Расписание
-            </Nav.Link>
-          </PrivateContent>
-          <PrivateContent>
-            <Nav.Link as={NavLink} to="/homeworks">
-              Задания
-            </Nav.Link>
-          </PrivateContent>
-          <PrivateContent allowedStates={[ASSISTANT, TEACHER]}>
-            <Nav.Link as={NavLink} to="/courses">
-              Курс
-            </Nav.Link>
-          </PrivateContent>
-          <PrivateContent>
-            <Nav.Link as={NavLink} to="/groups">
-              Группы
-            </Nav.Link>
-          </PrivateContent>
-        </Nav>
-        <PrivateContent>
-          <div className="mr-5">
-            <StatePicker />
-          </div>
-        </PrivateContent>
-        <AuthPanel />
-      </Navbar.Collapse>
-    </Navbar>
-  );
+function NavigationBar({ tabs }) {
+    const { width } = useWindowDimensions();
+    const isLarge = width > 992;
+
+    return (
+        <React.Fragment>
+            <Navbar collapseOnSelect expand="lg" bg="trans" variant="light">
+                <Link to="/">
+                    <Navbar.Brand>
+                        <img alt="" src="./src/static/images/app_logo_64.png" width="40" height="40" className="d-inline-block align-top" />
+                        <span className="d-none d-sm-inline-block">Best School Class</span>
+                    </Navbar.Brand>
+                </Link>
+                {isLarge && (
+                    <Nav className="mr-auto">
+                        {tabs.map(tab => {
+                            const Icon = tab.icon;
+                            return (
+                                <PrivateContent key={tab.name}>
+                                    <Nav.Link as={NavLink} exact to={tab.to}>
+                                        <div className="icon">
+                                            <Icon size={20} />
+                                        </div>
+                                        <div className="label">{tab.name}</div>
+                                    </Nav.Link>
+                                </PrivateContent>
+                            );
+                        })}
+                    </Nav>
+                )}
+                <AuthPanel />
+            </Navbar>
+            {!isLarge && (
+                <div className="navbar-bottom">
+                    {tabs.map(tab => {
+                        const Icon = tab.icon;
+                        return (
+                            <PrivateContent key={tab.name}>
+                                <Nav.Link as={NavLink} exact to={tab.to}>
+                                    <div className="icon">
+                                        <Icon size={30} />
+                                    </div>
+                                    <div className="label">{tab.name}</div>
+                                </Nav.Link>
+                            </PrivateContent>
+                        );
+                    })}
+                </div>
+            )}
+        </React.Fragment>
+    );
 }
 
 export default NavigationBar;

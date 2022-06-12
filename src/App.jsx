@@ -26,74 +26,60 @@ import Homeworks from "./pages/Homeworks";
 import Group from "./pages/Group";
 import { GroupJoinDetails } from "./components/groups/join/GroupJoinDetails";
 import TaskAnswer from "./pages/TaskAnswer";
+import "./static/style/bscstrap.less";
+
+import { IoEaselOutline, IoCalendarOutline, IoDocumentOutline, IoFolderOpenOutline, IoPeopleOutline } from "react-icons/io5";
+import NavbarTab from "./components/navbar/NavbarTab";
 
 configureAxios(axios);
 
 function App() {
-  return (
-    <BrowserRouter>
-      <LastLocationProvider>
-        <ReactNotification />
-        <NavigationBar />
-        <Switch>
-          <Route path={"/"} exact component={Index} />
-          <PublicRoute path={"/login"} component={Login} />
-          <PublicRoute path={"/register"} component={Register} />
-          <PrivateRoute path={"/home"} component={Workspace} />
-          <PrivateRoute
-            exact
-            path={"/answers"}
-            component={Answers}
-            allowedStates={[ASSISTANT, TEACHER]}
-          />
+    return (
+        <BrowserRouter>
+            <LastLocationProvider>
+                <ReactNotification />
+                <NavigationBar
+                    tabs={[
+                        { name: "Главная", icon: IoEaselOutline, to: "/" },
+                        { name: "Расписание", icon: IoCalendarOutline, to: "/shedule" },
+                        { name: "Задания", icon: IoDocumentOutline, to: "/homeworks" },
+                        { name: "Курс", icon: IoFolderOpenOutline, to: "/courses" },
+                        { name: "Группы", icon: IoPeopleOutline, to: "/groups" },
+                    ]}
+                />
+                <Switch>
+                    <Route path={"/"} exact component={Index} />
+                    <PublicRoute path={"/login"} component={Login} />
+                    <PublicRoute path={"/register"} component={Register} />
+                    <PrivateRoute path={"/home"} component={Workspace} />
+                    <PrivateRoute exact path={"/answers"} component={Answers} allowedStates={[ASSISTANT, TEACHER]} />
 
-          <PrivateRoute exact path={"/homeworks/"} component={Homeworks} />
-          <PrivateRoute path={"/homeworks/:homeworkId"} component={Homeworks} />
-          <Route exact path={"/homeworks/"} component={Homeworks} />
-          <Route exact path={"/homeworks/:homeworkId"} component={Homeworks} />
-          <PrivateRoute
-            path={"/homeworks/:homeworkId/tasks/:taskId"}
-            component={TaskAnswer}
-            allowedStates={[STUDENT]}
-          />
-          <PrivateRoute
-            exact
-            path={"/courses"}
-            component={Courses}
-            allowedStates={[ASSISTANT, TEACHER]}
-          />
-          <PrivateRoute
-            path={"/courses/:courseId/tasks/:taskId"}
-            component={Task}
-            allowedStates={[ASSISTANT, TEACHER]}
-          />
-          <PrivateRoute
-            path={"/shedule"}
-            component={Shedule}
-            allowedStates={[STUDENT, TEACHER]}
-          />
-          <PrivateRoute path={"/answers"} component={Answers} />
-          <PrivateRoute
-            path={"/courses"}
-            component={Courses}
-            allowedStates={[ASSISTANT, TEACHER]}
-          />
-          <PrivateRoute exact path={"/groups"} component={Groups} />
-          <PrivateRoute path={"/groups/:id"} component={Group} />
-          <PrivateRoute
-            path={"/invites/:code"}
-            children={
-              <>
-                <Groups />
-                <GroupJoinDetails />
-              </>
-            }
-          />
-          <Route component={NotFound} />
-        </Switch>
-      </LastLocationProvider>
-    </BrowserRouter>
-  );
+                    <PrivateRoute exact path={"/homeworks/"} component={Homeworks} />
+                    <PrivateRoute path={"/homeworks/:homeworkId"} component={Homeworks} />
+                    <Route exact path={"/homeworks/"} component={Homeworks} />
+                    <Route exact path={"/homeworks/:homeworkId"} component={Homeworks} />
+                    <PrivateRoute path={"/homeworks/:homeworkId/tasks/:taskId"} component={TaskAnswer} allowedStates={[STUDENT]} />
+                    <PrivateRoute exact path={"/courses"} component={Courses} allowedStates={[ASSISTANT, TEACHER]} />
+                    <PrivateRoute path={"/courses/:courseId/tasks/:taskId"} component={Task} allowedStates={[ASSISTANT, TEACHER]} />
+                    <PrivateRoute path={"/shedule"} component={Shedule} allowedStates={[STUDENT, TEACHER]} />
+                    <PrivateRoute path={"/answers"} component={Answers} />
+                    <PrivateRoute path={"/courses"} component={Courses} allowedStates={[ASSISTANT, TEACHER]} />
+                    <PrivateRoute exact path={"/groups"} component={Groups} />
+                    <PrivateRoute path={"/groups/:id"} component={Group} />
+                    <PrivateRoute
+                        path={"/invites/:code"}
+                        children={
+                            <>
+                                <Groups />
+                                <GroupJoinDetails />
+                            </>
+                        }
+                    />
+                    <Route component={NotFound} />
+                </Switch>
+            </LastLocationProvider>
+        </BrowserRouter>
+    );
 }
 
 export default App;
