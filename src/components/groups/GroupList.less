@@ -1,3 +1,42 @@
+@import '../../static/style/bscstrap.less';
+
+.group-card {
+  display: flex;
+  flex-direction: row;
+
+  background-color: @background-light;
+  border-radius: 20px;
+  padding: 20px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: @background-ultralight;
+  }
+
+  .group-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    width: 60px;
+    height: 60px;
+    border-radius: 20px;
+    margin-right: 20px;
+  }
+
+  .group-info {
+    width: 230px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    .group-name {
+      font-size: 16px;
+      line-height: 17px;
+    }
+  }
+}
+
 .groups-enter {
   opacity: 0.01;
 }

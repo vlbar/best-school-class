@@ -1,49 +1,85 @@
-import React from "react";
-import { useState } from "react";
-import { Button, Form, InputGroup, FormControl } from "react-bootstrap";
+import React, { useEffect, useRef, useState } from "react";
+import { Form } from "react-bootstrap";
+import { IoSearchOutline, IoCloseOutline } from "react-icons/io5";
 
-function SearchBar({
-  onChange,
-  onSubmit,
-  onEmpty,
-  buttonVariant,
-  borderColor,
-  placeholder,
-  ...props
-}) {
-  const [query, setQuery] = useState("");
+import "./search-bar.less";
 
-  function handleChange(e) {
-    setQuery(e.target.value);
-    if (onChange) onChange(e.target.value);
-    if (e.target.value.trim().length === 0 && onEmpty) onEmpty();
-  }
+const SerachBar = ({
+    delay = 1200,
+    canSubmit = true,
+    initialValue = "",
+    isValid,
+    disabled,
+    name,
+    className,
+    onSubmit,
+    onChange,
+    onBlur,
+    onEmpty,
+    onTimerStart,
+    emptyAfterValue,
+    placeholder,
+    children
+}) => {
+    const [value, setValue] = useState(initialValue);
 
-  function handleSubmit(e) {
-    e.preventDefault();
-    if (onSubmit) onSubmit(query);
-  }
+    const lastSubmitedValue = useRef("");
+    const notSubmitAfterValue = useRef(undefined);
+    const delayTimer = useRef(undefined);
 
-  return (
-    <Form onSubmit={handleSubmit}>
-      <Form.Group {...props}>
-        <InputGroup>
-          <FormControl
-            placeholder={placeholder ?? ""}
-            onChange={handleChange}
-            value={query}
-            style={{ borderColor: borderColor ?? "" }}
-            type="search"
-          />
-          <InputGroup.Append>
-            <Button variant={buttonVariant ?? "primary"} type="submit">
-              <i className="fas fa-search"></i>
-            </Button>
-          </InputGroup.Append>
-        </InputGroup>
-      </Form.Group>
-    </Form>
-  );
-}
+    useEffect(() => {
+        if (canSubmit) {
+            debounceChange(value);
+        }
+    }, [canSubmit]);
 
-export default SearchBar;
+    const onChagneHadler = event => {
+        let newValue = event.target.value;
+        setValue(newValue);
+
+        onChange?.(event);
+        debounceChange(newValue);
+    };
+
+    const handleSubmit = e => {
+        e.preventDefault();
+        if (canSubmit && lastSubmitedValue.current !== value && !value.includes(notSubmitAfterValue.current)) {
+            onSubmit?.(value);
+        }
+    };
+
+    const debounceChange = value => {
+        if (value.length === 0) {
+            if (onEmpty) onEmpty(value);
+            else onSubmit(value);
+
+            lastSubmitedValue.current = value;
+            clearTimeout(delayTimer.current);
+            return;
+        }
+
+        if (canSubmit && lastSubmitedValue.current !== value && !value.includes(notSubmitAfterValue.current)) {
+            notSubmitAfterValue.current = undefined;
+            lastSubmitedValue.current = value;
+            onTimerStart?.(value);
+
+            clearTimeout(delayTimer.current);
+            delayTimer.current = setTimeout(() => {
+                clearTimeout(delayTimer.current);
+                onSubmit(value);
+            }, delay);
+        }
+    };
+
+    return (
+        <Form onSubmit={handleSubmit} className={className}>
+            <div className="search-bar">
+                <IoSearchOutline size={21} className="search" />
+                <input type="text" placeholder={placeholder} value={value} onChange={onChagneHadler} onBlur={() => onBlur?.(value)} />
+                {value.length > 0 && <IoCloseOutline size={18} className="clear" onClick={() => onChagneHadler({ target: { value: "" } })} />}
+            </div>
+        </Form>
+    );
+};
+
+export default SerachBar;
