@@ -1,0 +1,43 @@
+@import '../../static/style/bscstrap.less';
+
+
+.input-field {
+    margin-bottom: 1rem;
+
+    .label {
+        font-size: 12px;
+        line-height: 15px;
+        color: @darkGray;
+        margin-bottom: 6px;
+    }
+
+    .error-message {
+        font-size: 12px;
+        line-height: 15px;
+        color: @danger;
+        margin-top: 2px;
+    }
+
+    .input-row {
+        display: flex;
+        flex-direction: row;
+        overflow: hidden;
+
+        background-color: @background;
+        border-radius: 8px;
+
+        input {
+            width: 100%;
+            background-color: transparent;
+            border: 0;
+            outline: none;
+
+            font-size: 14px;
+            padding: 10px 15px;
+
+            &::placeholder {
+                color: @silver;
+            }
+        }
+    }
+}
