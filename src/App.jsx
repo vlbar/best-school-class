@@ -50,7 +50,6 @@ function App() {
                     <Route path={"/"} exact component={Index} />
                     <PublicRoute path={"/login"} component={Login} />
                     <PublicRoute path={"/register"} component={Register} />
-                    <PrivateRoute path={"/home"} component={Workspace} />
                     <PrivateRoute exact path={"/answers"} component={Answers} allowedStates={[ASSISTANT, TEACHER]} />
 
                     <PrivateRoute exact path={"/homeworks/"} component={Homeworks} />

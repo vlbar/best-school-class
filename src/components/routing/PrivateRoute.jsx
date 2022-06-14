@@ -28,7 +28,7 @@ export default function PrivateRoute({
             );
           else
             return (
-              <Redirect to={{ pathname: "/home", state: { from: location } }} />
+              <Redirect to={{ pathname: "/", state: { from: location } }} />
             );
         } else {
           return (

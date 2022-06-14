@@ -2,12 +2,17 @@ import React from "react";
 import { Button, Col, Row } from "react-bootstrap";
 import { IoChevronForwardOutline, IoLockClosedOutline } from "react-icons/io5";
 import { useHistory } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 import "./index.less";
+import Workspace from "./Workspace";
+import { selectAuth } from './../redux/auth/authSelectors';
 
 function Index() {
     const history = useHistory();
+    const { isLoggedIn } = useSelector(selectAuth);
 
+    if (isLoggedIn) return <Workspace />
     return (
         <React.Fragment>
             <div className="background">
