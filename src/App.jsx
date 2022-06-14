@@ -1,10 +1,11 @@
 import React from "react";
 import { BrowserRouter, Route, Switch } from "react-router-dom";
 
-import NavigationBar from "./components/navbar/NavigationBar";
-import ReactNotification from "react-notifications-component";
-import { LastLocationProvider } from "react-router-last-location";
 import "react-notifications-component/dist/theme.css";
+import ReactNotification from "react-notifications-component";
+import axios from "axios";
+import { IoEaselOutline, IoCalendarOutline, IoDocumentOutline, IoFolderOpenOutline, IoPeopleOutline } from "react-icons/io5";
+import { LastLocationProvider } from "react-router-last-location";
 
 import Index from "./pages/Index";
 import Workspace from "./pages/Workspace";
@@ -15,21 +16,19 @@ import Task from "./pages/Task";
 import Groups from "./pages/Groups";
 import Login from "./pages/Login";
 
-import axios from "axios";
+import "./static/style/bscstrap.less";
+import Footer from "./components/navbar/Footer";
+import Group from "./pages/Group";
+import Homeworks from "./pages/Homeworks";
+import NavigationBar from "./components/navbar/NavigationBar";
 import NotFound from "./pages/NotFound";
 import PrivateRoute from "./components/routing/PrivateRoute";
 import PublicRoute from "./components/routing/PublicRoute";
-import { ASSISTANT, STUDENT, TEACHER } from "./redux/state/stateActions";
-import configureAxios from "./config/axios-config";
 import Register from "./pages/Register";
-import Homeworks from "./pages/Homeworks";
-import Group from "./pages/Group";
-import { GroupJoinDetails } from "./components/groups/join/GroupJoinDetails";
 import TaskAnswer from "./pages/TaskAnswer";
-import "./static/style/bscstrap.less";
-
-import { IoEaselOutline, IoCalendarOutline, IoDocumentOutline, IoFolderOpenOutline, IoPeopleOutline } from "react-icons/io5";
-import NavbarTab from "./components/navbar/NavbarTab";
+import configureAxios from "./config/axios-config";
+import { ASSISTANT, STUDENT, TEACHER } from "./redux/state/stateActions";
+import { GroupJoinDetails } from "./components/groups/join/GroupJoinDetails";
 
 configureAxios(axios);
 
@@ -77,6 +76,7 @@ function App() {
                     />
                     <Route component={NotFound} />
                 </Switch>
+                <Footer />
             </LastLocationProvider>
         </BrowserRouter>
     );
