@@ -86,7 +86,7 @@ const HomeworkBuilderPanel = () => {
                         <IoSchoolOutline size={35} />
                     </div>
                     <div className="homework-middle">
-                        <div><h4>Домашняя работа</h4></div>
+                        <div><h4 className="mt-0">Домашняя работа</h4></div>
                         {homework.current
                             ? <p><span className="mr-4">{`Класс: ${homework.current?.group?.name ?? "Не выбран"}`}</span><br/><span>{`Заданий: ${homework.current?.tasks?.length ?? 0}`}</span></p>
                             : <p>Объединяйте выбранные задания в домашнее и назначайте их выполнение студентам группы на определенный срок</p>

@@ -187,7 +187,7 @@ export const TaskList = ({selectedCourse}) => {
     return (
         <div className="course-content">
             <div className="d-flex justify-content-between align-items-baseline mb-2">
-                <h4>Задания</h4>
+                <h4 className="mt-0 mb-2">Задания</h4>
                 <Button
                     size="sm"
                     variant="primary"
