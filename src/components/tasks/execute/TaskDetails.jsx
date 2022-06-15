@@ -22,7 +22,7 @@ const TaskDetails = ({ task, isFetching }) => {
                 <>
                     <div className='mb-2'>
                         <div className='d-flex flex-wrap align-items-center'>
-                            <h4 className='mr-2 mb-0'>{task.name}</h4>
+                            <h4 className='mr-2 mb-0 mt-0'>{task.name}</h4>
                             {task.taskType !== null && (
                                 <div>
                                     <Badge variant='secondary' style={{ backgroundColor: getTaskTypeColor(task.taskType.id) }}>
@@ -35,8 +35,8 @@ const TaskDetails = ({ task, isFetching }) => {
                             <span className='text-secondary'></span>
                         </div>
                     </div>
-                    <div className='mb-3'>
-                        <User fetchLink={task.link('creator')} containerClasses='text-secondary ml-2' iconSize={21} />
+                    <div className='d-flex flex-row mb-3'>
+                        <small className="mr-2 mt-1">Составитель</small><User fetchLink={task.link('creator')} containerClasses='text-secondary ml-2' iconSize={21} />
                     </div>
 
                     {/* DANGER */}
