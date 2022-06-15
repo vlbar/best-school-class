@@ -25,7 +25,7 @@ function NavigationBar({ tabs }) {
                         {tabs.map(tab => {
                             const Icon = tab.icon;
                             return (
-                                <PrivateContent key={tab.name}>
+                                <PrivateContent key={tab.name} allowedStates={tab.states}>
                                     <Nav.Link as={NavLink} exact to={tab.to}>
                                         <div className="icon">
                                             <Icon size={20} />
@@ -44,7 +44,7 @@ function NavigationBar({ tabs }) {
                     {tabs.map(tab => {
                         const Icon = tab.icon;
                         return (
-                            <PrivateContent key={tab.name}>
+                            <PrivateContent key={tab.name} allowedStates={tab.states} >
                                 <Nav.Link as={NavLink} exact to={tab.to}>
                                     <div className="icon">
                                         <Icon size={30} />

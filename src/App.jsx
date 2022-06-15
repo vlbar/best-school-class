@@ -27,7 +27,7 @@ import PublicRoute from "./components/routing/PublicRoute";
 import Register from "./pages/Register";
 import TaskAnswer from "./pages/TaskAnswer";
 import configureAxios from "./config/axios-config";
-import { ASSISTANT, STUDENT, TEACHER } from "./redux/state/stateActions";
+import { ASSISTANT, STUDENT, TEACHER, types } from "./redux/state/stateActions";
 import { GroupJoinDetails } from "./components/groups/join/GroupJoinDetails";
 
 configureAxios(axios);
@@ -39,11 +39,11 @@ function App() {
                 <ReactNotification />
                 <NavigationBar
                     tabs={[
-                        { name: "Главная", icon: IoEaselOutline, to: "/" },
-                        { name: "Расписание", icon: IoCalendarOutline, to: "/shedule" },
-                        { name: "Задания", icon: IoDocumentOutline, to: "/homeworks" },
-                        { name: "Курс", icon: IoFolderOpenOutline, to: "/courses" },
-                        { name: "Группы", icon: IoPeopleOutline, to: "/groups" },
+                        { name: "Главная", icon: IoEaselOutline, to: "/", states: [TEACHER, ASSISTANT, STUDENT] },
+                        { name: "Расписание", icon: IoCalendarOutline, to: "/shedule", states:  [TEACHER, STUDENT] },
+                        { name: "Задания", icon: IoDocumentOutline, to: "/homeworks", states:  [TEACHER, ASSISTANT, STUDENT] },
+                        { name: "Курс", icon: IoFolderOpenOutline, to: "/courses", states: [TEACHER, ASSISTANT] },
+                        { name: "Группы", icon: IoPeopleOutline, to: "/groups", states:  [TEACHER, ASSISTANT, STUDENT] },
                     ]}
                 />
                 <Switch>
