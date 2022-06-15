@@ -66,7 +66,6 @@ function LoginForm() {
               >
                 <Form.Group>
                   <FastField
-                    className="form-control"
                     name="username"
                     type="text"
                     label="Имя пользователя"
@@ -82,7 +81,6 @@ function LoginForm() {
                     type="password"
                     placeholder="Введите пароль"
                     autoComplete="password"
-                    className="form-control"
                     label="Пароль"
                     errorMessage={
                       <ErrorMessage name="password" />

@@ -31,7 +31,6 @@ export const InviteCodeInputModal = ({ onClose }) => {
             <input
               ref={inputRef}
               name="joinCode"
-              className="form-control"
               value={code}
               onChange={(e) => setCode(e.target.value)}
               placeholder={"Введите код..."}

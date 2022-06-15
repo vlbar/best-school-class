@@ -66,7 +66,7 @@ export default function PasswordResetForm({ onSuccess, token }) {
             >
               <FastField
                 className={
-                  "form-control input " +
+                  "input " +
                   (errors.password && touched.password
                     ? "border-danger"
                     : touched.password
@@ -82,7 +82,7 @@ export default function PasswordResetForm({ onSuccess, token }) {
               />
               <FastField
                 className={
-                  "form-control input " +
+                  "input " +
                   (errors.passwordConfirmation && touched.passwordConfirmation
                     ? "border-danger"
                     : touched.passwordConfirmation

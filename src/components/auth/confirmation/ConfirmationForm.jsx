@@ -7,7 +7,6 @@ import "./confirmation-form.less";
 import { IoTimerOutline } from "react-icons/io5";
 import Spinner from "react-spinner-material";
 
-//FIXME
 const tokens_url =
   "https://dss-course-work.herokuapp.com/api/v2/confirmation-tokens";
 const authorize_url =

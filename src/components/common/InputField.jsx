@@ -7,7 +7,7 @@ const InputField = ({ field, form, label, errorMessage, placeholder, className, 
     if (!placeholderText) placeholderText = `Введите ${label.toLowerCase()}...`;
 
     return (
-        <div className="input-field">
+        <div className={'input-field '+ className}>
             <p className="label">{label}</p>
             <div className="input-row">
                 <input placeholder={placeholderText} {...field} {...props} />

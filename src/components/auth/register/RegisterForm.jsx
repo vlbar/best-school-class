@@ -168,7 +168,7 @@ function RegisterForm({ onSuccess }) {
                 <Col md={6}>
                   <FastField
                     className={
-                      "form-control input " +
+                      "input " +
                       (errors.firstName && touched.firstName
                         ? "border-danger"
                         : touched.firstName
@@ -188,7 +188,7 @@ function RegisterForm({ onSuccess }) {
                 <Col md={6}>
                   <FastField
                     className={
-                      "form-control input " +
+                      "input " +
                       (errors.secondName && touched.secondName
                         ? "border-danger"
                         : touched.secondName
@@ -208,7 +208,7 @@ function RegisterForm({ onSuccess }) {
               </Row>
               <FastField
                 className={
-                  "form-control input " +
+                  "input " +
                   (errors.middleName && touched.middleName
                     ? "border-danger"
                     : touched.middleName
@@ -225,7 +225,6 @@ function RegisterForm({ onSuccess }) {
                 component={InputField}
               />
               <Field
-                className="form-control"
                 name="email"
                 type="email"
                 placeholder="Введите электронную почту..."
@@ -255,7 +254,7 @@ function RegisterForm({ onSuccess }) {
               />
               <FastField
                 className={
-                  "form-control input " +
+                  "input " +
                   (errors.password && touched.password
                     ? "border-danger"
                     : touched.password
@@ -271,7 +270,7 @@ function RegisterForm({ onSuccess }) {
               />
               <FastField
                 className={
-                  "form-control input " +
+                  "input " +
                   (errors.passwordConfirmation && touched.passwordConfirmation
                     ? "border-danger"
                     : touched.passwordConfirmation
