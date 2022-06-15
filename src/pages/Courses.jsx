@@ -1,34 +1,30 @@
-import React, { useState } from 'react'
-import { Row, Col, Container } from 'react-bootstrap'
-import { CourseHierarchy } from '../components/courses/CourseHierarchy'
-import usePageTitle from '../components/feedback/usePageTitle'
-import HomeworkBuilderContext from '../components/homework/HomeworkBuilderContext'
-import HomeworkBuilderPanel from '../components/homework/HomeworkBuilderPanel'
-import { TaskList } from '../components/tasks/TaskList'
+import React, { useState } from "react";
+import { Row, Col } from "react-bootstrap";
+
+import HomeworkBuilderContext from "../components/homework/HomeworkBuilderContext";
+import HomeworkBuilderPanel from "../components/homework/HomeworkBuilderPanel";
+import Page from "../components/common/Page";
+import { CourseHierarchy } from "../components/courses/CourseHierarchy";
+import { TaskList } from "../components/tasks/TaskList";
 
 function Courses() {
-    const [selectedCourse, setSelectedCourse] = useState(undefined)
-    usePageTitle({title: 'Курсы'})
+    const [selectedCourse, setSelectedCourse] = useState(undefined);
 
     return (
-        <Container>
+        <Page name="База знаний">
             <HomeworkBuilderContext>
-                <HomeworkBuilderPanel/>
-
-                <Row style={{height: '100%'}}>
-                    <Col md={6}>
-                        <h4>База знаний</h4>
-                        <CourseHierarchy onCourseSelect={setSelectedCourse}/>
+                <Row style={{ height: "100%" }}>
+                    <Col md={5}>
+                        <CourseHierarchy onCourseSelect={setSelectedCourse} />
                     </Col>
-
-                    <Col md={6}>
-                        <h4>Задания</h4>
-                        <TaskList selectedCourse={selectedCourse}/>
+                    <Col md={7}>
+                        <HomeworkBuilderPanel />
+                        <TaskList selectedCourse={selectedCourse} />
                     </Col>
                 </Row>
             </HomeworkBuilderContext>
-        </Container>
-    )
+        </Page>
+    );
 }
 
-export default Courses
+export default Courses;

@@ -2,20 +2,17 @@ import React from "react";
 
 import "./input-field.less";
 
-const InputField = ({ field, form, label, errorMessage, placeholder, className, right, ...props }) => {
+const CustomInput = ({ field, form, label, errorMessage, placeholder, onChange, className, children, ...props }) => {
     let placeholderText = placeholder;
     if (!placeholderText) placeholderText = `Введите ${label.toLowerCase()}...`;
 
     return (
         <div className="input-field">
             <p className="label">{label}</p>
-            <div className="input-row">
-                <input placeholder={placeholderText} {...field} {...props} />
-                {right}
-            </div>
+            {children}
             {errorMessage && <p className="error-message">{errorMessage}</p>}
         </div>
     );
 };
 
-export default InputField;
+export default CustomInput;

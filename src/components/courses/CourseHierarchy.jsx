@@ -1,16 +1,17 @@
-import React, { useEffect, useState } from 'react'
-import { store } from 'react-notifications-component'
+import React, { useState } from 'react'
+import axios from 'axios'
 import { Button } from 'react-bootstrap'
-import { TreeHierarchy, treeToFlat, deleteNode } from '../hierarchy/TreeHierarchy'
+import { IoAddOutline } from "react-icons/io5";
+
+import './CourseHierarchy.less'
+import ProcessBar from '../process-bar/ProcessBar'
+import Resource from '../../util/Hateoas/Resource'
 import { CourseAddUpdateModal } from './CourseAddUpdateModal'
 import { DeleteCourseModal } from './DeleteCourseModal'
 import { LoadingCoursesList } from './LoadingCoursesList'
-import axios from 'axios'
-import './CourseHierarchy.less'
-import { createError, errorNotification } from '../notifications/notifications'
-import ProcessBar from '../process-bar/ProcessBar'
 import { SearchCourse } from './SearchCourse'
-import Resource from '../../util/Hateoas/Resource'
+import { TreeHierarchy, treeToFlat, deleteNode } from '../hierarchy/TreeHierarchy'
+import { createError } from '../notifications/notifications'
 
 const baseUrl = '/courses'
 const subCoursesPartUrl = 'sub-courses'
@@ -47,7 +48,7 @@ export const CourseHierarchy = ({onCourseSelect}) => {
                 coursePage.items = items
                 coursePage.total = res.page.totalElements
             })
-            .catch(error => createError('Не удалось загрузить список курсов.', error))
+            .catch(error => createError('Не удалось загрузить список разделов.', error))
 
         return coursePage
     }
@@ -74,7 +75,7 @@ export const CourseHierarchy = ({onCourseSelect}) => {
                 coursePage.items = items
                 coursePage.total = res.page.totalElements
             })
-            .catch(error => createError('Не удалось загрузить список подкурсов.', error))
+            .catch(error => createError('Не удалось загрузить список подразделов.', error))
 
         return coursePage
     }
@@ -88,7 +89,7 @@ export const CourseHierarchy = ({onCourseSelect}) => {
         }
         axios.put(`${baseUrl}/${courseId}/position`, data)
             .then(res => { })
-            .catch(error => createError('Не удалось переместить курс, возможно изменения не сохранятся.', error))
+            .catch(error => createError('Не удалось переместить раздел, возможно изменения не сохранятся.', error))
             .finally(() => {
                 setIsFetching(false)
             })
@@ -140,7 +141,7 @@ export const CourseHierarchy = ({onCourseSelect}) => {
                     setCourses([...courses, mapToNode(course)])
                 }
             })
-            .catch(error => createError('Не удалось добавить курс, возможно изменения не сохранятся.', error))
+            .catch(error => createError('Не удалось добавить раздел, возможно изменения не сохранятся.', error))
             .finally(() => {
                 setIsFetching(false)
                 course.name = ''
@@ -159,7 +160,7 @@ export const CourseHierarchy = ({onCourseSelect}) => {
                 applyCourseChanges(courseInTree, course)
                 setCourses(flatTreeData.filter(x => x.parentId == null))
             })
-            .catch(error => createError('Не удалось изменить курс, возможно изменения не сохранятся.', error))
+            .catch(error => createError('Не удалось изменить раздел, возможно изменения не сохранятся.', error))
             .finally(() => {
                 setIsFetching(false)
             })
@@ -175,7 +176,7 @@ export const CourseHierarchy = ({onCourseSelect}) => {
             .then(res => {
                 deleteNode(course, courses, setCourses)
             })
-            .catch(error => createError('Не удалось удалить курс, возможно изменеия не сохранятся.', error))
+            .catch(error => createError('Не удалось удалить раздел, возможно изменеия не сохранятся.', error))
             .finally(() => {
                 setIsFetching(false)
                 setCourseToDelete(undefined)
@@ -225,8 +226,19 @@ export const CourseHierarchy = ({onCourseSelect}) => {
     }
 
     return (
-        <>
-            <SearchCourse onSearching={(flag) => setIsShowHierarhy(!flag)} onCourseSelect={onCourseSelect} onAddClick={() => openAddCourseModal()} isAddDisabled={!courses || !isShowHierarhy}/>
+        <div className='courses-block'>
+            <div className='courses-header'>
+                <h5>Разделы</h5>
+                <Button 
+                    variant='primary'
+                    size="sm"
+                    onClick={() => openAddCourseModal()}
+                    disabled={!courses || !isShowHierarhy}
+                    className='pr-3'
+                ><IoAddOutline size={18} /> Добавить</Button>
+            </div>
+            
+            <SearchCourse onSearching={(flag) => setIsShowHierarhy(!flag)} onCourseSelect={onCourseSelect} />
 
             {isShowHierarhy && (
                 <div className='course-panel'>
@@ -246,9 +258,9 @@ export const CourseHierarchy = ({onCourseSelect}) => {
                         {courses 
                             ? courses.length == 0
                                 && <div className='no-courses'>
-                                    <h5>Увы, но учебные курсы еще не добавлены.</h5>
+                                    <h5>Увы, но разделы еще не добавлены.</h5>
                                     <p className='text-muted'>
-                                        Чтобы погрузится в мир удобного ведения учебного плана и базы знаний, для начала вы должны <a onClick={() => openAddCourseModal()}>добавить курс</a>.
+                                        Чтобы погрузится в мир удобного ведения учебного плана и базы знаний, для начала вы должны <a onClick={() => openAddCourseModal()}>добавить раздел</a>.
                                     </p>
                                 </div>
                             :isFetching
@@ -256,7 +268,7 @@ export const CourseHierarchy = ({onCourseSelect}) => {
                             :<div className='no-courses'>
                                 <h5>Произошла ошибка.</h5>
                                 <p className='text-muted'>
-                                    Не удалось загрузить список курсов, <a onClick={() => window.location.reload(false)}>перезагрузите страницу</a> или попробуйте позже.
+                                    Не удалось загрузить список разделов, <a onClick={() => window.location.reload(false)}>перезагрузите страницу</a> или попробуйте позже.
                                 </p>
                             </div>
                         }
@@ -271,7 +283,7 @@ export const CourseHierarchy = ({onCourseSelect}) => {
                     {courseToDelete && <DeleteCourseModal onSubmit={deleteCourse} deletedCourse={courseToDelete} onClose={() => setCourseToDelete(undefined)}/>}
                 </div>
             )}
-        </>
+        </div>
     )
 }
 

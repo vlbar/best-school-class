@@ -12,7 +12,7 @@ const SheduleButton = ({ className, ...props }) => {
 
     return (
         <div className={"shedule-container" + (className ? " " + className : "")}>
-            <Button variant="light" size="sm" className="mx-1 my-2" onClick={() => setIsPanelShow(!isPanelShow)} {...props}>
+            <Button variant="trans" size="sm" className="mx-1 my-2" onClick={() => setIsPanelShow(!isPanelShow)} {...props}>
                 <IoTodayOutline size={21} />
             </Button>
             {isPanelShow && (

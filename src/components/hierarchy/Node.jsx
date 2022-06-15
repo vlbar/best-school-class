@@ -157,7 +157,7 @@ export const Node = ({nodeData, upperNodeData, lowerNodeData, draggedNodeData, d
                         <Dropdown onToggle={(isOpen) => openDropdown(isOpen)}>
                             <Dropdown.Toggle size='sm' variant='best' id='dropdown-basic'>⋮</Dropdown.Toggle>
                             <Dropdown.Menu>
-                                {addNodeHandler && <Dropdown.Item onClick={() => addNodeHandler(nodeData)}>Добавить подкурс</Dropdown.Item>}
+                                {addNodeHandler && <Dropdown.Item onClick={() => addNodeHandler(nodeData)}>Добавить подраздел</Dropdown.Item>}
                                 {updateNodeHandler && <Dropdown.Item onClick={() => updateNodeHandler(nodeData)}>Изменить</Dropdown.Item>}
                                 {canNodeDrag && 
                                 <>

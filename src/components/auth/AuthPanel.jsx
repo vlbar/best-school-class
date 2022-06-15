@@ -82,15 +82,15 @@ function AuthPanel() {
                     {isMenuShow && (
                         <div className="profile-menu" ref={profileMenuRef}>
                             <div className="m-2">
-                                <Button variant="light" onClick={() => onMenuButtonClick()}>
+                                <Button variant="trans" onClick={() => onMenuButtonClick()}>
                                     <IoSettingsOutline size={21} className="mr-2" />
                                     Настройки
                                 </Button>
-                                <Button variant="light" onClick={() => onMenuButtonClick()}>
+                                <Button variant="trans" onClick={() => onMenuButtonClick()}>
                                     <IoHelpOutline size={21} className="mr-2" />
                                     Помощь
                                 </Button>
-                                <Button variant="light" onClick={() => onMenuButtonClick(handleLogoutSumbit)}>
+                                <Button variant="trans" onClick={() => onMenuButtonClick(handleLogoutSumbit)}>
                                     <IoExitOutline size={21} className="mr-2" />
                                     Выйти
                                 </Button>

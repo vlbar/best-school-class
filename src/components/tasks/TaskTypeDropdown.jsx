@@ -9,6 +9,7 @@ import LazySearchInput from '../search/LazySearchInput'
 import ProcessBar from '../process-bar/ProcessBar'
 import Resource from '../../util/Hateoas/Resource'
 import './TaskTypeDropdown.less'
+import SerachBar from '../search/SearchBar'
 
 const baseUrl = '/task-types'
 const baseLink = Resource.basedOnHref(baseUrl).link()
@@ -147,7 +148,7 @@ const TaskTypeDropdown = ({initialSelectedType, onSelect, placeholder = 'Тип 
                 className={'minw-0 task-types-dropdown dropdown-clean' + ((className) ? (' ' + className):'')}
                 toggle={(type) => {
                     return (
-                        <BestSelectToggle className='minw-0 d-flex flex-row align-items-center mw-100'>
+                        <BestSelectToggle className='minw-0 d-flex flex-row align-items-center mw-100 p-0' style={{ marginTop: "2px" }}>
                             <div>
                                 <div className='type-color-circle' style={{backgroundColor: getTaskTypeColor(type?.id)}}/>
                             </div>
@@ -161,11 +162,11 @@ const TaskTypeDropdown = ({initialSelectedType, onSelect, placeholder = 'Тип 
                     )
                 }}
             >
-                <div className='m-2'>
-                    <LazySearchInput
+                <div className='mx-2 mb-2'>
+                    <SerachBar
                         autoFocus
                         className='w-100'
-                        placeholder='Название для поиска...'
+                        placeholder='Поиск типа задания...'
                         onChange={(e) => pagination.current.name = e.target.value}
                         onSubmit={(value) => searchType(value)}
                         onEmpty={() => searchType('')}
@@ -188,7 +189,7 @@ const TaskTypeDropdown = ({initialSelectedType, onSelect, placeholder = 'Тип 
                     {taskTypes && taskTypes.map(taskType => 
                         <BestSelectItem key={taskType.id} item={taskType}>
                             <BestItemSelector className='d-flex pl-2'>
-                                <div><div className='type-color-circle' style={{backgroundColor: getTaskTypeColor(taskType.id)}}/></div>
+                                <div className='d-flex align-items-center'><div className='type-color-circle' style={{backgroundColor: getTaskTypeColor(taskType.id)}}/></div>
                                 <span className='text-truncate' title={taskType.name}>{taskType.name}</span>
                             </BestItemSelector>
                             {taskType.creatorId !== null && 
@@ -204,8 +205,8 @@ const TaskTypeDropdown = ({initialSelectedType, onSelect, placeholder = 'Тип 
                         </BestSelectItem>
                     )}
                 </BestSelectList>
-                <div className='m-2'>
-                    <Button size='sm' variant='outline-secondary' className='w-100' onClick={() => showAddTaskTypeModal()}>
+                <div className='mx-2 mt-2 mb-0'>
+                    <Button size='sm' variant='light' className='w-100' onClick={() => showAddTaskTypeModal()}>
                         Добaвить
                     </Button>
                 </div>

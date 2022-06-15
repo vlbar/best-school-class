@@ -12,7 +12,7 @@ const NotificationButton = ({ className, ...props }) => {
 
     return (
         <div className={"notification-container" + (className ? " " + className : "")}>
-            <Button variant="light" size="sm" className="mx-1 my-2" onClick={() => setIsPanelShow(!isPanelShow)} {...props}>
+            <Button variant="trans" size="sm" className="mx-1 my-2" onClick={() => setIsPanelShow(!isPanelShow)} {...props}>
                 <IoNotificationsOutline size={21} />
             </Button>
             {isPanelShow && (

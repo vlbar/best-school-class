@@ -8,6 +8,7 @@ import { createError } from '../../notifications/notifications'
 import { selectState } from '../../../redux/state/stateSelector'
 import { useSelector } from 'react-redux'
 import './GroupSelect.less'
+import SerachBar from '../../search/SearchBar'
 
 const baseUrl = '/groups'
 const baseLink = Resource.basedOnHref(baseUrl).link()
@@ -66,18 +67,20 @@ const GroupSelect = ({onSelect, initialSelectedGroup, placeholder, ...props}) =>
             className={(props.className ? props.className : 'dropdown-clean')}
             toggle={(group) => {
                 return (
-                    <BestSelectToggle className='d-flex align-items-center mw-100' size={props.size} variant={props.variant ? props.variant : 'white'}>
-                        {(group) && <div><div className='select-group-circle' style={{backgroundColor: group.color ?? '#343a40'}}/></div>}
-                        <span className='text-truncate'>{group ? group.name : 'Класс'}</span>
+                    <BestSelectToggle className='d-flex justify-content-between align-items-center w-100' size={props.size} variant={props.variant ? props.variant : 'white'}>
+                        <div className="d-flex flex-row align-items-center">
+                            {(group) && <div className='select-group-circle' style={{backgroundColor: group.color ?? '#343a40'}}/>}
+                            <span className='text-truncate'>{group ? group.name : 'Группа'}</span>
+                        </div>
                     </BestSelectToggle>
                 )
             }}
         >
-            <div className='m-2'>
-                <LazySearchInput
+            <div className='mb-2 mx-2'>
+                <SerachBar
                     autoFocus
                     className='w-100'
-                    placeholder={placeholder ?? 'Название для поиска...'}
+                    placeholder={placeholder ?? 'Поиск группы...'}
                     onSubmit={(value) => searchGroup(value)}
                     onEmpty={() => searchGroup('')}
                     onTimerStart={() => {
@@ -98,9 +101,7 @@ const GroupSelect = ({onSelect, initialSelectedGroup, placeholder, ...props}) =>
                 {groups && groups.map(group => 
                     <BestSelectItem key={group.id} item={group}>
                         <BestItemSelector className='d-flex pl-2'>
-                            <div>
-                                <div className='select-group-circle' style={{backgroundColor: group.color ?? '#343a40'}}/>
-                            </div>
+                            <div className='select-group-circle' style={{backgroundColor: group.color ?? '#343a40'}}/>
                             <span>{group.name}</span>
                         </BestItemSelector>
                     </BestSelectItem>

@@ -18,6 +18,7 @@ const HomeworkList = ({
   onSelect,
   onClick,
   canExpandTasks = true,
+  variant = "light",
   ...props
 }) => {
   // fetching
@@ -87,7 +88,7 @@ const HomeworkList = ({
   };
 
   return (
-    <div {...props}>
+    <div {...props} className={`homework-list-${variant} ${props.className}`}>
       <HomeworkListHeader onSelectFilter={onSelectFilterHandler} />
       <div className="homework-list">
         {isFetching && (

@@ -11,7 +11,7 @@ const orderBy = {
 
 const HomeworkListHeader = ({onSelectFilter}) => {
     const onSelectGroup = (group) => {
-        onSelectFilter({groupId: group?.id})
+        onSelectFilter({groupId: group?.id ?? null})
     }
 
     const onSelectSort = (sort) => {
@@ -19,20 +19,17 @@ const HomeworkListHeader = ({onSelectFilter}) => {
     }
 
     return (
-        <div className='homework-list-header justify-content-between'>
-            <span className='mt-2'>ДЗ</span>
-            <div className='d-flex'>
-                <GroupSelect
-                    onSelect={onSelectGroup}
-                />
-                <SortOrder
-                    title='Сортировка'
-                    orders={orderBy}
-                    initialOrder={'openingDate-desc'}
-                    onSelect={onSelectSort}
-                    className='btn-clean'
-                />
-            </div>
+        <div className={'homework-list-header'}>
+            <GroupSelect
+                onSelect={onSelectGroup}
+            />
+            <SortOrder
+                title='Сортировка'
+                orders={orderBy}
+                initialOrder={'openingDate-desc'}
+                onSelect={onSelectSort}
+                className='btn-clean mr-2'
+            />
         </div>
     )
 }

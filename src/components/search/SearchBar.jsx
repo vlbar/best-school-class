@@ -9,8 +9,6 @@ const SerachBar = ({
     canSubmit = true,
     initialValue = "",
     isValid,
-    disabled,
-    name,
     className,
     onSubmit,
     onChange,
@@ -19,7 +17,8 @@ const SerachBar = ({
     onTimerStart,
     emptyAfterValue,
     placeholder,
-    children
+    children,
+    ...props
 }) => {
     const [value, setValue] = useState(initialValue);
 
@@ -32,6 +31,10 @@ const SerachBar = ({
             debounceChange(value);
         }
     }, [canSubmit]);
+
+    useEffect(() => {
+        notSubmitAfterValue.current = emptyAfterValue
+    }, [emptyAfterValue])
 
     const onChagneHadler = event => {
         let newValue = event.target.value;
@@ -75,8 +78,9 @@ const SerachBar = ({
         <Form onSubmit={handleSubmit} className={className}>
             <div className="search-bar">
                 <IoSearchOutline size={21} className="search" />
-                <input type="text" placeholder={placeholder} value={value} onChange={onChagneHadler} onBlur={() => onBlur?.(value)} />
+                <input type="text" placeholder={placeholder} value={value} onChange={onChagneHadler} onBlur={() => onBlur?.(value)} {...props} />
                 {value.length > 0 && <IoCloseOutline size={18} className="clear" onClick={() => onChagneHadler({ target: { value: "" } })} />}
+                {children}
             </div>
         </Form>
     );

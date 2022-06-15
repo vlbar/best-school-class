@@ -11,6 +11,7 @@
 }
 
 @primary: #298AE5;
+@primary-light: #54A1EA;
 @primary-hover: #1F77C9;
 @danger: #DC3545;
 
@@ -52,7 +53,7 @@ a {
 }
 
 .btn-sm {
-    padding: 0.25rem;
+    padding: 0.25rem 0.5rem;
 }
 
 .btn-primary {
@@ -70,6 +71,38 @@ a {
 
     svg {
         color: @white;
+    }
+}
+
+.btn-light {
+    background-color: @background !important;
+    color: @darkGray;
+
+    &:hover {
+        background-color: @background-light;
+    }
+
+    &:active,
+    &:focus {
+        background-color: @background-ultralight;
+    }
+
+    svg {
+        color: @darkGray;
+    }
+}
+
+.btn-trans {
+    background-color: transparent;
+    border-width: 0;
+    border-radius: 10px !important;
+
+    &:hover {
+        background-color: @background;
+    }
+
+    &:focus {
+        box-shadow: none !important;
     }
 }
 
@@ -101,6 +134,16 @@ a {
     &:focus {
         box-shadow: none !important;
     }
+}
+
+.border {
+    border: 0 !important;
+    background-color: @background-light;
+}
+
+.rounded {
+    border-radius: 20px !important;
+    overflow: hidden;
 }
 
 .dropdown-menu {

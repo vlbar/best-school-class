@@ -5,6 +5,7 @@ import * as Yup from 'yup'
 
 import './TaskTypeAddUpdateModal.less'
 import ProcessBar from '../process-bar/ProcessBar'
+import InputField from '../common/InputField'
 
 const taskTypeSchema = Yup.object().shape({
     name: Yup.string()
@@ -52,18 +53,15 @@ export const TaskTypeAddUpdateModal = ({onSubmit, onClose, isFetching = false, u
                             submitForm();
                         }}>
                             <Modal.Body>
-                                <Form.Group controlId='formBasicEmail' style={{marginBottom: 0}}>
-                                    <Form.Label>Название типа задания</Form.Label>
-                                    <Field 
-                                        as={Form.Control} 
-                                        name='name' 
-                                        type='text'
-                                        laceholder="Введите название типа задания..." 
-                                        isInvalid={touched.name && errors.name}/>
-                                    <Form.Control.Feedback type="invalid">
-                                        {errors.name}
-                                    </Form.Control.Feedback>
-                                </Form.Group>
+                                <Field 
+                                    as={Form.Control} 
+                                    name='name' 
+                                    type='text' 
+                                    isInvalid={touched.name && errors.name}
+                                    label="Название типа задания"
+                                    component={InputField}
+                                    errorMessage={errors.name}
+                                />
                             </Modal.Body>
 
                             <Modal.Footer>

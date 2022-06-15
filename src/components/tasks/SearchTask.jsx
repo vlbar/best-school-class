@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import LazySearchInput from '../search/LazySearchInput'
 import './SearchTask.less'
 import useBestValidation from './edit/useBestValidation'
+import SerachBar from '../search/SearchBar'
+import Spinner from 'react-spinner-material'
 
 //validation
 const searchValidationSchema = {
@@ -12,7 +14,7 @@ const searchValidationSchema = {
     }
 }
 
-export const SearchTask = ({onSubmit, setIsFetching, emptyAfterTaskName}) => {
+export const SearchTask = ({onSubmit, setIsFetching, emptyAfterTaskName, isFetching}) => {
     const [searchedTaskName, setSearchedTaskName] = useState('')
     const searchValidation = useBestValidation(searchValidationSchema)
 
@@ -29,25 +31,28 @@ export const SearchTask = ({onSubmit, setIsFetching, emptyAfterTaskName}) => {
     let nameValdiationErros = searchValidation.errors.name
     return (<>
         <div className='d-flex flex-row w-100'>        
-            <LazySearchInput
+            <SerachBar
                 name='name'
-                placeholder='Введите название задания'
+                placeholder='Поиск задания...'
                 autoComplete='off'
                 onChange={(e) => {
                     searchValidation.blurHandle(e)
                     setSearchedTaskName(e.target.value)
                 }}
-                isCanSubmit={!nameValdiationErros}
-                isInvalid={nameValdiationErros}
+                canSubmit={!nameValdiationErros}
                 onTimerStart={(name) => { if(searchValidation.validate({name}) && name.trim().length > 0) setIsFetching(true) }}
                 onSubmit={(value) => submitSearchParams({name: value})}
                 onEmpty={() => submitSearchParams({name: ''})}
                 emptyAfterValue={emptyAfterTaskName}
+                className="w-100"
             >
                 {nameValdiationErros && <div className='invalid-tooltip'>
                     {nameValdiationErros}
                 </div>}
-            </LazySearchInput>
+                {isFetching && <div className="mr-3">
+                    <Spinner radius={21} color="#298AE5" stroke={2} visible={true} />
+                </div>}
+            </SerachBar>
         </div>
     </>)
 }

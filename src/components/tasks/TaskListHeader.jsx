@@ -36,12 +36,11 @@ const TaskListHeader = ({submitSearchParams, selectedTasks, isSelectedAll, onSel
                 onChange={() => onSelectAll()}
             />
 
-            <div className={selectedTasks.length == 0 ? 'd-flex justify-content-end' : 'none-parent'} style={{ width: '98%' }}>
+            <div className={selectedTasks.length == 0 ? 'd-flex justify-content-end align-items-center' : 'none-parent'} style={{ width: '98%' }}>
                 <TaskTypeDropdown
-                    className='btn-clean'
+                    className='btn-clean mr-4'
                     onSelect={onSelectType}
                 />
-
                 <SortOrder
                     orders={orderBy}
                     initialOrder={'name-asc'}
@@ -54,7 +53,7 @@ const TaskListHeader = ({submitSearchParams, selectedTasks, isSelectedAll, onSel
                 <>
                     <span className='selected-task-counter'>{selectedTasks.length} выделено</span>
                     <Dropdown className='dropdown-clean'>
-                        <Dropdown.Toggle variant='white' id='dropdown-basic'>Действие</Dropdown.Toggle>
+                        <Dropdown.Toggle variant='white' id='dropdown-basic' className="p-0">Действие</Dropdown.Toggle>
                         <Dropdown.Menu>
                             <Dropdown.Item onClick={() => addSelectedTasksToHomework()}>Добавить в домашнее</Dropdown.Item>
                             <Dropdown.Item>Переместить</Dropdown.Item>
