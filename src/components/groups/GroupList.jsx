@@ -49,7 +49,7 @@ function GroupList({ groups, user, ...props }) {
                                 </div>
                                 <div className="d-flex justify-content-between align-items-center text-muted">
                                     <div>
-                                        <small>{group.studentsLimit} участников</small>
+                                        <small>{group.studentsCount}/{group.studentsLimit} учеников</small>
                                     </div>
                                     <div>
                                         <Button
