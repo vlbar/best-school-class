@@ -2,7 +2,7 @@ import React from "react";
 
 import "./input-field.less";
 
-const InputField = ({ field, form, label, errorMessage, placeholder, onChange, className, right, ...props }) => {
+const InputField = ({ field, form, label, errorMessage, placeholder, className, right, ...props }) => {
     let placeholderText = placeholder;
     if (!placeholderText) placeholderText = `Введите ${label.toLowerCase()}...`;
 

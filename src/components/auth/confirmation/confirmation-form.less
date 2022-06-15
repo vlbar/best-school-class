@@ -1,0 +1,39 @@
+.confirmation-form {
+    max-width: 500px;
+}
+
+.confirmation-info {
+    line-height: 19px !important;
+}
+
+.custom-styles {
+    --ReactInputVerificationCode-itemWidth: 2.5rem;
+    --ReactInputVerificationCode-itemHeight: 3.5rem;
+  }
+  
+  .custom-styles .ReactInputVerificationCode__item {
+    position: relative;
+    color: #262626;
+    font-weight: 500;
+  }
+  
+  .custom-styles .ReactInputVerificationCode__item,
+  .custom-styles .ReactInputVerificationCode__item.is-active {
+    box-shadow: none;
+  }
+  
+  .custom-styles .ReactInputVerificationCode__item:after {
+    content: "";
+    display: block;
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    height: 2px;
+    background-color: #ebebeb;
+    transition: background-color 0.2s ease-out;
+  }
+  
+  .custom-styles .ReactInputVerificationCode__item.is-active:after {
+    background-color: #046cde;
+  }
