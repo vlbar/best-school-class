@@ -29,6 +29,7 @@ import TaskAnswer from "./pages/TaskAnswer";
 import configureAxios from "./config/axios-config";
 import { ASSISTANT, STUDENT, TEACHER, types } from "./redux/state/stateActions";
 import { GroupJoinDetails } from "./components/groups/join/GroupJoinDetails";
+import Recovery from "./pages/Recovery";
 
 configureAxios(axios);
 
@@ -50,6 +51,7 @@ function App() {
                     <Route path={"/"} exact component={Index} />
                     <PublicRoute path={"/login"} component={Login} />
                     <PublicRoute path={"/register"} component={Register} />
+                    <PublicRoute path={"/recovery"} component={Recovery} />
                     <PrivateRoute exact path={"/answers"} component={Answers} allowedStates={[ASSISTANT, TEACHER]} />
 
                     <PrivateRoute exact path={"/homeworks/"} component={Homeworks} />

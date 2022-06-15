@@ -39,58 +39,85 @@ function LoginForm() {
     };
 
     return (
-        <Container className="login-form">
-            <h4>Войти</h4>
-            <p className="other-way" onClick={() => history.push("/register")}>
-                Нет аккаунта? <span className="text-primary">Зарегистрироваться</span>
-            </p>
-            <div className="form-wrapper">
-                {errorMessage && <p className="alert alert-danger text-center">{errorMessage}</p>}
-                <Formik
-                    initialValues={{
-                        username: "",
-                        password: "",
-                    }}
-                    validationSchema={loginSchema}
-                    onSubmit={submit}>
-                    {({ dirty, isValid, isSubmitting, submitForm }) => (
-                        <Form
-                            onSubmit={e => {
-                                e.preventDefault();
-                                if (!isSubmitting) submitForm();
-                            }}>
-                            <Form.Group>
-                                <FastField className="form-control" name="username" type="text" label="Имя пользователя" component={InputField} />
-                                <Form.Text muted>
-                                    <ErrorMessage component="div" name="username" className="text-danger" />
-                                </Form.Text>
-                            </Form.Group>
-                            <Form.Group>
-                                <FastField
-                                    name="password"
-                                    type="password"
-                                    placeholder="Введите пароль"
-                                    autoComplete="password"
-                                    className="form-control"
-                                    label="Пароль"
-                                    component={InputField}
-                                />
-                                <Form.Text muted>
-                                    <ErrorMessage component="div" name="password" className=" text-danger" />
-                                </Form.Text>
-                            </Form.Group>
-                            <Form.Group>
-                                <Button variant="primary" className="btn-block" type="submit" disabled={isSubmitting || !(dirty && isValid)}>
-                                    <div className="w-100 d-flex justify-content-center">
-                                        {status === "loading" ? <Spinner radius={21} color="#ECF0F6" stroke={2} /> : "Войти"}
-                                    </div>
-                                </Button>
-                            </Form.Group>
-                        </Form>
-                    )}
-                </Formik>
-            </div>
-        </Container>
+      <Container className="login-form">
+        <h4>Войти</h4>
+        <p className="text-muted" onClick={() => history.push("/register")}>
+          Нет аккаунта? <span className="text-primary text-link">Зарегистрироваться</span>
+        </p>
+        <div className="form-wrapper">
+          {errorMessage && (
+            <p className="alert alert-danger text-center">{errorMessage}</p>
+          )}
+          <Formik
+            initialValues={{
+              username: "",
+              password: "",
+            }}
+            validationSchema={loginSchema}
+            validateOnChange={false}
+            onSubmit={submit}
+          >
+            {({ dirty, isValid, isSubmitting, submitForm }) => (
+              <Form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!isSubmitting) submitForm();
+                }}
+              >
+                <Form.Group>
+                  <FastField
+                    className="form-control"
+                    name="username"
+                    type="text"
+                    label="Имя пользователя"
+                    errorMessage={
+                      <ErrorMessage name="username" />
+                    }
+                    component={InputField}
+                  />
+                </Form.Group>
+                <Form.Group>
+                  <FastField
+                    name="password"
+                    type="password"
+                    placeholder="Введите пароль"
+                    autoComplete="password"
+                    className="form-control"
+                    label="Пароль"
+                    errorMessage={
+                      <ErrorMessage name="password" />
+                    }
+                    component={InputField}
+                  />
+                </Form.Group>
+                <p
+                  className="text-right text-muted"
+                  onClick={() => history.push("/recovery")}
+                >
+                  Забыли пароль?{" "}
+                  <span className="text-link text-primary">Восстановить</span>
+                </p>
+                <Form.Group>
+                  <Button
+                    variant="primary"
+                    className="btn-block"
+                    type="submit"
+                    disabled={isSubmitting || !(dirty && isValid)}
+                  >
+                    <div className="w-100 d-flex justify-content-center">
+                      {status === "loading" ? (
+                        <Spinner radius={21} color="#ECF0F6" stroke={2} />
+                      ) : (
+                        "Войти"
+                      )}
+                    </div>
+                  </Button>
+                </Form.Group>
+              </Form>
+            )}
+          </Formik>
+        </div>
+      </Container>
     );
 }
 

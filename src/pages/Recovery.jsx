@@ -1,17 +1,25 @@
-import React from "react";
+import React, { useState } from "react";
 import { useEffect } from "react";
-import { useState } from "react";
 import { Container } from "react-bootstrap";
 import { useHistory } from "react-router-dom";
 import ConfirmationForm from "../components/auth/confirmation/ConfirmationForm";
-import RegisterForm from "../components/auth/register/RegisterForm";
+
+import LoginCard from "../components/auth/LoginCard";
+import PasswordResetForm from "../components/auth/password-reset/PasswordResetForm";
+import RecoveryForm from "../components/auth/recovery/RecoveryForm";
 import useQuery from "../components/common/useQuery";
 import { addInfoNotification } from "../components/notifications/notifications";
-import LoginCard from "./../components/auth/LoginCard";
 
-function Register() {
+function Recovery() {
   const query = useQuery();
   const history = useHistory();
+
+  const [step, setStep] = useState({
+    name: "recovery",
+    data: {
+      onSuccess: onRecovery,
+    },
+  });
 
   useEffect(() => {
     const confirmData = query.get("code");
@@ -28,27 +36,34 @@ function Register() {
     }
   }, [query]);
 
-  const [step, setStep] = useState({
-    name: "register",
-    data: {
-      onSuccess: onRegister,
-    },
-  });
-
-  function onRegister(account) {
+  function onRecovery(token) {
     setStep({
       name: "confirm",
       data: {
-        email: account.email,
+        email: token.email,
         onSuccess: onConfirmation,
       },
     });
   }
 
-  function onConfirmation() {
+  function onConfirmation(authentication) {
+    setTimeout(
+      () =>
+        setStep({
+          name: "reset",
+          data: {
+            token: authentication.token,
+            onSuccess: onReset,
+          },
+        }),
+      0
+    );
+  }
+
+  function onReset() {
     addInfoNotification(
       "Теперь вы можете войти в свой аккаунт, введя ранее указанные данные.",
-      "Вы были успешно зарегистрированы!"
+      "Пароль был успешно сброшен!"
     );
     history.replace("/login");
   }
@@ -56,11 +71,12 @@ function Register() {
   return (
     <Container>
       <LoginCard>
-        {step.name === "register" && <RegisterForm {...step.data} />}
+        {step.name === "recovery" && <RecoveryForm {...step.data} />}
         {step.name === "confirm" && <ConfirmationForm {...step.data} />}
+        {step.name === "reset" && <PasswordResetForm {...step.data} />}
       </LoginCard>
     </Container>
   );
 }
 
-export default Register;
+export default Recovery;
