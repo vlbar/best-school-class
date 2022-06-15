@@ -1,3 +1,5 @@
+@import '../../../static/style/bscstrap.less';
+
 .task-duration {
     input {
         border-top-right-radius: 0;
@@ -25,7 +27,7 @@
     padding-bottom: 0.5Rem;
 
     &.show {
-        border-bottom: 1px solid #dee2e6!important;
+        border-bottom: 1px solid #dee2e6 !important;
         top: 0px;
 
         .dropdown-menu.show {
@@ -47,20 +49,20 @@
     width: 100%;
     text-align: right;
     margin-right: 1Rem;
-    margin-top: 0.5Rem;
     font-size: 14px;
 }
 
 .trans-span {
     opacity: 1;
     transition: opacity 0.1s;
+
     &.hide {
         opacity: 0;
         transition: opacity 0.4s;
     }
 }
 
-.dropdown-toggle-split.btn-outline-primary {
+.dropdown-toggle-split.btn-primary {
     color: #007bff;
 
     &:hover {
@@ -81,4 +83,23 @@
 .btn-white {
     border: 1px solid #ced4da;
     border-radius: .25rem;
+}
+
+.jodit-container {
+    border: 0 !important;
+    border-radius: 10px !important;
+    background-color: @background  !important;
+
+    .jodit-workplace,
+    .jodit-wysiwyg {
+        background-color: transparent !important;
+    }
+}
+
+h4 {
+    font-weight: bold;
+    font-size: 24px;
+    line-height: 29px;
+    margin-top: 20px;
+    margin-bottom: 20px;
 }

@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { Container } from "react-bootstrap";
 import { useSelector } from "react-redux";
 import { useHistory, useParams } from "react-router-dom";
+import Page from "../components/common/Page";
 
 import usePageTitle from "../components/feedback/usePageTitle";
 import HomeworkDetails from "../components/homework/HomeworkDetails";
@@ -11,26 +12,25 @@ import { STUDENT } from "../redux/state/stateActions";
 import { selectState } from "../redux/state/stateSelector";
 
 function Homeworks() {
-  const { homeworkId } = useParams();
-  const history = useHistory();
-  const state = useSelector(selectState);
-  usePageTitle({ title: homeworkId ? "Домашняя работа" : "Задания" });
+    const { homeworkId } = useParams();
+    const history = useHistory();
+    const state = useSelector(selectState);
+    usePageTitle({ title: homeworkId ? "Домашняя работа" : "Задания" });
 
-  return homeworkId ? (
-    <Container>
-      <HomeworkDetails homeworkId={homeworkId} />
-    </Container>
-  ) : (
-    <Container>
-      <h4 className="my-3">Текущие задания</h4>
-      <HomeworkList
-        role={state.state}
-        className="high-homework-list"
-        canExpandTasks={false}
-        onClick={(hw) => history.push(`/homeworks/${hw.id}`)}
-      />
-    </Container>
-  );
+    return homeworkId ? (
+        <Container>
+            <HomeworkDetails homeworkId={homeworkId} />
+        </Container>
+    ) : (
+        <Page name="Текущие задания">
+            <HomeworkList
+                role={state.state}
+                className="high-homework-list"
+                canExpandTasks={false}
+                onClick={hw => history.push(`/homeworks/${hw.id}`)}
+            />
+        </Page>
+    );
 }
 
 export default Homeworks;

@@ -70,6 +70,7 @@ export const QuestionsList = ({ questionsLink }) => {
         movedQuestions = arrayMove(movedQuestions, oldIndex, newIndex)
         movedQuestion.position = toPosition
         setQuestions([...movedQuestions])
+        setQuestionToChange(oldIndex)
     }
 
     const deleteQuestion = (question) => {
@@ -152,7 +153,7 @@ export const QuestionsList = ({ questionsLink }) => {
             }
             {message && <div className='task-message-container'>{message}</div>}
             <Button 
-                variant='outline-primary mb-4' 
+                variant='primary mb-4' 
                 className='w-100'
                 onClick={() => addQuestionAfter(questions[questions.length - 1]?.position + 1 || 1)}
                 disabled={isFetching || !questions || nextPage}

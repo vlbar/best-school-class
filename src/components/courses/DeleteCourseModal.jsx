@@ -7,7 +7,7 @@ export const DeleteCourseModal = ({deletedCourse, onSubmit, onClose}) => {
             <Modal show={true} onHide={onClose}>
                 <Modal.Header closeButton>
                     <Modal.Title>
-                        Удалить курс
+                        Удалить раздел
                     </Modal.Title>
                 </Modal.Header>
                     <Form onSubmit={(e) => {
@@ -15,7 +15,7 @@ export const DeleteCourseModal = ({deletedCourse, onSubmit, onClose}) => {
                         onSubmit(deletedCourse)
                     }}>
                         <Modal.Body>
-                            <Form.Label>Вы дейтсвительно хотите удалить курс '{deletedCourse.name}' и <u className='text-danger'> все его подкурсы и задания</u></Form.Label>
+                            <Form.Label>Вы дейтсвительно хотите удалить раздел '{deletedCourse.name}' и <u className='text-danger'> все его подразделы и задания</u></Form.Label>
                         </Modal.Body>
 
                         <Modal.Footer>

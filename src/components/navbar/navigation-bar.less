@@ -1,4 +1,132 @@
+@import '../../static/style/bscstrap.less';
+
 .navbar-nav a {
     padding-right: 1rem !important;
     padding-left: 1rem !important;
+}
+
+.navbar {
+    padding: 5px 50px;
+}
+
+@media screen and (max-width: 992px) {
+    .navbar {
+        padding: 5px 5px;
+    }
+}
+
+@media screen and (max-width: 1200px) {
+    .bg-trans {
+        .nav-link {
+            padding: 0.5rem 0.5rem !important;
+
+            .icon {
+                display: none !important;
+            }
+
+            .label {
+                display: inline-block;
+                transition: all .2s ease-in;
+                margin-right: 0px;
+
+                transform: translateX(0px) !important;
+            }
+        }
+    }
+}
+
+.bg-trans {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.10);
+
+    .navbar-brand {
+        font-size: 18px;
+
+        img {
+            margin-right: 20px;
+        }
+
+        a {
+            padding: 0;
+            color: @darkGray  !important;
+            text-decoration: none !important;
+        }
+
+        span {
+            display: inline-block;
+            padding-top: 6px;
+        }
+    }
+
+    .navbar-nav a {
+        color: @darkGray  !important;
+    }
+
+    .nav-link {
+        font-size: 14px;
+        border-radius: 10px;
+        margin-right: 0.25rem;
+
+        &:hover {
+            background-color: @background;
+        }
+
+        .icon {
+            display: inline-block;
+            margin-right: 10px;
+            transition: all .2s ease-in;
+
+            transform: translateX(10px);
+            opacity: 0;
+        }
+
+        .label {
+            display: inline-block;
+            transition: all .2s ease-in;
+
+            transform: translateX(-15px);
+        }
+
+        &.active {
+            background-color: @background;
+
+            .icon {
+                opacity: 1;
+                transform: translateX(0px);
+            }
+
+            .label {
+                transform: translateX(0px);
+            }
+        }
+    }
+}
+
+.navbar-bottom {
+    display: flex;
+    flex-direction: row;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+
+    background-color: @white;
+    z-index: 999;
+    border-top: 1px solid rgba(0, 0, 0, 0.10);
+
+    .nav-link {
+        flex: 1;
+
+        &:not(.active) {
+            color: @silver;
+        }
+
+        .icon {
+            display: flex;
+            justify-content: center;
+        }
+
+        .label {
+            font-size: 10px;
+            text-align: center;
+        }
+    }
 }

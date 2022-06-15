@@ -1,15 +1,33 @@
+@import '../../static/style/bscstrap.less';
+
+.course-content {
+    background-color: @background-light;
+    border-radius: 20px;
+    padding: 16px;
+    margin-top: 10px;
+
+    h4 {
+        font-weight: bold;
+        font-size: 18px;
+        line-height: 22px;
+        color: @darkGray;
+    }
+}
+
 .task-list {
     display: flex;
     flex-direction: column;
-    border: 1px solid #dee2e6;
+
+    height: calc(70vh - 89px);
 }
 
 .task-table-item {
     padding: .75rem;
-    border-bottom: 1px solid #dee2e6;
+    border-radius: 10px;
+    margin-bottom: 6px;
 
     &:hover {
-        background-color: rgba(0,0,0,.05);
+        background-color: @background;
     }
 }
 

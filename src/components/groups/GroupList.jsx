@@ -1,91 +1,76 @@
 import React from "react";
-import {
-  Button,
-  ButtonGroup,
-  Card,
-  Col,
-  Form,
-  Row,
-  OverlayTrigger,
-  Tooltip,
-} from "react-bootstrap";
-import Moment from "react-moment";
-import { Link, useHistory } from "react-router-dom";
-import getContrastColor from "../../util/ContrastColor";
+import { Button, Col, Row, OverlayTrigger, Tooltip } from "react-bootstrap";
+import { IoKeyOutline, IoListOutline, IoBookOutline } from "react-icons/io5";
+import { useHistory } from "react-router-dom";
+
 import "./GroupList.less";
+import getContrastColor from "../../util/ContrastColor";
 
 function GroupList({ groups, user, ...props }) {
-  const history = useHistory();
+    const history = useHistory();
 
-  return (
-    <Row {...props}>
-      {groups.map((group, index) => {
-        return (
-          <Col md={4} xs={12} className="mb-4" key={index}>
-            <Card key={index} className="h-100">
-              <Link
-                to={`/groups/${group.id}`}
-                className="text-break"
-                style={{
-                  color: getContrastColor(group.color ?? "#343a40"),
-                }}
-              >
-                <Card.Header
-                  className="p-4 d-flex justify-content-between align-items-center"
-                  style={{
-                    backgroundColor: group.color ?? "#343a40",
-                  }}
-                >
-                  <div>{group.name}</div>
-                  {user && (
-                    <div>
-                      {group.creatorId === user.id && (
-                        <OverlayTrigger
-                          placement="top"
-                          delay={{ show: 250, hide: 400 }}
-                          overlay={(props) => (
-                            <Tooltip {...props}>
-                              Вы являетесь создателем группы
-                            </Tooltip>
-                          )}
-                        >
-                          <i className="fas fa-key p-1"></i>
-                        </OverlayTrigger>
-                      )}
-                    </div>
-                  )}
-                </Card.Header>
-              </Link>
-              <Card.Body>
-                <Card.Text>
-                  <small>Ничего нового :(</small>{" "}
-                </Card.Text>
-              </Card.Body>
-              <Card.Footer className="bg-white d-flex justify-content-between">
-                <Form.Text muted>
-                  <Moment locale="ru" fromNow>
-                    {group.membership.joinDate}
-                  </Moment>
-                </Form.Text>
-                <ButtonGroup>
-                  <Button
-                    variant="outline-dark"
-                    size="sm"
-                    onClick={() => history.push(`/groups/${group.id}/tasks`)}
-                  >
-                    <i className="fas fa-tasks"></i>
-                  </Button>
-                  <Button variant="outline-dark" size="sm">
-                    <i className="fas fa-book"></i>
-                  </Button>
-                </ButtonGroup>
-              </Card.Footer>
-            </Card>
-          </Col>
-        );
-      })}
-    </Row>
-  );
+    const onClickPropaginatedLink = (e, to) => {
+        if (!e) var e = window.event;
+        e.cancelBubble = true;
+        if (e.stopPropagation) e.stopPropagation();
+
+        history.push(to);
+    };
+
+    return (
+        <Row {...props}>
+            {groups.map((group, index) => {
+                return (
+                    <Col md={4} xs={12} className="mb-4" key={index}>
+                        <div className="group-card" onClick={event => onClickPropaginatedLink(event, `/groups/${group.id}`)}>
+                            <div
+                                className="group-icon"
+                                style={{
+                                    backgroundColor: group.color ?? "#343a40",
+                                    color: getContrastColor(group.color ?? "#343a40"),
+                                }}>
+                                {group.name[0]}
+                            </div>
+                            <div className="group-info">
+                                <div className="d-flex justify-content-between">
+                                    <span className="group-name">{group.name}</span>
+                                    {user && (
+                                        <div>
+                                            {group.creatorId === user.id && (
+                                                <OverlayTrigger
+                                                    placement="top"
+                                                    delay={{ show: 250, hide: 400 }}
+                                                    overlay={props => <Tooltip {...props}>Вы являетесь создателем группы</Tooltip>}>
+                                                    <IoKeyOutline size={16} />
+                                                </OverlayTrigger>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="d-flex justify-content-between align-items-center text-muted">
+                                    <div>
+                                        <small>{group.studentsCount}/{group.studentsLimit} учеников</small>
+                                    </div>
+                                    <div>
+                                        <Button
+                                            variant="light"
+                                            size="sm"
+                                            className="px-2"
+                                            onClick={event => onClickPropaginatedLink(event, `/groups/${group.id}/tasks`)}>
+                                            <IoListOutline size={16} />
+                                        </Button>
+                                        <Button variant="light" size="sm" className="px-2">
+                                            <IoBookOutline size={16} />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </Col>
+                );
+            })}
+        </Row>
+    );
 }
 
 export default GroupList;

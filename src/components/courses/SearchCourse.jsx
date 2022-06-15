@@ -1,17 +1,17 @@
 import React, { useState, useRef } from 'react'
-import { Button } from 'react-bootstrap'
-import ProcessBar from '../process-bar/ProcessBar'
-import { TreeHierarchy } from '../hierarchy/TreeHierarchy'
-import { LoadingCoursesList } from './LoadingCoursesList'
-import { createError } from '../notifications/notifications'
+
 import './SearchCourse.less'
-import LazySearchInput from '../search/LazySearchInput'
+import ProcessBar from '../process-bar/ProcessBar'
 import Resource from '../../util/Hateoas/Resource'
+import SerachBar from './../search/SearchBar';
+import { LoadingCoursesList } from './LoadingCoursesList'
+import { TreeHierarchy } from '../hierarchy/TreeHierarchy'
+import { createError } from '../notifications/notifications'
 
 const baseUrl = '/courses'
 const baseLink = Resource.basedOnHref(baseUrl).link().fill('size', 20)
 
-export const SearchCourse = ({onSearching, onCourseSelect, onAddClick, isAddDisabled}) => {
+export const SearchCourse = ({onSearching, onCourseSelect}) => {
     const [courses, setCourses] = useState(undefined)
     const [nextPage, setNextPage] = useState(undefined)
     const [isFetching, setIsFetching] = useState(true)
@@ -42,7 +42,7 @@ export const SearchCourse = ({onSearching, onCourseSelect, onAddClick, isAddDisa
                 }
             })
             .catch(error => {
-                createError('Не удалось загрузить список курсов.', error)
+                createError('Не удалось загрузить список разделов.', error)
             })
     }
 
@@ -72,10 +72,10 @@ export const SearchCourse = ({onSearching, onCourseSelect, onAddClick, isAddDisa
 
     return (
         <>
-            <div className='d-flex flex-row my-3'>
-                <div className='input-group'>
-                    <LazySearchInput 
-                        placeholder='Введите название курса'
+            <div className='d-flex flex-row my-2'>
+                <div className='input-group d-block'>
+                    <SerachBar 
+                        placeholder='Поиск раздела...'
                         onChange={(e) => onChange(e.target.value)}
                         onSubmit={onSearch}
                         onEmpty={() => {
@@ -83,17 +83,11 @@ export const SearchCourse = ({onSearching, onCourseSelect, onAddClick, isAddDisa
                             onSearching(false)
                             setInputError(undefined)
                         }}
-                        isInvalid={inputError !== undefined}
                     />
                     {inputError && <div className="invalid-tooltip">
                         {inputError}
                     </div>}
                 </div>
-                <Button 
-                    variant='primary'
-                    onClick={onAddClick}
-                    disabled={isAddDisabled}
-                >Добавить</Button>
             </div>
 
             {isSearching &&
@@ -116,7 +110,7 @@ export const SearchCourse = ({onSearching, onCourseSelect, onAddClick, isAddDisa
                                 <div className='no-courses'>
                                     <h5>По вашему запросу ничего не найдено.</h5>
                                     <p className='text-muted'>
-                                        Не удалось найти курсы, удовлетворяющие условиям поиска, попробуйте изменить запрос.
+                                        Не удалось найти разделы, удовлетворяющие условиям поиска, попробуйте изменить запрос.
                                     </p>
                                 </div>
                             :<LoadingCoursesList/>

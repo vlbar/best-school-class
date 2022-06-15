@@ -14,7 +14,7 @@ export default function PublicRoute({ component: Component, ...rest }) {
       {...rest}
       render={(props) => {
         if (isLoggedIn) {
-          return <Redirect to={destinationPath || "/home"} />;
+          return <Redirect to={destinationPath || "/"} />;
         } else {
           return <Component {...props} />;
         }

@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Button, Modal, Form } from 'react-bootstrap'
 import ProcessBar from '../process-bar/ProcessBar'
 import useBestValidation from './edit/useBestValidation'
+import InputField from './../common/InputField';
 
 //validation
 const taskValidationSchema = {
@@ -37,23 +38,21 @@ export const TaskAddModal = ({ show, onSubmit, onClose, isFetching }) => {
                     <Modal.Title>Добавить задание</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    <Form.Group controlId='formBasicEmail' style={{ marginBottom: 0 }}>
-                        <Form.Label>Название задания</Form.Label>
-                        <Form.Control
-                            name='name'
-                            type='text'
-                            placeholder='Введите название задания...'
-                            value={task.name}
-                            onChange={e => {
-                                taskValidation.changeHandle(e)
-                                setName(e.target.value)
-                            }}
-                            onBlur={taskValidation.blurHandle}
-                            isInvalid={taskValidation.errors.name}
-                            disabled={isFetching}
-                        />
-                        <Form.Control.Feedback type='invalid'>{taskValidation.errors.name}</Form.Control.Feedback>
-                    </Form.Group>
+                    <InputField 
+                        name='name'
+                        type='text'
+                        value={task.name}
+                        onChange={e => {
+                            taskValidation.changeHandle(e)
+                            setName(e.target.value)
+                        }}
+                        onBlur={taskValidation.blurHandle}
+                        isInvalid={taskValidation.errors.name}
+                        disabled={isFetching}
+                        label="Название задания"
+                        component={InputField}
+                        errorMessage={taskValidation.errors.name}
+                    />
                 </Modal.Body>
 
                 <Modal.Footer>

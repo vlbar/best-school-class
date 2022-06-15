@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useContext } from 'react'
 import { Button, Table, Badge, Dropdown, OverlayTrigger, Tooltip } from 'react-bootstrap'
-import { SearchTask } from './SearchTask'
+import { IoAddOutline } from "react-icons/io5";
 
 import ProcessBar from '../process-bar/ProcessBar'
 import Resource from '../../util/Hateoas/Resource'
@@ -13,6 +13,7 @@ import { LoadingList } from '../loading/LoadingList'
 import { TaskAddModal } from './TaskAddModal'
 import { useInView } from 'react-intersection-observer'
 import './TaskList.less'
+import { SearchTask } from './SearchTask';
 
 const baseUrl = '/tasks'
 const baseLink = Resource.basedOnHref(baseUrl).link()
@@ -155,8 +156,8 @@ export const TaskList = ({selectedCourse}) => {
     const getMessage = () => {
         if(!selectedCourse && !tasks && !isFetching && searchParams.current.name == '')
             return  <>
-                        <h5>Не выбран курс</h5>
-                        <p className='text-muted'>Выберите курс, чтобы отобразить его задания, либо воспользуйтесь поиском.</p>
+                        <h5>Не выбран раздел</h5>
+                        <p className='text-muted'>Выберите раздел, чтобы отобразить его задания, либо воспользуйтесь поиском.</p>
                     </>
         else
             if(!isFetching)
@@ -184,32 +185,39 @@ export const TaskList = ({selectedCourse}) => {
 
     let message = getMessage()
     return (
-        <>
-            <div className='d-flex flex-row my-3'>
-                <SearchTask
+        <div className="course-content">
+            <div className="d-flex justify-content-between align-items-baseline mb-2">
+                <h4 className="mt-0 mb-2">Задания</h4>
+                <Button
+                    size="sm"
+                    variant="primary"
+                    disabled={!selectedCourse || !tasks}
+                    onClick={() => setIsAddTaskModalShow(true)}
+                    className='pr-3'
+                >
+                    <IoAddOutline size={18} /> Добавить
+                </Button>
+            </div>
+            <div className="w-100 mb-2">
+                <SearchTask 
                     onSubmit={(params) => setSearchParams(params)}
                     setIsFetching={(isFetching) => {
                         setIsFetching(isFetching)
                         setTasks([])
                     }}
                     emptyAfterTaskName={emptyResultAfterName.current}
+                    placeholder="Поиск задания..."
+                    className="w-100"
+                    isFetching={isFetching}
                 />
-                <Button 
-                    variant='primary'
-                    disabled={!selectedCourse || !tasks}
-                    onClick={() => setIsAddTaskModalShow(true)}
-                >
-                    Добавить
-                </Button>
             </div>
-            <div className='task-list course-panel'>
+            <div className='task-list'>
                 <TaskListHeader
                     submitSearchParams={(params) => setSearchParams(params)}
                     selectedTasks={selectedTasks}
                     isSelectedAll={selectedTasks.length == tasks?.length && tasks != undefined && tasks.length !== 0}
                     onSelectAll={onSelectAll}
                 />
-                {isFetching && <ProcessBar className='position-absolute' height='.18Rem'/>}
                 <div className='scroll-container'>
                     {tasks && tasks.length !== 0 && 
                         <div className='tasks-table'>
@@ -299,5 +307,5 @@ export const TaskList = ({selectedCourse}) => {
                 isFetching={isTaskDeleting}
                 onSubmit={removeTask}
             />}
-        </>)
+        </div>)
 }

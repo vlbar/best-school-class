@@ -1,7 +1,9 @@
 import React from 'react'
+import * as Yup from 'yup'
 import { Button, Modal, Form } from 'react-bootstrap'
 import { Formik, Field } from 'formik'
-import * as Yup from 'yup'
+
+import InputField from './../common/InputField';
 
 const courseSchema = Yup.object().shape({
     name: Yup.string()
@@ -22,10 +24,10 @@ export const CourseAddUpdateModal = ({onSubmit, onClose, parentCourse, updatedCo
     const getTitle = () => {
         if(!updatedCourse)
             return !parentCourse
-                ? 'Добавить курс'
-                : 'Добавить подкурс'
+                ? 'Добавить раздел'
+                : 'Добавить подраздел'
         else
-            return 'Изменить курс'
+            return 'Изменить раздел'
     } 
 
     return (
@@ -52,13 +54,15 @@ export const CourseAddUpdateModal = ({onSubmit, onClose, parentCourse, updatedCo
                             submitForm();
                         }}>
                             <Modal.Body>
-                                <Form.Group controlId='formBasicEmail' style={{marginBottom: 0}}>
-                                    <Form.Label>Название курса</Form.Label>
-                                    <Field as={Form.Control} name='name' type='text' placeholder="Введите название курса..." isInvalid={touched.name && errors.name}/>
-                                    <Form.Control.Feedback type="invalid">
-                                        {errors.name}
-                                    </Form.Control.Feedback>
-                                </Form.Group>
+                                <Field 
+                                    as={Form.Control} 
+                                    name='name' 
+                                    type='text'
+                                    isInvalid={touched.name && errors.name}
+                                    label="Название раздела"
+                                    component={InputField}
+                                    errorMessage={errors.name}
+                                />
                             </Modal.Body>
 
                             <Modal.Footer>

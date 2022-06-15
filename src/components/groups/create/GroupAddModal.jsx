@@ -6,6 +6,8 @@ import { CirclePicker } from "react-color";
 import ColorPicker from "./ColorPicker";
 import ProcessBar from "../../process-bar/ProcessBar";
 import { createError } from "../../notifications/notifications";
+import "./group-add-modal.less";
+import InputField from "../../common/InputField";
 
 const groupSchema = yup.object().shape({
   name: yup
@@ -54,95 +56,79 @@ export const GroupAddModal = ({ link, onClose, onSubmit, values }) => {
   }
 
   return (
-    <Modal show={true} onHide={onClose}>
-      <Modal.Body className="p-0">
-        <Formik
-          initialValues={{
-            name: values?.name ?? "",
-            subject: values?.subject ?? "",
-            color: values?.color ?? "#343a40",
-          }}
-          validationSchema={groupSchema}
-          onSubmit={handleSubmit}
-        >
-          {({ handleSubmit, values, isValid, dirty, handleChange }) => (
-            <Form onSubmit={handleSubmit}>
-              <Card className="h-100">
-                <Card.Header
-                  className="p-4"
-                  style={{ backgroundColor: values.color }}
-                >
-                  <div className="d-flex justify-content-between align-items-center">
-                    <InputGroup>
-                      <FastField
-                        name="name"
-                        className="form-control"
-                        placeholder="Название"
-                      />
-                      <FastField
-                        name="subject"
-                        className="form-control"
-                        placeholder="Предмет"
-                      />
-                    </InputGroup>
-                    <div className="mx-2">
-                      <ColorPicker
-                        onColorChange={(e) => {
-                          handleChange({
-                            target: { name: "color", value: e.hex },
-                          });
-                        }}
-                        initialColor={values.color}
-                        name="color"
-                      />
-                    </div>
-                  </div>
-                  <Form.Text muted>
-                    <ErrorMessage
-                      component="div"
-                      name="name"
-                      className="text-danger"
-                    />
-                    <ErrorMessage
-                      component="div"
-                      name="subject"
-                      className="text-danger"
-                    />
-                  </Form.Text>
-                </Card.Header>
-                <ProcessBar height="2px" active={loading} />
-                <Card.Body>
-                  <CirclePicker
-                    color={values.color}
-                    onChange={(e) => {
-                      handleChange({ target: { name: "color", value: e.hex } });
+    <Modal show={true} onHide={onClose} className="header-hidden">
+      <Formik
+        initialValues={{
+          name: values?.name ?? "",
+          subject: values?.subject ?? "",
+          color: values?.color ?? "#2196f3",
+        }}
+        validationSchema={groupSchema}
+        onSubmit={handleSubmit}
+      >
+        {({ handleSubmit, values, isValid, dirty, handleChange }) => (
+          <Form onSubmit={handleSubmit}>
+            <Modal.Header
+              className="pt-4 pb-3 flex-column"
+              style={{ backgroundColor: values.color }}
+            >
+              <div className="d-flex w-100 justify-content-between align-items-center">
+                <FastField
+                  autoFocus
+                  name="name"
+                  className="w-100"
+                  placeholder="Название"
+                  component={InputField}
+                />
+                <div className="mx-2 mb-2">
+                  <ColorPicker
+                    onColorChange={(e) => {
+                      handleChange({
+                        target: { name: "color", value: e.hex },
+                      });
                     }}
-                    className="m-auto w-100"
-                    circleSize={32}
-                    circleSpacing={18}
+                    initialColor={values.color}
                     name="color"
                   />
-                </Card.Body>
-                <Card.Footer>
-                  <div className="float-right">
-                    <Button variant="secondary" onClick={onClose}>
-                      Закрыть
-                    </Button>
-                    <Button
-                      variant="primary"
-                      type="submit"
-                      disabled={!(isValid && dirty)}
-                      className="ml-2"
-                    >
-                      {values ? "Сохранить" : "Добавить"}
-                    </Button>
-                  </div>
-                </Card.Footer>
-              </Card>
-            </Form>
-          )}
-        </Formik>
-      </Modal.Body>
+                </div>
+              </div>
+              <ErrorMessage
+                component="small"
+                name="name"
+                className="text-danger mt-n3"
+              />
+            </Modal.Header>
+            <ProcessBar height="2px" active={loading} />
+            <Modal.Body>
+              <CirclePicker
+                color={values.color}
+                onChange={(e) => {
+                  handleChange({ target: { name: "color", value: e.hex } });
+                }}
+                className="m-auto w-100"
+                circleSize={32}
+                circleSpacing={18}
+                name="color"
+              />
+            </Modal.Body>
+            <Modal.Footer>
+              <div className="float-right">
+                <Button variant="secondary" onClick={onClose}>
+                  Закрыть
+                </Button>
+                <Button
+                  variant="primary"
+                  type="submit"
+                  disabled={!(isValid && dirty)}
+                  className="ml-2"
+                >
+                  {values ? "Сохранить" : "Добавить"}
+                </Button>
+              </div>
+            </Modal.Footer>
+          </Form>
+        )}
+      </Formik>
     </Modal>
   );
 };

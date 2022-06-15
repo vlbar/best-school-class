@@ -17,7 +17,7 @@ function InterviewContainer({
     <>
       <div className="d-flex my-1 justify-content-between align-items-center">
         <div className="d-flex align-items-center">
-          <h5 className="m-0">Участники</h5>
+          <h4 className="m-0">Участники</h4>
           <SortOrder
             className="ml-2"
             orders={{

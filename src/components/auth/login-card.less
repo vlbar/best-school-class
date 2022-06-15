@@ -1,0 +1,82 @@
+@import '../../static/style/bscstrap.less';
+
+.login-card {
+    background-color: @background-light;
+    border-radius: 20px;
+    overflow: hidden;
+
+    margin-top: 50px;
+}
+
+.card-image-side {
+    min-height: 500px;
+
+    h4 {
+        font-weight: 700;
+        font-size: 24px;
+        line-height: 29px;
+        text-align: center;
+        color: @darkGray;
+
+        margin-bottom: 20px;
+    }
+
+    p {
+        width: 80%;
+
+        font-weight: 400;
+        font-size: 16px;
+        line-height: 19px;
+        text-align: center;
+
+        margin-bottom: 100px;
+    }
+
+    .card-image {
+        position: absolute;
+        top: 0;
+
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+
+        z-index: 1;
+
+        .bsc-logo {
+            width: 180px;
+            margin-top: 80px;
+            margin-bottom: 50px;
+        }
+    }
+
+    .side-background {
+        position: absolute;
+        bottom: 0;
+        width: 80%;
+
+        z-index: 0;
+        overflow: hidden;
+    }
+}
+
+.card-content {
+    margin-top: 40px;
+    margin-bottom: 40px;
+    flex-grow: 1;
+
+    h4 {
+        color: @darkGray;
+        font-weight: 700;
+        font-size: 32px;
+        line-height: 39px;
+    }
+
+    p {
+        font-size: 14px;
+        line-height: 15px;
+    }
+
+    .form-wrapper {
+        margin-top: 30px;
+    }
+}

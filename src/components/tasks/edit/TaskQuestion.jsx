@@ -253,76 +253,74 @@ export const TaskQuestion = ({ index, question, questionsLink }) => {
         <div className={!isValid ? 'invalid-question':''}>
             <div className={'question-card' + (isHover || isEditing ? ' hover':'') + (isEditing ? ' edit':'')} onMouseEnter={() => setIsHover(true)} onMouseLeave={() => setIsHover(false)}>
                 {(isFetching) && <ProcessBar height='.18Rem' className='position-absolute'/>}
-                <div className='m-3'>
-                    <div className='question-card-header'>
-                        <div>
-                            <DragHandle />
-                            {(questionVariants) && questionVariants.map((variant, index) => {
-                                    if(!variant.markForDelete) 
-                                        return <Button
-                                            key={index}
-                                            size='sm'
-                                            variant={(variant.isValid == undefined || variant.isValid) ? selectedVariant == index ? 'outline-primary' : 'outline-secondary' : 'outline-danger'}
-                                            onClick={() => selectVartiant(index)}
-                                            className={'question-variant-btn' + (selectedVariant !== index ? ' hover-border':'')}
-                                        >
-                                            {num++}
-                                        </Button>
-                                }
-                            )}
-                            {(questionVariants) && questionVariants.length < 10 && <Button
-                                size='sm' 
-                                variant='outline-secondary'
-                                className='question-variant-btn hover-border on-card-hover'
-                                onClick={() => pushNewVariant()}
-                            >+</Button>}
-                        </div>
-                        <div>
-                            <button className='icon-btn' title='Переместить ниже' onClick={() => moveQuestion({oldIndex: arrayIndex, newIndex: arrayIndex + 1})}><i className='fas fa-angle-down fa-lg'/></button>
-                            <button className='icon-btn mr-2' title='Переместить выше' onClick={() => moveQuestion({oldIndex: arrayIndex, newIndex: arrayIndex - 1})}><i className='fas fa-angle-up fa-lg'/></button>
-                            <button className='icon-btn' title='Удалить вопрос' onClick={() => markForDeletion()}><i className='fas fa-times fa-lg'/></button>
-                        </div>
-                    </div>
-                    <div onClick={() => onQuestionEdit()}>
-                        <TaskQuestionContext.Provider value={{ question, setQuestionVariant, pasteVariantAfter, variantCount, markForDeleteVariant, deleteQuestionVariant }}>
-                            {(questionVariants) && questionVariants.map((variant, index) => {
-                                if(!isEmpty(variant)) return (
-                                    <QuestionVariant key={index} show={selectedVariant == index} index={index} questionVariant={variant} isEditing={isEditing} variantsLink={variantsLink} />
-                                )
-                            })}
-                        </TaskQuestionContext.Provider>
-                        <hr className='question-card-hr'/>
-                        <Row>
-                            <Col>
-                                <Form.Group className='flex-between mb-0' style ={{width: '155px', marginRight: '1.85Rem'}}>
-                                    <Form.Label className='label-sm-center mb-0 mr-3'>
-                                        Балл.
-                                    </Form.Label>
-                                    <Form.Control
-                                        type='number'
-                                        min={1}
+                <div className='question-card-header'>
+                    <div className='d-flex align-items-center'>
+                        <DragHandle />
+                        {(questionVariants) && questionVariants.map((variant, index) => {
+                                if(!variant.markForDelete) 
+                                    return <Button
+                                        key={index}
                                         size='sm'
-                                        className='hover-border'
-                                        name='maxScore'
-                                        value={taskQuestion.maxScore}
-                                        isInvalid={questionValidation.errors.maxScore}
-                                        onBlur={questionValidation.blurHandle}
-                                        onChange={(e) => {
-                                            setMaxScore(Number(e.target.value))
-                                            questionValidation.changeHandle(e)
-                                        }}
-                                    />
-                                </Form.Group>
-                                <FeedbackMessage message={questionValidation.errors.maxScore}/>
-                            </Col>
-                        </Row>
+                                        variant={(variant.isValid == undefined || variant.isValid) ? selectedVariant == index ? 'primary' : 'outline-secondary' : 'outline-danger'}
+                                        onClick={() => selectVartiant(index)}
+                                        className={'question-variant-btn' + (selectedVariant !== index ? ' hover-border':'')}
+                                    >
+                                        {num++}
+                                    </Button>
+                            }
+                        )}
+                        {(questionVariants) && questionVariants.length < 10 && <Button
+                            size='sm' 
+                            variant='outline-secondary'
+                            className='question-variant-btn hover-border on-card-hover'
+                            onClick={() => pushNewVariant()}
+                        >+</Button>}
                     </div>
+                    <div className='d-flex align-items-center'>
+                        <button className='icon-btn' title='Переместить ниже' onClick={() => moveQuestion({oldIndex: arrayIndex, newIndex: arrayIndex + 1})}><i className='fas fa-angle-down fa-lg'/></button>
+                        <button className='icon-btn mr-2' title='Переместить выше' onClick={() => moveQuestion({oldIndex: arrayIndex, newIndex: arrayIndex - 1})}><i className='fas fa-angle-up fa-lg'/></button>
+                        <button className='icon-btn' title='Удалить вопрос' onClick={() => markForDeletion()}><i className='fas fa-times fa-lg'/></button>
+                    </div>
+                </div>
+                <div onClick={() => onQuestionEdit()}>
+                    <TaskQuestionContext.Provider value={{ question, setQuestionVariant, pasteVariantAfter, variantCount, markForDeleteVariant, deleteQuestionVariant }}>
+                        {(questionVariants) && questionVariants.map((variant, index) => {
+                            if(!isEmpty(variant)) return (
+                                <QuestionVariant key={index} show={selectedVariant == index} index={index} questionVariant={variant} isEditing={isEditing} variantsLink={variantsLink} />
+                            )
+                        })}
+                    </TaskQuestionContext.Provider>
+                    <hr className='question-card-hr'/>
+                    <Row>
+                        <Col>
+                            <Form.Group className='flex-between mb-0' style ={{width: '155px', marginRight: '1.85Rem'}}>
+                                <Form.Label className='label-sm-center mb-0 mr-3'>
+                                    Балл.
+                                </Form.Label>
+                                <Form.Control
+                                    type='number'
+                                    min={1}
+                                    size='sm'
+                                    className='hover-border'
+                                    name='maxScore'
+                                    value={taskQuestion.maxScore}
+                                    isInvalid={questionValidation.errors.maxScore}
+                                    onBlur={questionValidation.blurHandle}
+                                    onChange={(e) => {
+                                        setMaxScore(Number(e.target.value))
+                                        questionValidation.changeHandle(e)
+                                    }}
+                                />
+                            </Form.Group>
+                            <FeedbackMessage message={questionValidation.errors.maxScore}/>
+                        </Col>
+                    </Row>
                 </div>
             </div>
             {isEditing &&
                 <div className='question-card-actions'>
                     <Button 
-                        variant={isValid ? 'outline-primary' : 'outline-danger'}
+                        variant={isValid ? 'primary' : 'outline-danger'}
                         onClick={() => addQuestionAfter(question.position + 1)}
                     >
                         Добавить вопрос

@@ -1,6 +1,85 @@
+@import '../../static/style/bscstrap.less';
+
+.homework-panel {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+
+    cursor: pointer;
+    background-color: @primary-light;
+    border-radius: 20px;
+    padding: 14px;
+
+    .budge-icon {
+        background-color: #6EAFED;
+        border-radius: 10px;
+
+        padding: 8px;
+        margin-right: 20px;
+
+        svg {
+            color: @white;
+        }
+    }
+
+    .homework-middle {
+        div {
+            display: flex;
+            flex-direction: row;
+        }
+
+        h4 {
+            font-style: bold;
+            font-weight: 700;
+            font-size: 16px;
+            line-height: 19px;
+            color: @white;
+
+            margin-bottom: 2px;
+            margin-right: 20px;
+        }
+
+        p {
+            font-weight: 400;
+            font-size: 12px;
+            line-height: 15px;
+            color: @white;
+
+            margin-bottom: 0;
+        }
+
+        small {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+    }
+
+    .homework-action {
+        display: flex;
+        flex-direction: row;
+        
+        color: @white;
+
+        margin-left: 20px;
+
+        svg {
+            color: @white;
+        }
+    }
+}
+
+.homework-tasks-list {
+    list-style-type: none;
+    padding: 0;
+}
+
 .homework-task-item {
+    border-radius: 10px;
+    padding: 4px 10px;
+
     &:hover {
-        background-color: rgba(0, 0, 0, 0.01);
+        background-color: @background-light;
 
         & .btn-icon {
             opacity: 1;
@@ -11,19 +90,19 @@
         opacity: 1;
     }
 
-    & .dropdown-action-menu.show + .btn-icon {
+    & .dropdown-action-menu.show+.btn-icon {
         opacity: 1;
     }
 }
 
 .homework-task-item .btn-icon {
     opacity: 0.2;
-    color: #004085;
+    color: @darkGray;
 }
 
 .primary-select {
     .dropdown-toggle {
-        border-color: #00408575!important;
+        border-color: #00408575 !important;
     }
 
     .dropdown-menu {
@@ -66,4 +145,19 @@
 .homework-btn-bottom {
     position: absolute;
     bottom: 0;
+}
+
+.datetime-input {
+    display: flex;
+    justify-content: space-between;
+
+    background-color: @background;
+    border-radius: 10px;
+
+    input {
+        background-color: transparent;
+        border: 0;
+        outline: none;
+        padding: 6px 10px; 
+    }
 }

@@ -1,33 +1,31 @@
 import React, { useEffect, useState } from "react";
-import { useRef } from "react";
 import {
   Alert,
   Button,
   ButtonGroup,
-  Col,
-  Container,
   Dropdown,
-  Row,
 } from "react-bootstrap";
-import { useInView } from "react-intersection-observer";
-import { useSelector } from "react-redux";
 import { useHistory } from "react-router-dom";
-import { GroupAddModal } from "../components/groups/create/GroupAddModal";
-import ModalTrigger from "../components/common/ModalTrigger";
-import WaitingListener from "../components/common/WaitingListener";
-import GroupList from "../components/groups/GroupList";
+import { useInView } from "react-intersection-observer";
+import { useRef } from "react";
+import { useSelector } from "react-redux";
+
 import "../components/groups/GroupList.less";
+import Assistant from "../components/routing/PrivateContentAliases/Assistant";
+import GroupList from "../components/groups/GroupList";
+import Link from "../util/Hateoas/Link";
+import ModalTrigger from "../components/common/ModalTrigger";
+import Page from './../components/common/Page';
+import ProcessBar from "../components/process-bar/ProcessBar";
+import Resource from "../util/Hateoas/Resource";
+import SearchBar from './../components/search/SearchBar';
+import Student from "../components/routing/PrivateContentAliases/Student";
+import Teacher from "../components/routing/PrivateContentAliases/Teacher";
+import { GroupAddModal } from "../components/groups/create/GroupAddModal";
 import { InviteCodeInputModal } from "../components/groups/join/InviteCodeInputModal";
 import { createError } from "../components/notifications/notifications";
-import ProcessBar from "../components/process-bar/ProcessBar";
-import SearchBar from "../components/search/SearchBar";
 import { selectState } from "../redux/state/stateSelector";
 import { selectUser } from "../redux/user/userSelectors";
-import Link from "../util/Hateoas/Link";
-import Resource from "../util/Hateoas/Resource";
-import Teacher from "../components/routing/PrivateContentAliases/Teacher";
-import Student from "../components/routing/PrivateContentAliases/Student";
-import Assistant from "../components/routing/PrivateContentAliases/Assistant";
 
 function Groups() {
   const pageSize = 12;
@@ -179,17 +177,20 @@ function Groups() {
   }
 
   return (
-    <Container>
-      <h4 className="my-3">Группы</h4>
-      <Row className="mb-0">
-        <Col md={4} xs={12} className="mb-2">
+    <Page name="Группы">
+      <div className="d-flex flex-wrap w-100">
+        <SearchBar
+          onSubmit={setSearch}
+          placeholder="Поиск группы..."
+          className="flex-grow-1 mr-2 mb-3"
+        />
+        <div className="mb-3">
           <Dropdown as={ButtonGroup}>
             <ModalTrigger modal={<InviteCodeInputModal />}>
-              <Button variant="outline-dark">Присоединиться</Button>
+              <Button variant="primary">Присоединиться</Button>
             </ModalTrigger>
-
             <Teacher>
-              <Dropdown.Toggle variant="outline-dark" />
+              <Dropdown.Toggle variant="primary" />
               <Dropdown.Menu>
                 <ModalTrigger
                   modal={
@@ -204,23 +205,8 @@ function Groups() {
               </Dropdown.Menu>
             </Teacher>
           </Dropdown>
-        </Col>
-        <Col md={{ span: 4, offset: 4 }} xs={12}>
-          <WaitingListener delay={500} onChange={setSearch}>
-            {({ onChange }) => {
-              return (
-                <SearchBar
-                  onChange={onChange}
-                  onSubmit={setSearch}
-                  buttonVariant="outline-secondary"
-                  placeholder="Введите название..."
-                  borderColor="#6c757d"
-                />
-              );
-            }}
-          </WaitingListener>
-        </Col>
-      </Row>
+        </div>
+      </div>
 
       <GroupList groups={groups} user={user} />
       <ProcessBar height="2px" active={loading} className="mb-2" />
@@ -245,7 +231,7 @@ function Groups() {
             </Alert>
           )
         ))}
-    </Container>
+    </Page>
   );
 }
 

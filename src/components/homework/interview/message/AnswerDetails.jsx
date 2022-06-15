@@ -248,7 +248,7 @@ function AnswerDetails({
                         Отменить
                       </Button>
                       <SplitButton
-                        variant="outline-primary"
+                        variant="primary"
                         title={
                           answer.answerStatus == "APPRECIATED"
                             ? "Обновить"
@@ -291,7 +291,7 @@ function AnswerDetails({
                 ) : (
                   <Button
                     className="text-right"
-                    variant="outline-primary"
+                    variant="primary"
                     onClick={() => setIsEdit(true)}
                   >
                     Переоценить

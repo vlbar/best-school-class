@@ -16,8 +16,8 @@ const SelectHomeworkModal = ({show, onClose, onSelect}) => {
                 <h6 className='mb-2'>Выбрать существующее домашнее:</h6>
                 <HomeworkList onSelect={onSelect} className='select-homework-list' />
 
-                <p className='text-center text-muted'>или</p>
-                <Button variant="outline-primary" className='w-100' onClick={() => onSelect(undefined)}>
+                <p className='text-center text-muted mt-2'>или</p>
+                <Button variant="primary" className='w-100' onClick={() => onSelect(undefined)}>
                     Создать новое
                 </Button>
             </Modal.Body>

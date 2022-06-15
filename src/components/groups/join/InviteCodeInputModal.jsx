@@ -21,28 +21,33 @@ export const InviteCodeInputModal = ({ onClose }) => {
 
   return (
     <Modal show onHide={onClose}>
-      <Form onSubmit={submitHandle}>
-        <InputGroup>
-          <input
-            ref={inputRef}
-            name="joinCode"
-            className="form-control"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            placeholder={"Введите код..."}
-          />
-          <InputGroup.Append>
-            <Button
-              variant="primary"
-              type="submit"
-              disabled={!code}
-              className="w-100 px-5"
-            >
-              <i className="fas fa-long-arrow-alt-right"></i>
-            </Button>
-          </InputGroup.Append>
-        </InputGroup>
-      </Form>
+      <Modal.Header closeButton>
+        <Modal.Title>Присоединиться</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        <Form onSubmit={submitHandle}>
+          <p>Введите код приглашения, выданный преподавателем</p>
+          <InputGroup>
+            <input
+              ref={inputRef}
+              name="joinCode"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder={"Введите код..."}
+            />
+            <InputGroup.Append>
+              <Button
+                variant="primary"
+                type="submit"
+                disabled={!code}
+                className="w-100 px-5"
+              >
+                <i className="fas fa-long-arrow-alt-right"></i>
+              </Button>
+            </InputGroup.Append>
+          </InputGroup>
+        </Form>
+      </Modal.Body>
     </Modal>
   );
 };

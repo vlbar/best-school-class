@@ -1,0 +1,60 @@
+@import '../static/style/bscstrap.less';
+
+.workspace {
+    margin-top: 100px;
+
+    h3 {
+        font-size: 24px;
+        margin-left: 20px;
+    }
+
+    .budge-icon {
+        border-radius: 20px;
+        background-color: #DEE9F3;
+
+        padding: 16px;
+
+        &.primary {
+            background-color: #6EAFED;
+
+            svg {
+                color: @white;
+            }
+        }
+
+        &.danger {
+            background-color: #ED6E6E;
+
+            svg {
+                color: @white;
+            }
+        }
+    }
+
+    .button-block {
+        background-color: @background-light;
+        border-radius: 20px;
+
+        padding: 20px;
+        margin-bottom: 20px;
+
+        &:hover {
+            background-color: @background;
+        }
+
+        &:active {
+            background-color: @background-ultralight;
+        }
+
+        &.full-height {
+            height: calc(100% - 20px);
+            margin-bottom: 0;
+        }
+
+        .block-line {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+    }
+}

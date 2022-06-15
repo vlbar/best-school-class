@@ -12,7 +12,7 @@ function SortOrder({ orders, variant, initialOrder, onSelect, ...props }) {
 
   return (
     <Dropdown {...props}>
-      <Dropdown.Toggle variant={variant ?? "outline-ligth"} className="w-100">
+      <Dropdown.Toggle variant={variant ?? "outline-ligth"} className="w-100 p-0">
         {orders[currentOrder]}
       </Dropdown.Toggle>
 

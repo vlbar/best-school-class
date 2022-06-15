@@ -224,14 +224,14 @@ const TaskAnswerTry = ({ task, interview, createLink, setTaskModalHide, onClose,
     var isReadOnly = selectedAnswerTry && secondsLeft != null && !(selectedAnswerTry.answerStatus === STATUS_NOT_PERFORMED && secondsLeft > 0)
     return (
         <>
-            <h5 ref={ref} className='mb-1'>Вопросы:</h5>
+            <h4 ref={ref} className='mb-1'>Вопросы:</h4>
             {isConfirmed && selectedAnswerTry && (
                 <div className={'answer-panel' + (inView ? '':' fixed')}>
                     <div className='inner-container'>
                         <div className='d-flex justify-content-between mb-2'>
                             <div className='my-auto'>Оставшееся время: {isReadOnly || !selectedAnswerTry.completionDate ? '-' : toLocaleTimeDurationString(secondsLeft)}</div>
                             <div>
-                                <Button variant='outline-primary' size='sm' onClick={() => {
+                                <Button variant='primary' size='sm' onClick={() => {
                                         setIsCompleteTaskModalShow(true)
                                         setTaskSaveModalState(modalStateConst.CONFIRM)
                                     }} disabled={isReadOnly}>
@@ -259,11 +259,11 @@ const TaskAnswerTry = ({ task, interview, createLink, setTaskModalHide, onClose,
             {isConfirmed === false && (
                 <div className='text-center'>
                     <div className='mx-auto my-3'>
-                        <b>Вопросы еще не получены, так как выполнение задания еще не начато.</b>
+                        <b>Вопросы еще не получены, так как выполнение задания еще не начато</b>
                         <br />
-                        Вы можете ознакомится с условиями задания и начать его выполнение.
+                        Вы можете ознакомится с условиями задания и начать его выполнение
                     </div>
-                    <Button variant='outline-primary' type='submit' onClick={() => createTaskAnswer(true)} disabled={isFetching}>
+                    <Button variant='primary' type='submit' onClick={() => createTaskAnswer(true)} disabled={isFetching}>
                         Начать выполнение
                     </Button>
                 </div>

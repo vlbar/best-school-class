@@ -20,6 +20,7 @@ import { useSelector } from "react-redux";
 import { selectState } from "../../redux/state/stateSelector";
 import Resource from "../../util/Hateoas/Resource";
 import ExecuteTaskModal from "../tasks/execute/ExecuteTaskModal";
+import usePageTitle from "../feedback/usePageTitle";
 
 // requests
 const baseUrl = "/homeworks";
@@ -38,6 +39,7 @@ const HomeworkDetails = ({ homeworkId }) => {
 
   const [isExecuteTaskModalShow, setIsExecuteTaskModalShow] = useState(false);
   const [taskLink, setTaskLink] = useState(undefined);
+  usePageTitle({ title: "Домашнее задание" });
 
   const history = useHistory();
 
@@ -77,7 +79,7 @@ const HomeworkDetails = ({ homeworkId }) => {
     <>
       <div className="d-flex flex-wrap justify-content-between mt-3">
         <div className="d-flex flex-row">
-          <h5 className="mr-2 mb-1">Домашняя работа</h5>
+          <h4 className="mr-2 mb-1 mb-2">Домашняя работа</h4>
           <div>
             <Badge variant="secondary" className="y-auto">
               Завершено
@@ -172,7 +174,7 @@ const HomeworkDetails = ({ homeworkId }) => {
                 />
               </PrivateContent>
               <Student>
-                <h5 className="">Задания</h5>
+                <h4 className="mt-0 mb-2">Задания</h4>
                 <div className="border rounded">
                   <HomeworkTaskList
                     tasks={homework.tasks}
@@ -192,7 +194,7 @@ const HomeworkDetails = ({ homeworkId }) => {
               <PrivateContent allowedStates={[TEACHER, ASSISTANT]}>
                 {interview === undefined && (
                   <>
-                    <h5 className="mt-2 mb-2 py-1">Задания</h5>
+                    <h4 className="mt-0 mb-0 py-1">Задания</h4>
                     <div className="border rounded">
                       <HomeworkTaskList
                         tasks={homework.tasks}
@@ -247,7 +249,7 @@ const HomeworkDetails = ({ homeworkId }) => {
               </PrivateContent>
               {interview !== undefined && (
                 <Student>
-                  <h5>Интервью</h5>
+                  <h4 className="mt-0 mb-2">Интервью</h4>
                   <div className="border rounded">
                     <Interview
                       fetchLink={interview.link()}
