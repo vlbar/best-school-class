@@ -231,7 +231,7 @@ const TaskAnswerTry = ({ task, interview, createLink, setTaskModalHide, onClose,
                         <div className='d-flex justify-content-between mb-2'>
                             <div className='my-auto'>Оставшееся время: {isReadOnly || !selectedAnswerTry.completionDate ? '-' : toLocaleTimeDurationString(secondsLeft)}</div>
                             <div>
-                                <Button variant='outline-primary' size='sm' onClick={() => {
+                                <Button variant='primary' size='sm' onClick={() => {
                                         setIsCompleteTaskModalShow(true)
                                         setTaskSaveModalState(modalStateConst.CONFIRM)
                                     }} disabled={isReadOnly}>
@@ -263,7 +263,7 @@ const TaskAnswerTry = ({ task, interview, createLink, setTaskModalHide, onClose,
                         <br />
                         Вы можете ознакомится с условиями задания и начать его выполнение.
                     </div>
-                    <Button variant='outline-primary' type='submit' onClick={() => createTaskAnswer(true)} disabled={isFetching}>
+                    <Button variant='primary' type='submit' onClick={() => createTaskAnswer(true)} disabled={isFetching}>
                         Начать выполнение
                     </Button>
                 </div>

@@ -58,7 +58,7 @@ a {
 
 .btn-primary {
     background-color: @primary;
-    color: @white;
+    color: @white !important;
 
     &:hover {
         background-color: @primary-hover;
@@ -136,6 +136,11 @@ a {
     }
 }
 
+.btn-outline-danger {
+    background-color: @danger;
+    color: @white;
+}
+
 .border {
     border: 0 !important;
     background-color: @background-light;
@@ -193,4 +198,21 @@ a {
 .modal-content {
     border: 0;
     border-radius: 20px;
+}
+
+.bordered {
+    border: 0;
+}
+
+.form-control {
+    border: 0;
+    background-color: @background;
+    border-radius: 10px !important;
+
+    &:focus {
+        border: 0 !important;
+        outline: 0 !important;
+        box-shadow: none !important;
+        background-color: @background;
+    }
 }

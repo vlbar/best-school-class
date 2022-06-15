@@ -1,10 +1,14 @@
+@import '../../../static/style/bscstrap.less';
+
 .question-card {
-    border: 1px solid rgba(0,0,0,.125);
     transition: border 0.2s;
-    border-radius: .25rem;
-    background-color: rgb(249, 249, 250);
-    margin-bottom: 1Rem;
+    border-radius: 10px;
+    background-color: #F9FAFB;
     position: relative;
+
+    margin-bottom: 1Rem;
+    padding: 20px;
+    padding-top: 10px;
 
     .bordered {
         border-color: transparent;
@@ -50,7 +54,7 @@
             border-color: #dc3545;
         }
 
-        &.btn-outline-primary {
+        &.btn-primary {
             border-color:#007bff;
         }
     }
@@ -70,17 +74,17 @@
 
 .question-card-actions {
     button {
-        background-color: rgb(249, 249, 250);
+        //background-color: rgb(249, 249, 250);
         border-top: 0;
         border-radius: 0;
         border-right-width: 0;
 
         &:first-child {
-            border-bottom-left-radius: .25Rem;
+            border-bottom-left-radius: 10px;
         }
     
         &:last-child {
-            border-bottom-right-radius: .25Rem;
+            border-bottom-right-radius: 10px;
             border-right-width: 1px;
         }
     }
@@ -101,6 +105,7 @@
     transition: height 0.2s;
     display: flex;
     justify-content: space-between;
+    align-items: baseline;
 }
 
 .question-variant-btn {

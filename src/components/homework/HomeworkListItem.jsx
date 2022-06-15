@@ -61,7 +61,7 @@ const HomeworkListItem = ({ homework, onSelect, onClick, canExpandTasks }) => {
                     </div>
                     {Date.now() < homework.endingDate && onSelect && (
                         <div className='d-block'>
-                            <Button variant='outline-primary' size='sm' className='mt-2' onClick={() => onSelect()}>
+                            <Button variant='primary' size='sm' className='mt-2' onClick={() => onSelect()}>
                                 Изменить
                             </Button>
                         </div>

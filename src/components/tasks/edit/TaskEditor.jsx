@@ -206,9 +206,10 @@ export const TaskEditor = ({taskId}) => {
         <>
             <div className={'task-save-panel' + (isBarShow ? ' show':'')}>
                 <Container>
+
                     <Row>
-                        <Col md={8} className='d-flex mt-2'>
-                            <h4>Задание</h4>
+                        <Col md={8} className='d-flex align-items-baseline mt-2'>
+                            <h4 className="mb-0">Задание</h4>
                             <span className='label-center text-ellipsis ml-2'>
                                 {taskDetails?.name}
                                 <button className='icon-btn ml-1' onClick={() => window.scrollTo(0, 0)}>
@@ -216,35 +217,39 @@ export const TaskEditor = ({taskId}) => {
                                 </button>
                             </span>
                         </Col>
-                        <Col md={4} className='d-flex justify-content-between mt-2'>
+                        <Col md={4} className='d-flex justify-content-between align-items-baseline mt-2'>
                             <div className='save-status'>{displayStatus}</div>
+                            <div>
+                                <Dropdown as={ButtonGroup}>
+                                    <Button variant='primary' onClick={() => onSaveClick()}>Сохранить</Button>
+                                    <Dropdown.Toggle split variant='primary' />
+
+                                    <Dropdown.Menu>
+                                        <Dropdown.Item onClick={() => setIsComplited(!taskDetails.isCompleted)}>{(taskDetails?.isCompleted) && <i className='fas fa-check'></i>} Завершить</Dropdown.Item>
+                                        <Dropdown.Item onClick={() => autoSave.setIsAutoSaveEnabled(!autoSave.isEnabled)}>{(autoSave.isEnabled) && <i className='fas fa-check'></i>} Автосохранение</Dropdown.Item>
+                                    </Dropdown.Menu>
+                                </Dropdown>
+                            </div>
+                        </Col>
+                    </Row>
+                </Container>
+            </div>
+            <Container>
+                <div className='d-flex justify-content-between align-items-baseline'>
+                    <h4 className='mt-2'>Задание</h4>
+                    <div className='d-flex justify-content-between align-items-baseline mt-2'>
+                        <div className='save-status'>{displayStatus}</div>
+                        <div>
                             <Dropdown as={ButtonGroup}>
-                                <Button variant='outline-primary' onClick={() => onSaveClick()}>Сохранить</Button>
-                                <Dropdown.Toggle split variant='outline-primary' />
+                                <Button variant='primary' onClick={() => onSaveClick()}>Сохранить</Button>
+                                <Dropdown.Toggle split variant='primary' />
 
                                 <Dropdown.Menu>
                                     <Dropdown.Item onClick={() => setIsComplited(!taskDetails.isCompleted)}>{(taskDetails?.isCompleted) && <i className='fas fa-check'></i>} Завершить</Dropdown.Item>
                                     <Dropdown.Item onClick={() => autoSave.setIsAutoSaveEnabled(!autoSave.isEnabled)}>{(autoSave.isEnabled) && <i className='fas fa-check'></i>} Автосохранение</Dropdown.Item>
                                 </Dropdown.Menu>
                             </Dropdown>
-                        </Col>
-                    </Row>
-                </Container>
-            </div>
-            <Container>
-                <div className='d-flex justify-content-between'>
-                    <h4 className='mt-2'>Задание</h4>
-                    <div className='d-flex justify-content-between mt-2'>
-                        <div className='save-status'>{displayStatus}</div>
-                        <Dropdown as={ButtonGroup}>
-                            <Button variant='outline-primary' onClick={() => onSaveClick()}>Сохранить</Button>
-                            <Dropdown.Toggle split variant='outline-primary' />
-
-                            <Dropdown.Menu>
-                                <Dropdown.Item onClick={() => setIsComplited(!taskDetails.isCompleted)}>{(taskDetails?.isCompleted) && <i className='fas fa-check'></i>} Завершить</Dropdown.Item>
-                                <Dropdown.Item onClick={() => autoSave.setIsAutoSaveEnabled(!autoSave.isEnabled)}>{(autoSave.isEnabled) && <i className='fas fa-check'></i>} Автосохранение</Dropdown.Item>
-                            </Dropdown.Menu>
-                        </Dropdown>
+                        </div>
                     </div>
                 </div>
                 <ProcessBar active={isTaskFetching} height='.18Rem' className='mt-2 mb-1'/>
@@ -252,7 +257,7 @@ export const TaskEditor = ({taskId}) => {
                     <Form.Label column sm={2}>
                         Название
                     </Form.Label>
-                    <Col sm={10}>
+                    <Col sm={6}>
                         <Form.Control 
                             type='text' 
                             name='name'
@@ -271,7 +276,15 @@ export const TaskEditor = ({taskId}) => {
                             {taskValidation.errors.name}
                         </Form.Control.Feedback>
                     </Col>
+                    <Form.Label column sm={2}>
+                        Тип задания
+                    </Form.Label>
+                    <Col sm={2}>
+                        <TaskTypeDropdown initialSelectedType={taskDetails.taskType} onSelect={(t) => setTaskType(t)} placeholder='Выберите тип...' disabled={isInputBlock} className='bordered mt-2' />
+                    </Col>
                 </Form.Group>
+                
+
                 <Form.Group as={Row}>
                     <Form.Label column sm={2}>
                         Описание задания
@@ -316,7 +329,7 @@ export const TaskEditor = ({taskId}) => {
                 </Form.Group>
                 <Form.Group as={Row}>
                     <Form.Label column sm={2}>
-                        Длительность
+                        Длительность (минут)
                     </Form.Label>
                     <Col sm={10}>
                         <div className='task-duration'>
@@ -335,27 +348,13 @@ export const TaskEditor = ({taskId}) => {
                                     taskValidation.changeHandle(e)
                                 }}
                             />
-                            <Form.Control as='select'>
-                                <option>{getTimeName(MINUTES, taskDetails?.duration || '')}</option>
-                                <option>{getTimeName(HOURS, taskDetails?.duration || '')}</option>
-                                <option>{getTimeName(DAYS, taskDetails?.duration || '')}</option>
-                            </Form.Control>
                             <Form.Control.Feedback type='invalid'>
                                 {taskValidation.errors.duration}
                             </Form.Control.Feedback>
                         </div>
                     </Col>
                 </Form.Group>
-                
-                <Form.Group as={Row}>
-                    <Form.Label column sm={2}>
-                        Тип задания
-                    </Form.Label>
-                    <Col sm={10}>
-                        <TaskTypeDropdown initialSelectedType={taskDetails.taskType} onSelect={(t) => setTaskType(t)} placeholder='Выберите тип...' disabled={isInputBlock} className='bordered' />
-                    </Col>
-                </Form.Group>
-                <hr/>
+                <h4>Вопросы</h4>
                 {(taskDetails?.name === undefined && !isTaskFetching) && (
                      <div className='task-message-container'>
                         <h5>Произошла ошибка</h5>
